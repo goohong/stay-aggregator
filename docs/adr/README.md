@@ -7,3 +7,4 @@
 |---|---|---|
 | [0001](0001-record-decisions-as-adr.md) | 결정 기록 방식과 ADR 작성 기준 정의 | accepted |
 | [0002](0002-adopt-kotlin.md) | 구현 언어로 Kotlin 채택 | accepted |
+| [0003](0003-publish-claude-md.md) | CLAUDE.md 를 저장소에 공개 | accepted |
