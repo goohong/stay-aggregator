@@ -13,8 +13,7 @@
 | `docs/adr/` | 결정과 그 근거. 선택지, 버린 대안, 버린 이유 |
 | `CLAUDE.md` | 작업 절차. 계속 참조하는 규칙 본문 |
 | `README.md` | 빌드·실행 방법. 결정은 한 줄 요약과 ADR 링크만 |
-| `JOURNAL.md` | 날짜별 진행과 막힌 지점 |
-| `docs/ai-log.md` | AI 에게 무엇을 묻고 그 답을 어떻게 처리했는지 |
+| `JOURNAL.md` | 날짜별 진행, 막힌 지점, AI 에게 무엇을 묻고 그 답을 어떻게 처리했는지 |
 
 같은 내용을 두 곳에 쓰지 않습니다. 한쪽이 바뀌면 다른 쪽이 틀린 말이 되기 때문입니다.
 
@@ -66,7 +65,7 @@ Co-Authored-By: ...
 
 `type` — `feat` `fix` `docs` `refactor` `test` `chore` `revert`
 
-`scope` — `domain` `supplier` `catalog` `search` `mock` `infra` `adr` `readme` `journal` `ai-log`
+`scope` — `domain` `supplier` `catalog` `search` `mock` `infra` `adr` `readme` `journal`
 문서 커밋의 scope 는 그 문서가 다루는 영역으로 합니다.
 
 ### 본문
@@ -107,6 +106,6 @@ AI 가 diff 의 일부라도 작성했을 때만 붙입니다.
 - "그리고" 없이 한 문장으로 말할 수 있는 것 하나
 - 그 커밋만 되돌려도 빌드가 깨지지 않을 것
 - 계약이나 동작이 바뀌는 커밋은 그것을 서술하는 문서 변경을 함께 담습니다.
-  `JOURNAL.md` 와 `docs/ai-log.md` 는 별도 커밋으로 합니다
+  `JOURNAL.md` 는 별도 커밋으로 합니다
 - 의존성을 추가하는 커밋은 본문을 씁니다. 왜 그 라이브러리이고 대안은 무엇이었는지
 - 되돌릴 때는 `revert(scope): <원 제목>` 에 본문을 씁니다. 되돌리는 이유와 원 커밋 해시
