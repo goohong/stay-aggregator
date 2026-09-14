@@ -11,3 +11,4 @@
 | [0004](0004-commit-convention.md) | 커밋 규약 채택 | accepted |
 | [0005](0005-separate-mock-module.md) | 앱과 Mock 공급사를 별도 Gradle 모듈로 분리 | accepted |
 | [0006](0006-add-dependencies-when-needed.md) | 의존성은 그 기능을 만들 때 추가 | accepted |
+| [0007](0007-build-and-framework-versions.md) | 빌드 도구와 프레임워크 버전 채택 | accepted |
