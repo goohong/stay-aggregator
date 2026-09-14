@@ -36,8 +36,9 @@ Java 21+ 와 Kotlin 중 하나를 골라야 한다. 빌드는 어느 쪽이든 G
 
 **잃는 것**
 - Kotlin + Spring 조합의 알려진 설정 함정을 다시 밟을 수 있다.
-  `kotlin("plugin.spring")`, `kotlin("plugin.jpa")` 와 `allOpen`, `jackson-module-kotlin` 을
-  프로젝트 골격 커밋에 함께 넣어 대비한다
+  `kotlin("plugin.spring")` 은 언어 선택의 결과이므로 골격에 넣는다.
+  `kotlin("plugin.jpa")` 와 `allOpen`, `jackson-module-kotlin` 은 각각 JPA 와 JSON 역직렬화를
+  도입할 때 함께 넣는다 (ADR-0006)
 - Reactor 체인은 구독 시점에 실행되므로 `runCatching` 으로 감싸도 예외가 잡히지 않는다.
   실패 처리는 `onErrorResume` 으로만 한다
 
