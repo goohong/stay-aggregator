@@ -1,3 +1,15 @@
 .kickoff.txt
 .launch.sh
 .claude/settings.local.json
+
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
