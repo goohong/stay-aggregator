@@ -1,0 +1,11 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: mock-supplier
+  threads:
+    virtual:
+      # 무응답·지연 모드는 요청 스레드를 붙잡고 기다린다.
+      # 동시 요청으로 측정할 때 Mock 의 스레드가 먼저 막혀 결과가 왜곡되지 않게 한다.
+      enabled: true
