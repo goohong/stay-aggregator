@@ -34,3 +34,4 @@
 | [0027](0027-spec-violation-handling-criteria.md) | 규약과 다른 공급사 응답을 세 가지 질문으로 판정하기로 결정 | accepted |
 | [0028](0028-implement-decided-units-first.md) | 결정이 끝난 구현 단위부터 구현하고 남은 설계를 이어가기로 결정 | accepted (Verification 짝 규칙은 superseded by [0029](0029-verification-sweep-instead-of-pairing.md)) |
 | [0029](0029-verification-sweep-instead-of-pairing.md) | ADR Verification 은 커밋마다 맞추지 않고 모아서 점검하기로 결정 | accepted |
+| [0030](0030-supplier-response-dto-receives-without-validation.md) | 공급사 응답 DTO 는 스펙 필드를 모두 받기만 하고 판정은 내부 로직에 두기로 결정 | accepted |
