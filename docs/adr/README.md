@@ -17,3 +17,4 @@
 | [0010](0010-keep-internal-id-on-merge.md) | 같은 숙소를 병합해도 내부 식별자 유지 | accepted |
 | [0011](0011-internal-id-random-uuid.md) | 내부 식별자를 무작위 UUID 로 발급해 저장 | accepted |
 | [0012](0012-static-info-from-catalog.md) | 응답의 숙소·객실 타입 정적 정보는 숙소 목록 기준으로 저장해 사용 | accepted |
+| [0013](0013-catalog-sync-on-startup-and-interval.md) | 숙소 목록은 앱 기동 시와 일정 주기마다 받아오기로 결정 | accepted |
