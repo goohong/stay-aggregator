@@ -22,3 +22,4 @@
 | [0015](0015-exclude-unmapped-room-types.md) | 매핑에 없는 객실 타입은 응답에서 빼고 뺀 사실을 남기기로 결정 | accepted |
 | [0016](0016-catalog-sync-interval-default-daily.md) | 숙소 목록 갱신 주기는 기본 하루 한 번으로 두고 설정으로 바꿀 수 있게 결정 | accepted |
 | [0017](0017-mapping-in-server-rdb.md) | 매핑은 서버형 관계형 DB 에 저장하기로 결정 | accepted |
+| [0018](0018-postgresql-for-mapping.md) | 매핑을 저장할 DB 로 PostgreSQL 채택 | accepted |
