@@ -1,7 +1,7 @@
 ---
 id: 0025
 title: 범위 밖·중복·음수 날짜 재고는 보수적으로 판정하고 사실을 남기기로 결정
-status: accepted
+status: superseded by ADR-0027
 date: 2026-09-15
 ---
 

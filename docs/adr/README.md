@@ -28,6 +28,7 @@
 | [0021](0021-block-on-virtual-threads.md) | 검색 요청은 가상 스레드에서 공급사 응답을 기다리기로 결정 | accepted |
 | [0022](0022-jvm-25.md) | JVM 툴체인을 25 로 올리기로 결정 | accepted |
 | [0023](0023-multi-night-availability-minimum.md) | 연박 예약 가능 객실 수는 날짜별 잔여 수의 최솟값으로 판정 | accepted |
-| [0024](0024-missing-night-as-zero-and-record.md) | 숙박일이 빠진 재고 응답은 그 날을 0 으로 보고 사실을 남기기로 결정 | accepted |
-| [0025](0025-out-of-spec-inventory-dates.md) | 범위 밖·중복·음수 날짜 재고는 보수적으로 판정하고 사실을 남기기로 결정 | accepted |
+| [0024](0024-missing-night-as-zero-and-record.md) | 숙박일이 빠진 재고 응답은 그 날을 0 으로 보고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
+| [0025](0025-out-of-spec-inventory-dates.md) | 범위 밖·중복·음수 날짜 재고는 보수적으로 판정하고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
 | [0026](0026-expose-unbookable-as-zero.md) | 예약 불가 상품은 응답에서 빼지 않고 예약 가능 객실 수 0 으로 노출 | accepted |
+| [0027](0027-spec-violation-handling-criteria.md) | 규약과 다른 공급사 응답을 세 가지 질문으로 판정하기로 결정 | accepted |

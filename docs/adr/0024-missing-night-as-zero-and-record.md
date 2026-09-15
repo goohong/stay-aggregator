@@ -1,7 +1,7 @@
 ---
 id: 0024
 title: 숙박일이 빠진 재고 응답은 그 날을 0 으로 보고 사실을 남기기로 결정
-status: accepted
+status: superseded by ADR-0027
 date: 2026-09-15
 ---
 
