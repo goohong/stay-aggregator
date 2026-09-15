@@ -1,6 +1,6 @@
 ---
 topic: 숙소 콘텐츠(목록) 갱신 주기와 변경 반영 방식
-checked: 2026-09-15
+checked: 2026-09-15 (출처 문장 재대조 같은 날)
 ---
 
 # 숙소 콘텐츠 갱신 주기 조사
@@ -40,11 +40,13 @@ checked: 2026-09-15
 
 ## 출처
 
-1. https://developers.expediagroup.com/rapid/lodging
-2. https://developer.hotelbeds.com/documentation/hotels/content-api/how-use-content-api/
-3. https://developer.agoda.com/demand/docs/faq
-4. https://developer.agoda.com/demand/docs/content-api
-5. https://docs.emergingtravel.com/docs/b2b-api/static-content/retrieve-hotel-incremental-dump/
-6. https://developers.onda.me/docs/api/channel/webhook-overview
-7. https://developers.onda.me/docs/api/channel/webhook-specifications
-8. https://yellotravel.gitbooks.io/ytl-api/content/property/property.html
+| # | 출처 | 해당 문장·절로 이동 |
+|---|---|---|
+| 1 | Expedia Rapid Lodging API 개요 | [매일 갱신 문장](https://developers.expediagroup.com/rapid/lodging#step-1.-get-static-content:~:text=Property%20content%20requires%20daily%20refreshes.) |
+| 2 | Hotelbeds Content API 사용법 | [매일 권장 문장](https://developer.hotelbeds.com/documentation/hotels/content-api/how-use-content-api/#:~:text=we%20recommend%20on%20a%20daily%20basis) (섹션 앵커 없음) |
+| 3 | Agoda Demand FAQ | [매주 전체](https://developer.agoda.com/demand/docs/faq#static-api:~:text=Weekly%20refresh%20job%3A%20Target%20all%20hotels) · [매일 변경분](https://developer.agoda.com/demand/docs/faq#static-api:~:text=Daily%20refresh%20job%3A%20Target%20changed%20hotels) |
+| 4 | Agoda Content API | [전체 갱신 절](https://developer.agoda.com/demand/docs/content-api#full-refresh:~:text=Use%20this%20job%20to%20rebuild%20your%20entire%20location) · [변경분 갱신 절](https://developer.agoda.com/demand/docs/content-api#content-update:~:text=Use%20this%20daily%20job%20to%20detect%20what%20changed%20yesterday) |
+| 5 | ETG 변경분 덤프 조회 | [전날 변경분 문장](https://docs.emergingtravel.com/docs/b2b-api/static-content/retrieve-hotel-incremental-dump/#:~:text=content%20has%20changed%20in%20the%20previous%20day) (섹션 앵커 없음) |
+| 6 | ONDA 웹훅 개요 | [웹훅 종류 절](https://developers.onda.me/docs/api/channel/webhook-overview#webhook-%EC%A2%85%EB%A5%98:~:text=%EC%BB%A8%ED%85%90%EC%B8%A0%20%EC%A0%95%EB%B3%B4%EA%B0%80%20%EB%B3%80%EA%B2%BD%EB%90%98%EC%97%88%EB%8B%A4%EB%8A%94%20%EC%82%AC%EC%8B%A4%EC%9D%84%20%EC%95%8C%EB%A6%AC%EB%8A%94%20%EC%9B%B9%ED%9B%85) |
+| 7 | ONDA 웹훅 상세 | [contents_updated 절](https://developers.onda.me/docs/api/channel/webhook-specifications#contents_updated:~:text=%EA%B0%81%20target%20%EC%9D%98%20id%20%EB%A5%BC%20%EC%9D%B4%EC%9A%A9%ED%95%98%EC%97%AC%20%EC%BB%A8%ED%85%90%EC%B8%A0%20%EC%97%85%EB%8D%B0%EC%9D%B4%ED%8A%B8) |
+| 8 | 옐로트래블랩스 업체정보 API | [GET /v1/properties 절](https://yellotravel.gitbooks.io/ytl-api/content/property/property.html#get-v1properties:~:text=%EC%A1%B0%EA%B1%B4%EC%97%90%20%EB%94%B0%EB%A5%B8%20%EC%97%85%EC%B2%B4%20%EB%AA%A9%EB%A1%9D%EC%9D%84%20%EA%B0%80%EC%A0%B8%EC%98%B5%EB%8B%88%EB%8B%A4). 변경분 조회·주기 권장·알림은 문서 전체에서 찾지 못함 |
