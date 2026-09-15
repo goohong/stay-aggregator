@@ -23,3 +23,4 @@
 | [0016](0016-catalog-sync-interval-default-daily.md) | 숙소 목록 갱신 주기는 기본 하루 한 번으로 두고 설정으로 바꿀 수 있게 결정 | accepted |
 | [0017](0017-mapping-in-server-rdb.md) | 매핑은 서버형 관계형 DB 에 저장하기로 결정 | accepted |
 | [0018](0018-postgresql-for-mapping.md) | 매핑을 저장할 DB 로 PostgreSQL 채택 | accepted |
+| [0019](0019-first-catalog-failure-no-special-handling.md) | 공급사 첫 숙소 목록 실패에 별도 장치를 두지 않기로 결정 | accepted |
