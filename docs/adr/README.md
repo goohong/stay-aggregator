@@ -27,3 +27,4 @@
 | [0020](0020-mvc-server-with-webclient.md) | 서버는 Spring MVC 로 두고 공급사 호출에만 WebClient 채택 | accepted |
 | [0021](0021-block-on-virtual-threads.md) | 검색 요청은 가상 스레드에서 공급사 응답을 기다리기로 결정 | accepted |
 | [0022](0022-jvm-25.md) | JVM 툴체인을 25 로 올리기로 결정 | accepted |
+| [0023](0023-multi-night-availability-minimum.md) | 연박 예약 가능 객실 수는 날짜별 잔여 수의 최솟값으로 판정 | accepted |
