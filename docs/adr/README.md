@@ -18,3 +18,4 @@
 | [0011](0011-internal-id-random-uuid.md) | 내부 식별자를 무작위 UUID 로 발급해 저장 | accepted |
 | [0012](0012-static-info-from-catalog.md) | 응답의 숙소·객실 타입 정적 정보는 숙소 목록 기준으로 저장해 사용 | accepted |
 | [0013](0013-catalog-sync-on-startup-and-interval.md) | 숙소 목록은 앱 기동 시와 일정 주기마다 받아오기로 결정 | accepted |
+| [0014](0014-detect-drift-in-search-correct-in-sync.md) | 목록 어긋남은 검색에서 감지하고 교정은 동기화 주기에 맡기기로 결정 | accepted |
