@@ -15,3 +15,4 @@
 | [0008](0008-adopt-feature-spec.md) | Feature Spec 을 두 층 구조의 위층으로 도입 | accepted |
 | [0009](0009-reactor-over-coroutines.md) | 공급사 호출 흐름을 코루틴이 아닌 Reactor 로 직접 다룸 | accepted |
 | [0010](0010-keep-internal-id-on-merge.md) | 같은 숙소를 병합해도 내부 식별자 유지 | accepted |
+| [0011](0011-internal-id-random-uuid.md) | 내부 식별자를 무작위 UUID 로 발급해 저장 | accepted |
