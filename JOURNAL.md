@@ -545,6 +545,15 @@ AI       → 처음엔 질문을 구현 순서 제안으로 잘못 읽음 → �
 결과     → 구현 단위로 갈림길 규칙 적용. 핵심 흐름을 막는 Q1·Q2·Q5·Q6 부터 설계. Verification 짝 규칙과 구현 단위 AI 기록을 CLAUDE.md 에
 ```
 
+### 구현 단위: JVM 툴체인 25 (ADR-0022)
+| | |
+|---|---|
+| AI 가 쓴 것 | `app/build.gradle.kts` 의 `jvmToolchain(21)` → `jvmToolchain(25)` 한 줄. 사용자 위임으로 Homebrew `openjdk@25`(25.0.4.1) 설치, `~/Library/Java/JavaVirtualMachines/openjdk-25.jdk` 에 연결 |
+| 읽으며 물은 것 | `jvmToolchain` 이 런타임까지 정하는가 → 컴파일·테스트·`bootRun` 은 툴체인 JDK 로, `java -jar` 직접 실행은 그 명령의 JDK 로 돈다고 공식 문서로 확인 |
+| 바꾼 것 | 없음 |
+| 설명하지 못해 뺀 것 | 없음 |
+| 확인 | `./gradlew clean build` 성공, 클래스 major version 69, `bootRun` 로그 "using Java 25.0.4.1" |
+
 ### 다음에 할 것
-JDK 25 설치와 툴체인 반영(ADR-0022) → 기반 구성(가상 스레드·스타터·Mock 모듈) → 목록 동기화·매핑 저장. 설계는 Q6·Q5 부터
+기반 구성(가상 스레드·웹과 WebClient 스타터·Mock 모듈) → 목록 동기화·매핑 저장. 설계는 Q6·Q5 부터
 
