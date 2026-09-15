@@ -25,3 +25,4 @@
 | [0018](0018-postgresql-for-mapping.md) | 매핑을 저장할 DB 로 PostgreSQL 채택 | accepted |
 | [0019](0019-first-catalog-failure-no-special-handling.md) | 공급사 첫 숙소 목록 실패에 별도 장치를 두지 않기로 결정 | accepted |
 | [0020](0020-mvc-server-with-webclient.md) | 서버는 Spring MVC 로 두고 공급사 호출에만 WebClient 채택 | accepted |
+| [0021](0021-block-on-virtual-threads.md) | 검색 요청은 가상 스레드에서 공급사 응답을 기다리기로 결정 | accepted |
