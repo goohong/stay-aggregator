@@ -1,7 +1,7 @@
 ---
 id: 0007
 title: 빌드 도구와 프레임워크 버전 채택
-status: accepted
+status: accepted (JVM 타깃은 superseded by ADR-0022)
 date: 2026-09-14
 ---
 
@@ -99,6 +99,8 @@ Kotlin Gradle 플러그인(KGP)의 공식 Gradle 지원 범위표를 확인한 �
   확인했다. 전환 비용은 래퍼 버전을 바꾸는 것 하나였다.
 
 ### JVM 타깃
+
+> 이 부분은 [ADR-0022](0022-jvm-25.md) 가 대체한다. 아래는 결정 당시의 기록이다.
 
 - **(가) 25** — 최신 LTS. Boot 4.1 의 지원 상한(26) 안이다.
 - **(나) 21** ← AI 추천 — 이 설계가 22 이상에서 쓸 라이브러리 API 가 없다.

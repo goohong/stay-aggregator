@@ -46,7 +46,7 @@ date: 2026-09-15
 ## Decision
 
 **(다)** 를 택한다. 컨트롤러는 공급사 호출 결과를 `block()` 으로 기다리고, 요청 처리는 가상 스레드에서 한다
-(`spring.threads.virtual.enabled=true`). 런타임은 JDK 25 로 올리며, 그 결정은 ADR-0007 의 JVM 부분을 대체하는 별도 ADR 에 둔다.
+(`spring.threads.virtual.enabled=true`). 런타임은 JDK 25 로 올린다([ADR-0022](0022-jvm-25.md)).
 
 HikariCP 는 JDBC 를 추가할 때 7.1.0 이상으로 둔다([ADR-0006](0006-add-dependencies-when-needed.md) 에 따라 지금 넣지는 않는다).
 

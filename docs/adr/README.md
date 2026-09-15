@@ -11,7 +11,7 @@
 | [0004](0004-commit-convention.md) | 커밋 규약 채택 | accepted |
 | [0005](0005-separate-mock-module.md) | 앱과 Mock 공급사를 별도 Gradle 모듈로 분리 | accepted |
 | [0006](0006-add-dependencies-when-needed.md) | 의존성은 그 기능을 만들 때 추가 | accepted |
-| [0007](0007-build-and-framework-versions.md) | 빌드 도구와 프레임워크 버전 채택 | accepted |
+| [0007](0007-build-and-framework-versions.md) | 빌드 도구와 프레임워크 버전 채택 | accepted (JVM 타깃은 superseded by [0022](0022-jvm-25.md)) |
 | [0008](0008-adopt-feature-spec.md) | Feature Spec 을 두 층 구조의 위층으로 도입 | accepted |
 | [0009](0009-reactor-over-coroutines.md) | 공급사 호출 흐름을 코루틴이 아닌 Reactor 로 직접 다룸 | accepted |
 | [0010](0010-keep-internal-id-on-merge.md) | 같은 숙소를 병합해도 내부 식별자 유지 | accepted |
@@ -26,3 +26,4 @@
 | [0019](0019-first-catalog-failure-no-special-handling.md) | 공급사 첫 숙소 목록 실패에 별도 장치를 두지 않기로 결정 | accepted |
 | [0020](0020-mvc-server-with-webclient.md) | 서버는 Spring MVC 로 두고 공급사 호출에만 WebClient 채택 | accepted |
 | [0021](0021-block-on-virtual-threads.md) | 검색 요청은 가상 스레드에서 공급사 응답을 기다리기로 결정 | accepted |
+| [0022](0022-jvm-25.md) | JVM 툴체인을 25 로 올리기로 결정 | accepted |
