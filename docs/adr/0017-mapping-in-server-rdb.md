@@ -18,8 +18,15 @@ date: 2026-09-15
 [ADR-0016](0016-catalog-sync-interval-default-daily.md)). Mock 공급사는 앱과 다른 모듈·프로세스로 띄운다
 ([ADR-0005](0005-separate-mock-module.md)).
 
-H2 공식 문서 기준으로, 메모리 모드는 마지막 연결이 닫히면 내용이 사라지고, 파일 모드(내장)는 한 번에 한 JVM 만
+[H2 공식 문서](https://www.h2database.com/html/features.html) 기준으로, 메모리 모드는 마지막 연결이 닫히면 내용이 사라지고, 파일 모드(내장)는 한 번에 한 JVM 만
 DB 를 열 수 있으며, PostgreSQL·MySQL 호환 모드는 차이의 일부만 맞춰 준다.
+
+| 사실 | 원문 |
+|---|---|
+| 메모리 모드는 마지막 연결이 닫히면 내용이 사라짐 | [In-Memory Databases 절](https://www.h2database.com/html/features.html#in_memory_databases:~:text=For%20an%20in%2Dmemory%20database%2C%20this%20means%20the%20content%20is%20lost) |
+| 내장 모드는 한 번에 한 JVM 만 DB 를 열 수 있음 | [Connection Modes 절](https://www.h2database.com/html/features.html#connection_modes:~:text=a%20database%20may%20only%20be%20open%20in%20one%20virtual%20machine%20%28and%20class%20loader%29%20at%20any%20time) |
+| 혼합 모드(`AUTO_SERVER`)면 여러 프로세스가 접근 가능 | [Automatic Mixed Mode 절](https://www.h2database.com/html/features.html#auto_mixed_mode:~:text=Multiple%20processes%20can%20access%20the%20same%20database) |
+| 호환 모드는 차이의 일부만 맞춤 | [Compatibility 절](https://www.h2database.com/html/features.html#compatibility_modes:~:text=only%20a%20small%20subset%20of%20the%20differences%20between%20databases%20are%20implemented) |
 
 ## Options
 

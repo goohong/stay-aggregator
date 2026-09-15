@@ -14,7 +14,7 @@ date: 2026-09-14
 
 확인한 사실 (Maven Central 메타데이터, 공식 문서, 실측). 출처는 [조사 기록](../research/build-versions.md) 에 있다.
 
-- Spring Boot 최신은 4.1.1. OSS 지원 종료가 4.1은 2027-07-31, 4.0은 2026-12-31,
+- Spring Boot 최신 정식 릴리스는 4.1.1. OSS 지원 종료가 4.1은 2027-07-31, 4.0은 2026-12-31,
   3.5는 2026-06-30, 3.4는 2025-12-31로 **3.4·3.5는 이미 지원이 끝났다.**
   Spring Boot 는 Kotlin 처럼 라인마다 지원 기간을 두는 정책이고, JDK 의 LTS 같은
   별도 명칭은 없다.
@@ -26,8 +26,8 @@ date: 2026-09-14
   Spring Boot 3 에서는 WebClient 를 쓰려면 `spring-boot-starter-webflux` 를 넣어야 하고,
   그 안에 쓰지 않을 리액티브 서버 의존성이 함께 들어온다.
 - Kotlin 최신은 2.4.20. Kotlin Gradle 플러그인이 명시적으로 테스트하는 Gradle 범위는
-  7.6.3–9.7.0. Kotlin 은 2.4.0 부터 릴리스 라인마다 18개월 지원 창을 두는 정책이고,
-  Spring Boot 처럼 별도의 LTS 명칭은 없다.
+  7.6.3–9.7.0. Kotlin 은 2.4.0 부터 JVM 용 표준 라이브러리에 릴리스 라인마다 18개월
+  보안 지원을 둔다. 별도의 LTS 명칭은 문서에서 찾지 못했다.
 - Gradle 최신은 9.7.1. Gradle 실행에 필요한 JDK 범위는 9.4.1 과 9.7.1 이
   **동일하게 17–26**이다. 27 은 둘 다 지원하지 않는다. 9.7.1 릴리스 노트를 확인한
   결과 9.7.0 대비 버그 수정 6건이 포함되어 있고, 그중 하나가 Kotlin DSL 의
@@ -36,12 +36,25 @@ date: 2026-09-14
   팬아웃 구조에 가장 맞아 보이는 Structured Concurrency(JEP 505)는 25 에서도
   다섯 번째 Preview 로 정식이 아니고, 애초에 이 프로젝트가 쓰는 것은
   가상 스레드 기반 팬아웃이 아니라 Reactor 기반 팬아웃이라 관련이 없다.
-- Gradle 이 로컬에 없는 JDK 를 자동으로 받아오려면 `settings.gradle.kts` 에
-  `foojay-resolver-convention` 플러그인이 있어야 한다. 실측 중 자동으로 받아진
+- Gradle 이 로컬에 없는 JDK 를 자동으로 받아오려면 툴체인 다운로드 저장소가 설정돼 있어야 하고,
+  이 저장소는 `settings.gradle.kts` 에 설정 플러그인을 적용해 추가한다. `foojay-resolver-convention` 이 대표적인 예다. 실측 중 자동으로 받아진
   것처럼 보인 사례가 있었는데, 확인해 보니 몇 달 전 다른 프로젝트 작업 때
   이미 캐시에 있던 JDK 를 발견한 것이었고 이번 프로젝트에서 새로 받아진 게
   아니었다. 플러그인 없이는 빌드하는 사람의 컴퓨터에 해당 JDK 가 없으면 빌드가 그대로
   실패한다.
+
+**근거 위치** (자세한 표는 [조사 기록](../research/build-versions.md))
+
+| 사실 | 원문 |
+|---|---|
+| Spring Boot 4.1.1 요구사항 Java 17–26, Gradle 8.14+·9.x | [Java](https://docs.spring.io/spring-boot/system-requirements.html#:~:text=Spring%20Boot%204.1.1%20requires%20at%20least%20Java%2017) · [Gradle](https://docs.spring.io/spring-boot/system-requirements.html#:~:text=Gradle%208.x%20%288.14%20or%20later%29%20and%209.x) |
+| Boot 4 스타터 이름 변경, `starter-webclient` 신설 | [마이그레이션 가이드 스타터 표](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide#user-content-starters) |
+| Kotlin Gradle 플러그인 2.4.20 의 Gradle 상한 9.7.0 | [호환표](https://kotlinlang.org/docs/gradle-configure-project.html#apply-the-plugin:~:text=the%20maximum%20fully%20supported%20version%20is%209.7.0) |
+| Kotlin 표준 라이브러리 18개월 보안 지원 | [릴리스 문서](https://kotlinlang.org/docs/releases.html#standard-library-security-support:~:text=has%20an%2018%E2%80%93month%20support%20window%20for%20each%20release%20line) |
+| Gradle 9.4.1·9.7.1 실행 JVM 17–26 | [9.4.1](https://docs.gradle.org/9.4.1/userguide/compatibility.html#:~:text=A%20JVM%20version%20between%2017%20and%2026%20is%20required%20to%20execute%20Gradle) · [9.7.1](https://docs.gradle.org/current/userguide/compatibility.html#java_runtime:~:text=A%20JVM%20version%20between%2017%20and%2026%20is%20required%20to%20execute%20Gradle) |
+| Gradle 9.7.1 의 Kotlin DSL 관련 수정 | [릴리스 노트](https://docs.gradle.org/9.7.1/release-notes.html#:~:text=expects%20Option%20annotation%20arguments%20in%20a%20different%20order) |
+| JDK 자동 다운로드는 툴체인 다운로드 저장소 설정이 필요 | [툴체인 문서](https://docs.gradle.org/9.4.1/userguide/toolchains.html#sec:provisioning:~:text=as%20long%20as%20a%20toolchain%20download%20repository%20has%20been%20configured) |
+| JDK 25 LTS, JEP 505 는 다섯 번째 Preview | [JDK 25](https://openjdk.org/projects/jdk/25/#Features:~:text=505%3A%20Structured%20Concurrency%20%28Fifth%20Preview%29) |
 
 ## Options
 
@@ -89,7 +102,7 @@ Kotlin Gradle 플러그인(KGP)의 공식 Gradle 지원 범위표를 확인한 �
 
 - **(가) 25** — 최신 LTS. Boot 4.1 의 지원 상한(26) 안이다.
 - **(나) 21** ← AI 추천 — 이 설계가 22 이상에서 쓸 라이브러리 API 가 없다.
-  foojay 플러그인을 넣지 않기로 했으므로(ADR-0007 Decision 참고) 빌드하는 사람의 컴퓨터에
+  툴체인 다운로드 저장소 플러그인을 넣지 않기로 했으므로(ADR-0007 Decision 참고) 빌드하는 사람의 컴퓨터에
   해당 JDK 가 미리 깔려 있어야 하고, 21 이 가장 널리 배포된 LTS 라 그 확률이 높다.
 
 ## Decision
@@ -100,7 +113,7 @@ Kotlin Gradle 플러그인(KGP)의 공식 Gradle 지원 범위표를 확인한 �
 먼저 정하면 그 버전을 지원 범위에 담는 최신 KGP 라인이 정해진다. 이 프로젝트에서는
 Gradle 9.7.1 을 먼저 정하고, 그걸 지원 범위에 가장 가깝게 담는 것이 2.4.20 이다.
 
-`foojay-resolver-convention` 플러그인은 넣지 않는다. 자동 다운로드가 편리하지만
+툴체인 다운로드 저장소 플러그인(`foojay-resolver-convention` 등)은 넣지 않는다. 자동 다운로드가 편리하지만
 빌드 시점에 네트워크가 필요해지고, 그 대신 README 에 "JDK 21 필요"를 명시한다.
 
 **타깃과 런타임은 다른 결정이다.** 타깃 21 은 이 설계가 22 이상의 무엇도 쓰지 않는다는
@@ -150,7 +163,7 @@ Jackson 2 용이라 넣으면 조용히 아무 일도 안 하다가 나중에 �
 - **반박** — 실제로 무엇이 그 JDK 를 받아왔는지 확인이 필요하다는 지적을 받았다
 - **검증 결과** — 직접 재확인한 결과 두 주장 다 부정확했다. 그 JDK 는 이번에 받아진 것이
   아니라 몇 달 전 다른 프로젝트 작업으로 이미 캐시에 있던 것이었다. 공식 문서로 확인한
-  결과 자동 다운로드는 `foojay-resolver-convention` 플러그인을 명시적으로 넣어야만
+  결과 자동 다운로드는 툴체인 다운로드 저장소를 설정 플러그인(`foojay-resolver-convention` 등)으로 넣어야만
   동작한다
 - **그래서 어떻게 바뀌었나** — 플러그인을 넣지 않기로 했으므로, 빌드하는 사람의 컴퓨터에 JDK 가
   없으면 빌드가 실패하는 것이 맞는 결론이 됐다. 가장 널리 깔린 LTS 를 타깃으로 고르는
@@ -188,5 +201,5 @@ Jackson 2 용이라 넣으면 조용히 아무 일도 안 하다가 나중에 �
 
 `app/build.gradle.kts` 의 플러그인 버전이 `4.1.1`(Boot), `2.4.20`(Kotlin)이고,
 `gradle/wrapper/gradle-wrapper.properties` 의 `distributionUrl` 이 `9.7.1`이고,
-`settings.gradle.kts` 에 `foojay-resolver-convention` 이 없고,
+`settings.gradle.kts` 에 툴체인 다운로드 저장소 플러그인이 없고,
 `jvmToolchain(21)` 이 설정되어 있는지.
