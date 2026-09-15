@@ -11,7 +11,7 @@ group = "com.stayaggregator"
 version = "0.1.0"
 
 kotlin {
-    jvmToolchain(21)
+    jvmToolchain(25)
 }
 
 repositories {
