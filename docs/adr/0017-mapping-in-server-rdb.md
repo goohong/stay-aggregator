@@ -70,5 +70,5 @@ DB 를 열 수 있으며, PostgreSQL·MySQL 호환 모드는 차이의 일부만
 
 ## Verification
 
-아직 구현 전이다. 매핑을 구현할 때 "앱을 다시 띄운 뒤에도 기존 매핑과 내부 식별자가 그대로인지" 확인하는
-테스트를 추가하고 이 절에 이름을 적는다.
+`CatalogSyncIntegrationTest` 가 실제 PostgreSQL 컨테이너에서 돌며 매핑이 남는지 확인한다.
+앱을 다시 띄운 뒤에도 남는지는 아직 확인하지 않았다.

@@ -70,5 +70,5 @@ date: 2026-09-15
 
 ## Verification
 
-아직 구현 전이다. DB 실행 구성과 마이그레이션을 추가할 때 "PostgreSQL 로 기동해 매핑 테이블이 만들어지는지"
-확인하는 테스트나 실행 명령을 이 절에 적는다.
+`./gradlew :app:bootRun` 이 compose 의 PostgreSQL 을 띄우고 Flyway 가 `V1__mapping.sql` 을 적용한다.
+`CatalogSyncIntegrationTest` 도 PostgreSQL 컨테이너에서 돈다.
