@@ -181,6 +181,27 @@ class CatalogSyncIntegrationTest {
         assertThat(hotelCodes()).containsExactly("B-1")
     }
 
+    @Test
+    fun `공급사가 알린 실패가 아니어도 다른 공급사는 반영된다`() {
+        // 우리 쪽 결함으로 나는 예외다. 공급사 실패와 다른 가지를 타지만 건너뛰는 것은 같다 (ADR-0019)
+        val broken = FakeCatalogAdapter("a", Mono.error(IllegalStateException("어댑터 안에서 난 오류")))
+        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
+
+        syncWith(broken, working)
+
+        assertThat(hotelCodes()).containsExactly("B-1")
+    }
+
+    @Test
+    fun `값을 정할 수 없어 뺀 숙소도 목록에 없는 것으로 표시된다`() {
+        sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+
+        // 이름이 없어 정규화에서 빠진다. 공급사가 뺀 것인지 우리가 읽지 못한 것인지는 구분하지 않는다 (ADR-0037, ADR-0039)
+        sync(catalog(hotel("A-1", null, roomType("DLX", "디럭스", 2))))
+
+        assertThat(missingSince("A-1")).isNotNull()
+    }
+
     private fun apply(catalog: FetchedCatalog): AppliedCatalog {
         val normalized = normalizer.normalize(catalog)
         return repository.applyCatalog(normalized.supplierId, normalized.hotels)
