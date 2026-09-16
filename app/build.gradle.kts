@@ -24,6 +24,11 @@ extra["hikaricp.version"] = "7.1.0"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
 
+    // 공급사 호출은 WebClient 로 한다 (ADR-0020). 이 스타터는 리액티브 서버를 끌고 오지 않는다 (ADR-0007).
+    implementation("org.springframework.boot:spring-boot-starter-webclient")
+    // Kotlin 데이터 클래스로 JSON 을 받으려면 필요하다. Boot 4 는 Jackson 3 이라 tools.jackson 좌표를 쓴다 (ADR-0007).
+    implementation("tools.jackson.module:jackson-module-kotlin")
+
     // 매핑 저장·조회는 JdbcClient 로 한다 (ADR-0032). DB 는 PostgreSQL (ADR-0018).
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     runtimeOnly("org.postgresql:postgresql")
@@ -38,7 +43,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     // 테스트는 실제 PostgreSQL 컨테이너에서 돈다 (ADR-0035).
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
-    testImplementation("org.testcontainers:postgresql")
+    // Testcontainers 2.x 부터 모듈 이름이 `testcontainers-<제품>` 으로 바뀌었다. 예전 이름은 1.21.x 에서 멈춰 있다.
+    testImplementation("org.testcontainers:testcontainers-postgresql")
 }
 
 tasks.withType<Test> {
