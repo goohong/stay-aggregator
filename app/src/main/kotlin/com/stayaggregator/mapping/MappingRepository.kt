@@ -42,17 +42,18 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
         jdbcClient.sql(
             """
             update room_type_mapping r
-               set missing_since = coalesce(r.missing_since, now())
+               set missing_since = now()
               from hotel_mapping h
              where r.internal_hotel_id = h.internal_hotel_id
                and h.supplier = :supplier
+               and r.missing_since is null
             """.trimIndent(),
         ).param("supplier", supplierId).update()
 
         jdbcClient.sql(
             """
             update hotel_mapping
-               set missing_since = coalesce(missing_since, now())
+               set missing_since = now()
              where supplier = :supplier
                and missing_since is null
             """.trimIndent(),
