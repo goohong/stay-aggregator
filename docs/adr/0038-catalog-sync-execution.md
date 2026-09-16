@@ -66,8 +66,9 @@ date: 2026-09-16
 한 공급사의 동기화 도중 실패했을 때 그 공급사의 매핑이 이전 상태로 남는지
   → `CatalogSyncIntegrationTest.저장 도중 실패하면 그 공급사 매핑이 이전 상태로 남는다`
 
-다른 공급사는 그대로 반영되는지
-  → `CatalogSyncIntegrationTest.공급사 하나가 실패해도 다른 공급사는 반영된다`
+다른 공급사는 그대로 반영되는지 — 조회에서 실패한 경우와 저장에서 실패한 경우 둘 다
+  → `CatalogSyncIntegrationTest.공급사 하나가 실패해도 다른 공급사는 반영된다`,
+    `CatalogSyncIntegrationTest.저장 단계에서 실패해도 다른 공급사는 반영된다`
 
 설정 파일에 공급사별 묶음이 있고 코드에 주소가 없는지
   → `app/src/main/resources/application.yml` 의 `stay.suppliers`, `app/src/main/kotlin/com/stayaggregator/supplier/StayProperties.kt`

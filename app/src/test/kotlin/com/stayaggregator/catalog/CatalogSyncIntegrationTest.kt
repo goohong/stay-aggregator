@@ -182,6 +182,24 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
+    fun `저장 단계에서 실패해도 다른 공급사는 반영된다`() {
+        sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+
+        // 정규화는 통과하고 저장에서 DB 가 거부한다. 조회 실패가 아니라 저장 실패일 때도
+        // 그 공급사만 건너뛰는지 본다 (ADR-0019, ADR-0038).
+        val rejected = FakeCatalogAdapter(
+            "a",
+            Mono.just(FetchedCatalog("a", listOf(hotel("A-2", "널 문자\u0000가 든 이름", roomType("STD", "스탠다드", 2))))),
+        )
+        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
+
+        syncWith(rejected, working)
+
+        assertThat(hotelCodes()).containsExactly("A-1", "B-1")
+        assertThat(missingSince("A-1")).isNull()
+    }
+
+    @Test
     fun `공급사가 알린 실패가 아니어도 다른 공급사는 반영된다`() {
         // 우리 쪽 결함으로 나는 예외다. 공급사 실패와 다른 가지를 타지만 건너뛰는 것은 같다 (ADR-0019)
         val broken = FakeCatalogAdapter("a", Mono.error(IllegalStateException("어댑터 안에서 난 오류")))
