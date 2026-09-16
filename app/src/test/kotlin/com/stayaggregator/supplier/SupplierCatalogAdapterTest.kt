@@ -76,6 +76,32 @@ class SupplierCatalogAdapterTest {
     }
 
     @Test
+    fun `스펙에 없는 필드가 섞여 와도 무시한다`() {
+        respond(
+            "/a/v1/hotels",
+            status = 200,
+            body = """
+                {"items":[{"hotelCode":"A-1","hotelName":"강변 호텔","starRating":5,
+                "roomTypes":[{"roomTypeCode":"DLX","roomTypeName":"디럭스","maxOccupancy":2,"bedType":"KING"}]}],
+                "page":1}
+            """.trimIndent(),
+        )
+
+        val fetched = adapterA().fetchCatalog().block()!!
+
+        assertThat(fetched.hotels).singleElement()
+            .satisfies({ hotel -> assertThat(hotel.code).isEqualTo("A-1") })
+    }
+
+    @Test
+    fun `본문을 읽을 수 없으면 오류가 된다`() {
+        // 역직렬화에서 실패하는 것은 JSON 문법 오류와 타입 불일치뿐이고, 둘 다 공급사 실패로 본다 (ADR-0030, ADR-0027 의 첫 질문)
+        respond("/a/v1/hotels", status = 200, body = """{"items":[{"hotelCode":""")
+
+        assertThatThrownBy { adapterA().fetchCatalog().block() }
+    }
+
+    @Test
     fun `공급사가 응답하지 않으면 정한 시간에 끊는다`() {
         server.createContext("/a/v1/hotels") { exchange ->
             Thread.sleep(2_000)

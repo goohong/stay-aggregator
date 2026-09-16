@@ -80,4 +80,17 @@ date: 2026-09-15
 
 ## Verification
 
-공급사 응답 DTO 에 `@JsonIgnoreProperties(ignoreUnknown = true)` 와 주석이 있고, 스펙에 없는 필드·필드가 빠진 항목·틀이 빠진 응답을 넣은 역직렬화·정규화 테스트가 각각 무시·항목 제외·공급사 실패로 처리되는지. 테스트를 만들면 그 이름을 여기에 적는다.
+공급사 응답 DTO 에 `@JsonIgnoreProperties(ignoreUnknown = true)` 와 이유 주석이 있는지
+  → `app/src/main/kotlin/com/stayaggregator/supplier/a/SupplierAHotelsResponse.kt`, `.../b/SupplierBPropertiesResponse.kt`
+
+스펙에 없는 필드가 무시되는지
+  → `SupplierCatalogAdapterTest.스펙에 없는 필드가 섞여 와도 무시한다`
+
+역직렬화에서 실패하는 응답이 오류가 되는지
+  → `SupplierCatalogAdapterTest.본문을 읽을 수 없으면 오류가 된다`
+
+필드가 빠진 항목이 제외되는지
+  → `CatalogNormalizerTest.숙소 코드가 없으면 그 숙소를 빼고 뺀 사실을 남긴다`, `CatalogNormalizerTest.최대 수용 인원이 없으면 그 객실 타입만 빼고 숙소는 남긴다`
+
+**아직 확인하지 못한 것** — 문법은 맞지만 숙소 목록 필드가 통째로 없는 응답(`{}`)을 어떻게 볼지가 정해지지 않았다.
+지금 구현은 빈 목록으로 읽고, 그러면 그 공급사의 숙소가 모두 목록에서 빠진 것으로 표시된다(ADR-0037). 판정 기준을 정한 뒤 여기에 적는다.
