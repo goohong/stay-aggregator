@@ -38,3 +38,4 @@
 | [0031](0031-supplier-adapter-boundaries.md) | 공급사 어댑터를 기능별 경계로 나누고 공급사마다 한 클래스로 구현하기로 결정 | accepted |
 | [0032](0032-mapping-persistence-with-jdbcclient.md) | 매핑 저장은 Spring JDBC 의 JdbcClient 로 하기로 결정 | accepted |
 | [0033](0033-flyway-for-schema-migration.md) | 스키마 변경 도구로 Flyway 채택 | accepted |
+| [0034](0034-internal-id-as-uuid-column.md) | 내부 식별자를 uuid 컬럼 타입으로 저장하기로 결정 | accepted |
