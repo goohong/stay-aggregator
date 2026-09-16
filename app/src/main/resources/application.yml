@@ -1,3 +1,23 @@
 spring:
   application:
     name: stay-aggregator
+
+stay:
+  # 공급사마다 주소·인증 키·타임아웃을 한 묶음으로 둔다 (ADR-0038).
+  # 저장소에는 Mock 을 가리키는 값만 둔다. 실제 값은 환경 변수로 덮어쓴다.
+  # 예: STAY_SUPPLIERS_A_BASEURL, STAY_SUPPLIERS_A_APIKEY
+  suppliers:
+    a:
+      base-url: http://localhost:9090
+      api-key: mock
+      timeout: PT30S
+    b:
+      base-url: http://localhost:9090
+      api-key: mock
+      timeout: PT30S
+
+  catalog:
+    sync:
+      # 기동 직후 한 번 돌리고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
+      initial-delay: PT0S
+      interval: PT24H

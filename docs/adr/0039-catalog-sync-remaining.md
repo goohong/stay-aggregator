@@ -25,12 +25,31 @@ date: 2026-09-16
 
 ### 목록 조회 타임아웃을 어디에 둘지 (9/16)
 
-공급사별 설정 묶음 안에 둔다([ADR-0038](0038-catalog-sync-execution.md) 이 정한 그 묶음이다). 값은 Mock 의 지연 모드로 측정한 뒤 정하고,
-그때까지 코드에 추측한 기본값을 두지 않는다. 설정에 값이 없으면 앱이 뜨지 않게 한다.
+공급사별 설정 묶음 안에 둔다([ADR-0038](0038-catalog-sync-execution.md) 이 정한 그 묶음이다). 코드에 기본값을 두지 않고, 설정에 값이 없으면 앱이 뜨지 않게 한다.
 
 - **이유** — 공급사마다 응답 속도가 다르면 느린 쪽 때문에 빠른 쪽의 실패 감지가 늦어진다. 어댑터가 이미 자기 설정 묶음을 받으므로 타임아웃도 같은 자리에 있다
 - 공급사가 늘어 같은 값이 반복되면 "공통 기본값 + 공급사별 덮어쓰기"로 옮긴다. 연동 클라이언트들이 쓰는 형태다
   ([Spring Cloud OpenFeign](https://docs.spring.io/spring-cloud-openfeign/reference/spring-cloud-openfeign.html) 의 `default` 이름, [Resilience4j](https://resilience4j.readme.io/docs/getting-started-3) 의 공유 설정)
+
+### 목록 조회 타임아웃 값 (9/16)
+
+**30초**로 둔다. 이 값은 다시 볼 것으로 남긴다.
+
+확인한 사실
+
+| 사실 | 원문 |
+|---|---|
+| 흔히 쓰는 중간 장비의 기본 읽기·유휴 한계가 60초 안팎이다 | [nginx](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_read_timeout): "Default: proxy_read_timeout 60s;" · [AWS ALB](https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_LoadBalancerAttribute.html): "The default is 60 seconds." · [Cloudflare](https://developers.cloudflare.com/fundamentals/reference/connection-limits/): 읽기 125초 |
+| 어떤 공급사는 자기 API 에 90초를 권한다. 다만 연결 타임아웃 맥락이고, 쇼핑 호출에는 더 짧게 잡아도 된다고 구분한다 | [Expedia Rapid](https://developers.expediagroup.com/rapid/lodging/reference/error-responses): "for Lodging and our other APIs, we recommend 90 seconds" / "you may decide to use a smaller connection time out for Shopping availability calls" |
+| 우리가 쓰는 `Mono.timeout()` 은 연결부터 응답까지 전체에 걸린다. 커넥션 풀에서 연결을 기다리는 시간은 그 바깥이다(기본 45초) | [Reactor Netty, HttpClient Timeout](https://github.com/reactor/reactor-netty/blob/main/docs/modules/ROOT/pages/http-client.adoc): "the `timeout` operator can only apply to the operation as a whole, from establishing the connection to the remote peer to receiving the response" |
+| 스케줄러는 기본 스레드 하나라, 멈춘 공급사가 있으면 기동 후 매핑 준비가 공급사 수만큼 늦어진다 | [Spring Boot](https://docs.spring.io/spring-boot/reference/features/task-execution-and-scheduling.html): "The ThreadPoolTaskScheduler uses one thread by default" |
+
+- **이유** — 90초를 걸어도 중간 장비가 대개 60초 안팎에서 먼저 끊으므로 그 값이 하는 일이 없다. 30초는 우리가 정한 한계가 되고, 단일 스레드에서 다른 공급사를 막는 시간도 줄어든다.
+  목록 동기화는 하루 한 번 도는 배경 작업이라 30초 안에 오지 않는 응답을 기다릴 이유가 없다
+- **30초라는 숫자 자체는 문서에 없다.** "중간 장비 기본값보다 짧게, 배경 작업이므로 여유 있게"라는 우리 판단이다
+- Mock 은 같은 컴퓨터에서 고정 응답을 주어 1.2~1.6ms 였다. 이 측정으로는 값을 정할 수 없어 위 근거를 대신 썼다
+- 어떤 공급사가 대량 수집 호출에 5분을 권하는 문서가 있으나, 그것은 예약 수집 엔드포인트에 대한 것이라 근거에서 뺐다
+- **다시 볼 것** — 실제 공급사를 붙이면 관측한 지연 분포로 정한다. 공급사가 목록을 쪽 단위로 나눠 주면 호출 1회 타임아웃과 동기화 전체 예산을 따로 두어야 한다
 
 ### 스펙과 달라 뺀 항목의 표시 (9/16)
 
