@@ -37,3 +37,4 @@
 | [0030](0030-supplier-response-dto-receives-without-validation.md) | 공급사 응답 DTO 는 스펙 필드를 모두 받기만 하고 판정은 내부 로직에 두기로 결정 | accepted |
 | [0031](0031-supplier-adapter-boundaries.md) | 공급사 어댑터를 기능별 경계로 나누고 공급사마다 한 클래스로 구현하기로 결정 | accepted |
 | [0032](0032-mapping-persistence-with-jdbcclient.md) | 매핑 저장은 Spring JDBC 의 JdbcClient 로 하기로 결정 | accepted |
+| [0033](0033-flyway-for-schema-migration.md) | 스키마 변경 도구로 Flyway 채택 | accepted |
