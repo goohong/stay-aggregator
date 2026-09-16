@@ -98,7 +98,7 @@ Co-Authored-By: ...
 
 `type` — `feat` `fix` `docs` `refactor` `test` `chore` `revert`
 
-`scope` — `domain` `supplier` `catalog` `search` `mock` `infra` `adr` `readme` `journal`
+`scope` — `domain` `supplier` `mapping` `catalog` `search` `mock` `infra` `adr` `readme` `journal`
 문서 커밋의 scope 는 그 문서가 다루는 영역으로 합니다.
 
 ### 본문
