@@ -112,5 +112,20 @@ date: 2026-09-16
 
 ## Verification
 
-공급사별 설정에 타임아웃 값이 있고 코드에 기본값이 없는지. Mock 을 지연 모드로 두었을 때 그 공급사만 실패하고 다른 공급사의 매핑은 반영되는지.
-정규화 결과가 쓸 것과 뺀 것을 함께 돌려주는지. 테스트가 매핑 테이블을 비우고 시작하는지. 테스트를 만들면 그 이름을 여기에 적는다.
+공급사별 설정에 타임아웃 값이 있고 코드에 기본값이 없는지
+  → `app/src/main/kotlin/com/stayaggregator/supplier/StayProperties.kt` 의 `timeout`, `app/src/main/resources/application.yml`
+
+정한 시간에 끊는지
+  → `SupplierCatalogAdapterTest.공급사가 응답하지 않으면 정한 시간에 끊는다`
+
+끊긴 공급사만 실패하고 다른 공급사의 매핑은 반영되는지
+  → `CatalogSyncIntegrationTest.공급사 하나가 실패해도 다른 공급사는 반영된다`
+
+정규화 결과가 쓸 것과 뺀 것을 함께 돌려주는지
+  → `CatalogNormalizerTest.숙소 코드가 없으면 그 숙소를 빼고 뺀 사실을 남긴다`
+
+최대 수용 인원이 1 미만인 객실 타입을 빼는지
+  → `CatalogNormalizerTest.최대 수용 인원이 1 미만이면 그 객실 타입을 뺀다`
+
+테스트가 매핑 테이블을 비우고 시작하는지
+  → `CatalogSyncIntegrationTest.clearTables`

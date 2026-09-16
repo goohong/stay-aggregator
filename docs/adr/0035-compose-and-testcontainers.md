@@ -56,7 +56,9 @@ H2 는 차이의 일부만 흉내 내므로 테스트가 통과해도 실제와 
 ## Verification
 
 `compose.yml` 이 있고 `app/build.gradle.kts` 에 docker-compose·Testcontainers 의존성이 있는지.
-매핑 저장 테스트가 PostgreSQL 컨테이너에서 도는지. 테스트를 만들면 그 이름을 여기에 적는다.
+
+매핑 저장 테스트가 PostgreSQL 컨테이너에서 도는지
+  → `CatalogSyncIntegrationTest` 의 `Containers` 설정 (`PostgreSQLContainer("postgres:18")`)
 
 ## Discussion
 
