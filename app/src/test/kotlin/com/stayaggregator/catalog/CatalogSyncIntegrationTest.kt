@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
+import org.springframework.dao.DataAccessException
 import org.springframework.context.annotation.Bean
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.context.annotation.Import
@@ -146,8 +147,13 @@ class CatalogSyncIntegrationTest {
 
         // 반영은 먼저 모두 표시하고 되살리는 순서라, 중간에 멈추면 있는 숙소가 사라진 것으로 남을 수 있다.
         // DB 가 받지 못하는 값으로 실패를 만들어 트랜잭션이 통째로 취소되는지 본다 (ADR-0038).
-        val rejected = listOf(NormalizedHotel("A-2", "널 문자\u0000가 든 이름", listOf(NormalizedRoomType("STD", "스탠다드", 2))))
+        // 실패하는 숙소 앞에 정상 숙소를 두어, 이미 저장된 것까지 되돌려지는지도 함께 본다.
+        val rejected = listOf(
+            NormalizedHotel("A-2", "한옥 스테이", listOf(NormalizedRoomType("ONDOL", "온돌", 2))),
+            NormalizedHotel("A-3", "널 문자\u0000가 든 이름", listOf(NormalizedRoomType("STD", "스탠다드", 2))),
+        )
         assertThatThrownBy { repository.applyCatalog("a", rejected) }
+            .isInstanceOf(DataAccessException::class.java)
 
         assertThat(hotelCodes()).containsExactly("A-1")
         assertThat(missingSince("A-1")).isNull()
