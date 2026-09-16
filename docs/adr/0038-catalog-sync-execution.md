@@ -63,8 +63,17 @@ date: 2026-09-16
 
 ## Verification
 
-앱을 Mock 무응답 모드로 띄웠을 때 기동이 끝나는지. 설정 파일에 공급사별 묶음이 있고 코드에 주소가 없는지.
-한 공급사의 동기화 도중 실패했을 때 그 공급사의 매핑이 이전 상태로 남고 다른 공급사는 반영되는지. 테스트를 만들면 그 이름을 여기에 적는다.
+한 공급사의 동기화 도중 실패했을 때 그 공급사의 매핑이 이전 상태로 남는지
+  → `CatalogSyncIntegrationTest.저장 도중 실패하면 그 공급사 매핑이 이전 상태로 남는다`
+
+다른 공급사는 그대로 반영되는지
+  → `CatalogSyncIntegrationTest.공급사 하나가 실패해도 다른 공급사는 반영된다`
+
+설정 파일에 공급사별 묶음이 있고 코드에 주소가 없는지
+  → `app/src/main/resources/application.yml` 의 `stay.suppliers`, `app/src/main/kotlin/com/stayaggregator/supplier/StayProperties.kt`
+
+기동을 막지 않는지는 스케줄러 스레드에서 도는 것으로 확인한다
+  → `app/src/main/kotlin/com/stayaggregator/catalog/CatalogSyncScheduler.kt`
 
 ## Discussion
 
