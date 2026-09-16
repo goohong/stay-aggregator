@@ -21,7 +21,7 @@ date: 2026-09-16
 | 사실 | 원문 |
 |---|---|
 | 메인 클래스를 루트 패키지에 두면 그 아래가 스캔 범위가 된다 | [Spring Boot, Structuring Your Code](https://docs.spring.io/spring-boot/reference/using/structuring-your-code.html#:~:text=We%20generally%20recommend%20that%20you%20locate%20your%20main%20application%20class%20in%20a%20root%20package%20above%20other%20classes), 절 "Locating the Main Application Class": "We generally recommend that you locate your main application class in a root package above other classes." / "Using a root package also allows component scan to apply only on your project." |
-| 같은 페이지의 예시 구조는 기능별이지만, 문서가 기능별을 권한다고 쓰지는 않는다. 구조를 강제하고 싶으면 따로 도구를 보라고 한다 | 같은 절: "If you wish to enforce a structure based on domains, take a look at Spring Modulith." |
+| 같은 페이지의 예시 구조는 기능별이지만, 문서가 기능별을 권한다고 쓰지는 않는다. 구조를 강제하고 싶으면 따로 도구를 보라고 한다 | 같은 페이지 도입부(절 제목 앞): "If you wish to enforce a structure based on domains, take a look at Spring Modulith." |
 | 설정 바인딩도 애노테이션을 선언한 클래스의 패키지부터 스캔한다 | [Spring Boot, Externalized Configuration](https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.enabling-annotated-types), 절 "Enabling @ConfigurationProperties-annotated Types": "By default, scanning will occur from the package of the class that declares the annotation." |
 | Kotlin 의 `internal` 은 패키지가 아니라 모듈 단위라, 패키지 사이의 의존 규칙을 컴파일러가 막지 못한다 | [Kotlin, Visibility modifiers](https://kotlinlang.org/docs/visibility-modifiers.html#modules): "a module is a set of Kotlin files compiled together" / "A Gradle source set" |
 
