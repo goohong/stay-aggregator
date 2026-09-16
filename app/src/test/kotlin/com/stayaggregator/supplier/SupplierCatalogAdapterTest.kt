@@ -62,7 +62,9 @@ class SupplierCatalogAdapterTest {
     fun `공급사 A 가 HTTP 실패를 주면 오류가 된다`() {
         respond("/a/v1/hotels", status = 503, body = """{"error":"SERVICE_UNAVAILABLE","message":"temporarily unavailable"}""")
 
+        // B 가 본문 결과 코드로 알린 실패와 같은 신호가 되어야 한다 (ADR-0027 의 첫 질문, ADR-0031)
         assertThatThrownBy { adapterA().fetchCatalog().block() }
+            .isInstanceOf(SupplierResponseException::class.java)
             .hasMessageContaining("503")
     }
 
@@ -99,6 +101,7 @@ class SupplierCatalogAdapterTest {
         respond("/a/v1/hotels", status = 200, body = """{"items":[{"hotelCode":""")
 
         assertThatThrownBy { adapterA().fetchCatalog().block() }
+            .isInstanceOf(SupplierResponseException::class.java)
     }
 
     @Test
@@ -109,6 +112,7 @@ class SupplierCatalogAdapterTest {
         }
 
         assertThatThrownBy { adapterA(timeout = Duration.ofMillis(200)).fetchCatalog().block() }
+            .isInstanceOf(SupplierResponseException::class.java)
             .hasRootCauseInstanceOf(TimeoutException::class.java)
     }
 

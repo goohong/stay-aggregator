@@ -6,6 +6,7 @@ import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.asSupplierFailure
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
@@ -35,6 +36,7 @@ class SupplierBCatalogAdapter(properties: StayProperties) : CatalogAdapter {
             .bodyToMono(SupplierBPropertiesResponse::class.java)
             .timeout(config.timeout)
             .map { response -> response.toFetchedCatalog() }
+            .asSupplierFailure(SUPPLIER_ID)
 
     private fun SupplierBPropertiesResponse.toFetchedCatalog(): FetchedCatalog {
         if (resultCode != SUCCESS_CODE) {

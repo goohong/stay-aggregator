@@ -5,6 +5,7 @@ import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
 import com.stayaggregator.supplier.StayProperties
+import com.stayaggregator.supplier.asSupplierFailure
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
@@ -34,6 +35,7 @@ class SupplierACatalogAdapter(properties: StayProperties) : CatalogAdapter {
             .bodyToMono(SupplierAHotelsResponse::class.java)
             .timeout(config.timeout)
             .map { response -> response.toFetchedCatalog() }
+            .asSupplierFailure(SUPPLIER_ID)
 
     private fun SupplierAHotelsResponse.toFetchedCatalog() =
         FetchedCatalog(
