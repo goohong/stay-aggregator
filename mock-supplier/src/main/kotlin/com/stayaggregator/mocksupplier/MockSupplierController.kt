@@ -15,8 +15,11 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * 공급사 A·B 를 흉내낸다. 요청 파라미터는 보지 않고 [SupplierFixtures] 의 고정 응답을 준다.
  *
- * 재고·요금 조회만 모드를 바꿀 수 있다.
  * `POST /control/{a|b}/mode?value=normal|error|no-response|delay&delaySeconds=N`
+ *
+ * 모드는 그 공급사의 두 API(숙소 목록, 재고·요금)에 함께 적용된다.
+ * 목록 API 에도 모드가 필요한 이유는 목록 응답을 읽지 못한 동기화의 동작(ADR-0037)과
+ * 무응답 공급사가 있을 때의 기동(ADR-0038)을 확인해야 하기 때문이다.
  */
 @RestController
 class MockSupplierController {
@@ -35,10 +38,20 @@ class MockSupplierController {
     }
 
     @GetMapping("/a/v1/hotels", produces = [APPLICATION_JSON_VALUE])
-    fun hotelsA(): String = SupplierFixtures.A_HOTELS
+    fun hotelsA(): ResponseEntity<String> =
+        respond(
+            supplier = "a",
+            success = SupplierFixtures.A_HOTELS,
+            failure = ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(SupplierFixtures.A_ERROR),
+        )
 
     @GetMapping("/b/api/properties", produces = [APPLICATION_JSON_VALUE])
-    fun propertiesB(): String = SupplierFixtures.B_PROPERTIES
+    fun propertiesB(): ResponseEntity<String> =
+        respond(
+            supplier = "b",
+            success = SupplierFixtures.B_PROPERTIES,
+            failure = ResponseEntity.ok(SupplierFixtures.B_ERROR),
+        )
 
     @GetMapping("/a/v1/availability", produces = [APPLICATION_JSON_VALUE])
     fun availabilityA(): ResponseEntity<String> =
