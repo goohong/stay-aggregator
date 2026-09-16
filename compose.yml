@@ -1,0 +1,10 @@
+# 로컬 실행용 PostgreSQL. 앱이 기동하면서 함께 띄우고 접속 정보를 자동으로 연결한다 (ADR-0035).
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: stay_aggregator
+      POSTGRES_USER: stay
+      POSTGRES_PASSWORD: stay
+    ports:
+      - "5432:5432"
