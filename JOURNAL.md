@@ -685,6 +685,15 @@ Fable 구조 검토 → ADR 위반 3건: 타임아웃 부재(ADR-0019 충돌), �
            "격리"는 요구사항의 선택 항목 이름이라 그 항목을 가리킬 때만 쓰고, 평소에는 "버리지 않고 따로 보관"으로 씀
 ```
 
+### 구현 단위: 목록 동기화 (진행 중)
+| | |
+|---|---|
+| AI 가 쓴 것 | 매핑 스키마(Flyway V1)와 compose 파일, 의존성(JDBC·드라이버·Flyway·PostgreSQL 모듈·WebClient·Kotlin 용 Jackson·Testcontainers), 공급사 A·B 어댑터와 DTO, 공통 형태·인터페이스, 정규화, 저장소, 동기화 서비스와 스케줄러, 설정 클래스, 단위 테스트 6건과 통합 테스트 4건 |
+| 읽으며 물은 것 | Boot 4.1.1 이 관리하는 Testcontainers 는 2.0.5 이고 모듈 이름이 `testcontainers-postgresql` 로 바뀐 것, `PostgreSQLContainer` 가 `org.testcontainers.postgresql` 로 옮겨진 것, Flyway 는 PostgreSQL 전용 모듈이 따로 필요한 것, HikariCP 판올림이 실제로 반영됐는지(7.0.2 → 7.1.0) |
+| 바꾼 것 | 사용자 지적으로 최대 수용 인원이 1 미만이면 그 객실 타입을 빼도록 규칙을 더함. bootRun 의 실행 디렉터리를 루트로 맞춰 compose 파일을 찾게 함 |
+| 막힌 곳 | 타임아웃 값. Mock 정상 응답이 1.2~1.6ms 라 측정으로 정할 수 없어, 공급사 문서의 권장값을 근거로 삼기로 하고 추가 근거를 조사 중 |
+| 확인 | `./gradlew :app:bootRun` 이 compose 로 PostgreSQL 을 띄우고 Flyway 가 테이블 두 개를 만듦(psql 로 컬럼·제약·외래 키 확인). `./gradlew :app:test` 에서 단위 6건·통합 4건 통과 |
+
 ### 다음에 할 것
-목록 동기화 구현. 결정은 모두 끝남. Verification 모아서 점검(시점 미정)
+타임아웃 값 확정 → 운영 설정 파일 → Mock 상대로 앱 실행 확인. 그 뒤 검색 흐름 설계(Q1·Q2·Q4). Verification 모아서 점검(시점 미정)
 
