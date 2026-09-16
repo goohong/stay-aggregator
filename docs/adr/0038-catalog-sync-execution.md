@@ -72,8 +72,10 @@ date: 2026-09-16
 설정 파일에 공급사별 묶음이 있고 코드에 주소가 없는지
   → `app/src/main/resources/application.yml` 의 `stay.suppliers`, `app/src/main/kotlin/com/stayaggregator/supplier/StayProperties.kt`
 
-기동을 막지 않는지는 스케줄러 스레드에서 도는 것으로 확인한다
-  → `app/src/main/kotlin/com/stayaggregator/catalog/CatalogSyncScheduler.kt`
+응답하지 않는 공급사가 있어도 기동이 끝나는지 — Mock 의 공급사 A 를 무응답 모드로 두고 `./gradlew :app:bootRun` 했을 때
+관찰한 것(2026-09-17): 기동이 2.7초에 끝나고(`Started StayAggregatorApplicationKt in 2.692 seconds`),
+30초 뒤 그 공급사만 타임아웃으로 실패했으며(`목록 동기화 실패 supplier=a`), 같은 주기에 공급사 B 는 반영됐다
+(`목록 동기화 완료 supplier=b 숙소=1 객실타입=1 목록에없는숙소=0 제외=0`).
 
 ## Discussion
 
