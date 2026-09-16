@@ -22,12 +22,9 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
         // 한 트랜잭션 안이라 커밋 전까지 중간 상태는 밖에서 보이지 않는다.
         markAllMissing(supplierId)
 
-        hotels.forEach { hotel -> upsertHotel(supplierId, hotel) }
-
-        val hotelIds = hotelIdsByCode(supplierId)
         var roomTypeCount = 0
         hotels.forEach { hotel ->
-            val hotelId = hotelIds.getValue(hotel.code)
+            val hotelId = upsertHotel(supplierId, hotel)
             hotel.roomTypes.forEach { roomType ->
                 upsertRoomType(hotelId, roomType)
                 roomTypeCount++
@@ -69,22 +66,27 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
             .query(Int::class.java)
             .single()
 
-    /** 이미 있으면 내부 식별자를 그대로 두고 이름만 갱신한다 (ADR-0011). 새로 만든 식별자는 쓰이지 않고 버려진다 */
-    private fun upsertHotel(supplierId: String, hotel: NormalizedHotel) {
+    /**
+     * 이미 있으면 내부 식별자를 그대로 두고 이름만 갱신한다 (ADR-0011). 새로 만든 식별자는 쓰이지 않고 버려진다.
+     *
+     * 객실 타입이 이 숙소를 가리켜야 하므로 내부 식별자를 돌려받는다. 갱신된 행도 `returning` 으로 나온다.
+     */
+    private fun upsertHotel(supplierId: String, hotel: NormalizedHotel): UUID =
         jdbcClient.sql(
             """
             insert into hotel_mapping (internal_hotel_id, supplier, supplier_hotel_code, hotel_name, missing_since)
             values (:id, :supplier, :code, :name, null)
             on conflict (supplier, supplier_hotel_code)
             do update set hotel_name = excluded.hotel_name, missing_since = null
+            returning internal_hotel_id
             """.trimIndent(),
         )
             .param("id", UUID.randomUUID())
             .param("supplier", supplierId)
             .param("code", hotel.code)
             .param("name", hotel.name)
-            .update()
-    }
+            .query(UUID::class.java)
+            .single()
 
     private fun upsertRoomType(hotelId: UUID, roomType: NormalizedRoomType) {
         jdbcClient.sql(
@@ -106,13 +108,6 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
             .param("maxOccupancy", roomType.maxOccupancy)
             .update()
     }
-
-    private fun hotelIdsByCode(supplierId: String): Map<String, UUID> =
-        jdbcClient.sql("select supplier_hotel_code, internal_hotel_id from hotel_mapping where supplier = :supplier")
-            .param("supplier", supplierId)
-            .query { rs, _ -> rs.getString("supplier_hotel_code") to rs.getObject("internal_hotel_id", UUID::class.java) }
-            .list()
-            .toMap()
 }
 
 /** 한 공급사의 목록을 반영한 결과 */
