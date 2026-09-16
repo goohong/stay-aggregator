@@ -1,6 +1,5 @@
 package com.stayaggregator.supplier
 
-import com.stayaggregator.catalog.SupplierResponseException
 import com.stayaggregator.supplier.a.SupplierACatalogAdapter
 import com.stayaggregator.supplier.b.SupplierBCatalogAdapter
 import com.sun.net.httpserver.HttpExchange

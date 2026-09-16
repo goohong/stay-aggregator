@@ -1,9 +1,9 @@
 package com.stayaggregator.supplier.a
 
-import com.stayaggregator.catalog.CatalogAdapter
-import com.stayaggregator.catalog.FetchedCatalog
-import com.stayaggregator.catalog.FetchedHotel
-import com.stayaggregator.catalog.FetchedRoomType
+import com.stayaggregator.supplier.CatalogAdapter
+import com.stayaggregator.supplier.FetchedCatalog
+import com.stayaggregator.supplier.FetchedHotel
+import com.stayaggregator.supplier.FetchedRoomType
 import com.stayaggregator.supplier.StayProperties
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient

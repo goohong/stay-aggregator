@@ -1,5 +1,7 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.supplier.CatalogAdapter
+import com.stayaggregator.supplier.SupplierResponseException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 

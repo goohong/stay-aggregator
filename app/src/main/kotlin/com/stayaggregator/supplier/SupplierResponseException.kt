@@ -1,4 +1,4 @@
-package com.stayaggregator.catalog
+package com.stayaggregator.supplier
 
 /**
  * 공급사 응답을 스펙대로 읽지 못했다는 신호. ADR-0027 의 첫 질문에 "아니요"인 경우다.

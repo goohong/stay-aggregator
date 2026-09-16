@@ -1,5 +1,7 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.supplier.FetchedCatalog
+import com.stayaggregator.supplier.FetchedRoomType
 import org.springframework.stereotype.Component
 
 /**

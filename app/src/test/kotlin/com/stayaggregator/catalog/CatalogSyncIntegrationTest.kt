@@ -1,5 +1,10 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.supplier.CatalogAdapter
+import com.stayaggregator.supplier.FetchedCatalog
+import com.stayaggregator.supplier.FetchedHotel
+import com.stayaggregator.supplier.FetchedRoomType
+import com.stayaggregator.supplier.SupplierResponseException
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
