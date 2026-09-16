@@ -42,3 +42,4 @@
 | [0035](0035-compose-and-testcontainers.md) | 로컬은 Docker Compose, 테스트는 Testcontainers 로 PostgreSQL 을 띄우기로 결정 | accepted |
 | [0036](0036-mapping-tables.md) | 매핑 테이블을 두 개로 두고 내부 식별자를 키로 쓰기로 결정 | accepted |
 | [0037](0037-missing-catalog-entries-kept-and-marked.md) | 목록에서 사라진 숙소·객실 타입은 매핑을 남기고 사라진 시각을 표시하기로 결정 | accepted |
+| [0038](0038-catalog-sync-execution.md) | 목록 동기화의 기동 방식·공급사 설정·트랜잭션 경계 결정 | accepted |
