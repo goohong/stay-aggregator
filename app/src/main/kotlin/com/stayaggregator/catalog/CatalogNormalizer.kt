@@ -46,20 +46,26 @@ class CatalogNormalizer {
         val roomTypes = mutableListOf<NormalizedRoomType>()
         fetched.groupBy { it.code }.forEach { (code, sameCode) ->
             val roomType = sameCode.first()
+            val name = roomType.name
+            val maxOccupancy = roomType.maxOccupancy
             when {
                 code.isNullOrBlank() ->
                     excluded += ExcludedItem(hotelCode, code, "객실 타입 코드가 없다")
 
-                roomType.name.isNullOrBlank() ->
+                name.isNullOrBlank() ->
                     excluded += ExcludedItem(hotelCode, code, "객실 타입명이 없다")
 
-                roomType.maxOccupancy == null ->
+                maxOccupancy == null ->
                     excluded += ExcludedItem(hotelCode, code, "최대 수용 인원이 없다")
+
+                // 한 명도 묵을 수 없는 객실 타입은 팔 수 없다. 재고 수를 다룰 때와 같은 기준이다 (ADR-0027, ADR-0039)
+                maxOccupancy < 1 ->
+                    excluded += ExcludedItem(hotelCode, code, "최대 수용 인원이 1 미만이다")
 
                 sameCode.distinct().size > 1 ->
                     excluded += ExcludedItem(hotelCode, code, "같은 객실 타입 코드가 다른 값으로 두 번 왔다")
 
-                else -> roomTypes += NormalizedRoomType(code, roomType.name, roomType.maxOccupancy)
+                else -> roomTypes += NormalizedRoomType(code, name, maxOccupancy)
             }
         }
         return roomTypes

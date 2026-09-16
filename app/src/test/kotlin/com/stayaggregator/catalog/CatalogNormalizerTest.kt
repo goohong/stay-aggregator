@@ -64,6 +64,20 @@ class CatalogNormalizerTest {
     }
 
     @Test
+    fun `최대 수용 인원이 1 미만이면 그 객실 타입을 뺀다`() {
+        val fetched = catalog(
+            hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 0), roomType("STD", "스탠다드", 2)),
+        )
+
+        val normalized = normalizer.normalize(fetched)
+
+        assertThat(normalized.hotels).singleElement()
+            .satisfies({ hotel -> assertThat(hotel.roomTypes).extracting<String> { it.code }.containsExactly("STD") })
+        assertThat(normalized.excluded).singleElement()
+            .satisfies({ excluded -> assertThat(excluded.reason).contains("1 미만") })
+    }
+
+    @Test
     fun `같은 숙소 코드가 같은 값으로 두 번 오면 하나만 쓴다`() {
         val fetched = catalog(
             hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)),
