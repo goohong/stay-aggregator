@@ -31,7 +31,7 @@
 | [0024](0024-missing-night-as-zero-and-record.md) | 숙박일이 빠진 재고 응답은 그 날을 0 으로 보고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
 | [0025](0025-out-of-spec-inventory-dates.md) | 범위 밖·중복·음수 날짜 재고는 보수적으로 판정하고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
 | [0026](0026-expose-unbookable-as-zero.md) | 예약 불가 상품은 응답에서 빼지 않고 예약 가능 객실 수 0 으로 노출 | accepted |
-| [0027](0027-spec-violation-handling-criteria.md) | 규약과 다른 공급사 응답을 세 가지 질문으로 판정하기로 결정 | accepted |
+| [0027](0027-spec-violation-handling-criteria.md) | 스펙과 다른 공급사 응답을 세 가지 질문으로 판정하기로 결정 | accepted |
 | [0028](0028-implement-decided-units-first.md) | 결정이 끝난 구현 단위부터 구현하고 남은 설계를 이어가기로 결정 | accepted (Verification 짝 규칙은 superseded by [0029](0029-verification-sweep-instead-of-pairing.md)) |
 | [0029](0029-verification-sweep-instead-of-pairing.md) | ADR Verification 은 커밋마다 맞추지 않고 모아서 점검하기로 결정 | accepted |
 | [0030](0030-supplier-response-dto-receives-without-validation.md) | 공급사 응답 DTO 는 스펙 필드를 모두 받기만 하고 판정은 내부 로직에 두기로 결정 | accepted |
