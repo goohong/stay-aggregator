@@ -55,4 +55,5 @@ last_reviewed: 2026-09-15
 | 매핑 저장·조회는 Spring JDBC 의 `JdbcClient` | ADR-0032 |
 | 스키마 변경은 Flyway 스크립트로 | ADR-0033 |
 | 내부 식별자 컬럼은 `uuid` 타입 (ADR-0018 이 미룬 것) | ADR-0034 |
+| 로컬은 Docker Compose, 테스트는 Testcontainers | ADR-0035 |
 | 예약 불가 상품도 응답에 예약 가능 객실 수 0 으로 노출 (Q7) | ADR-0026 |
