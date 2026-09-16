@@ -40,3 +40,4 @@
 | [0033](0033-flyway-for-schema-migration.md) | 스키마 변경 도구로 Flyway 채택 | accepted |
 | [0034](0034-internal-id-as-uuid-column.md) | 내부 식별자를 uuid 컬럼 타입으로 저장하기로 결정 | accepted |
 | [0035](0035-compose-and-testcontainers.md) | 로컬은 Docker Compose, 테스트는 Testcontainers 로 PostgreSQL 을 띄우기로 결정 | accepted |
+| [0036](0036-mapping-tables.md) | 매핑 테이블을 두 개로 두고 내부 식별자를 키로 쓰기로 결정 | accepted |
