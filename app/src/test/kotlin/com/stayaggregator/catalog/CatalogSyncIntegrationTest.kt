@@ -101,6 +101,29 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
+    fun `응답을 읽지 못한 동기화는 기존 표시를 건드리지 않는다`() {
+        sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val before = hotelId("A-1")
+
+        syncWith(FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답"))))
+
+        // 표시했다가 되살리는 순서라, 읽지 못한 동기화가 표시만 남기고 끝나면 있는 숙소가 사라진 것이 된다 (ADR-0037)
+        assertThat(missingSince("A-1")).isNull()
+        assertThat(hotelId("A-1")).isEqualTo(before)
+    }
+
+    @Test
+    fun `공급사를 하나 더 붙여도 소비자 코드를 고치지 않는다`() {
+        syncWith(
+            FakeCatalogAdapter("a", Mono.just(FetchedCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)))))),
+            FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2)))))),
+            FakeCatalogAdapter("c", Mono.just(FetchedCatalog("c", listOf(hotel("C-1", "바다 리조트", roomType("SUITE", "스위트", 4)))))),
+        )
+
+        assertThat(hotelCodes()).containsExactly("A-1", "B-1", "C-1")
+    }
+
+    @Test
     fun `공급사 하나가 실패해도 다른 공급사는 반영된다`() {
         val failing = FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답")))
         val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
@@ -116,7 +139,12 @@ class CatalogSyncIntegrationTest {
     }
 
     private fun sync(catalog: FetchedCatalog) {
-        CatalogSyncService(listOf(FakeCatalogAdapter(catalog.supplierId, Mono.just(catalog))), normalizer, repository).syncAll()
+        syncWith(FakeCatalogAdapter(catalog.supplierId, Mono.just(catalog)))
+    }
+
+    /** 소비자는 어댑터 목록을 주입받기만 한다. 공급사가 늘어도 이 호출은 그대로다 (ADR-0031) */
+    private fun syncWith(vararg adapters: CatalogAdapter) {
+        CatalogSyncService(adapters.toList(), normalizer, repository).syncAll()
     }
 
     private class FakeCatalogAdapter(
