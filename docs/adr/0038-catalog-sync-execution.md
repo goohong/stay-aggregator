@@ -73,10 +73,19 @@ date: 2026-09-16
 설정 파일에 공급사별 묶음이 있고 코드에 주소가 없는지
   → `app/src/main/resources/application.yml` 의 `stay.suppliers`, `app/src/main/kotlin/com/stayaggregator/supplier/StayProperties.kt`
 
-응답하지 않는 공급사가 있어도 기동이 끝나는지 — Mock 의 공급사 A 를 무응답 모드로 두고 `./gradlew :app:bootRun` 했을 때
-관찰한 것(2026-09-17): 기동이 2.7초에 끝나고(`Started StayAggregatorApplicationKt in 2.692 seconds`),
-30초 뒤 그 공급사만 타임아웃으로 실패했으며(`목록 동기화 실패 supplier=a`), 같은 주기에 공급사 B 는 반영됐다
-(`목록 동기화 완료 supplier=b 숙소=1 객실타입=1 목록에없는숙소=0 제외=0`).
+응답하지 않는 공급사가 있어도 기동이 끝나는지 — 테스트로 잡기 어려운 성질이라 실행해 관찰한다.
+
+```
+curl -X POST 'localhost:9090/control/a/mode?value=no-response'
+./gradlew :app:bootRun
+```
+
+보는 것은 **로그의 순서**다. `Started StayAggregatorApplicationKt` 가 먼저 나오고, 그 뒤 `stay.suppliers.a.timeout` 만큼
+지나서야 `목록 동기화 실패 supplier=a` 가 나오며, 같은 주기에 `목록 동기화 완료 supplier=b` 가 남아야 한다.
+기동이 동기화를 기다렸다면 두 로그의 순서가 뒤집힌다.
+
+2026-09-17 관찰: 기동 로그가 먼저 나왔고 실패 로그는 30초 뒤였다(타임아웃과 같다). B 는 숙소 1건·객실 타입 1건으로 반영됐다.
+기동에 걸린 시간 자체(2.7초)는 기계마다 달라 판정 기준으로 쓰지 않는다.
 
 ## Discussion
 
