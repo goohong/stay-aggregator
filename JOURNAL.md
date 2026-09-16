@@ -665,6 +665,13 @@ AI 안    → 지우면 "항상 같은 식별자" 요구가 깨진다 → 사용
 - 트랜잭션은 공급사 하나의 동기화 전체. 실패 단위(ADR-0019)와 같고 사라진 행 표시의 원자성(ADR-0037)도 지켜짐
 - 타임아웃 값은 Mock 지연 모드로 측정한 뒤 정하기로 넘김
 
+### 구현을 누가 맡을지
+- 선택지: 내가 구현 / Fable 이 구현 / 둘 다 구현 후 합치기 / 내가 구현하고 Fable 이 검토
+- 사용자가 "Fable 이 코딩을 더 잘한다고 들었다"고 해 공식 모델 문서를 확인함.
+  Opus 5 는 "For complex agentic coding and enterprise work", Fable 5.1 은 "For demanding reasoning and long-horizon agentic work" 로 적혀 있고,
+  기본은 Opus 로 시작하고 까다로운 추론이나 긴 호흡 작업에 Fable 을 쓰라고 안내함
+- 결과: 결정의 맥락을 들고 있는 Opus 가 구현하고, 구조 단계와 코드 단계에서 Fable 이 검토. CLAUDE.md 일하는 순서에 검토 단계 추가
+
 ### 다음에 할 것
 목록 동기화 구현. 결정은 모두 끝남. Verification 모아서 점검(시점 미정)
 
