@@ -1,5 +1,6 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.mapping.MappingRepository
 import com.stayaggregator.supplier.CatalogAdapter
 import com.stayaggregator.supplier.SupplierResponseException
 import org.slf4j.LoggerFactory
@@ -28,7 +29,7 @@ class CatalogSyncService(
             val fetched = adapter.fetchCatalog().block()
                 ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
             val normalized = normalizer.normalize(fetched)
-            val applied = repository.applyCatalog(normalized)
+            val applied = repository.applyCatalog(normalized.supplierId, normalized.hotels)
             log.info(
                 "목록 동기화 완료 supplier={} 숙소={} 객실타입={} 목록에없는숙소={} 제외={} {}",
                 adapter.supplierId,

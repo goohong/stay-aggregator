@@ -1,5 +1,7 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.mapping.NormalizedHotel
+import com.stayaggregator.mapping.NormalizedRoomType
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedRoomType
 import org.springframework.stereotype.Component
@@ -79,18 +81,6 @@ data class NormalizedCatalog(
     val supplierId: String,
     val hotels: List<NormalizedHotel>,
     val excluded: List<ExcludedItem>,
-)
-
-data class NormalizedHotel(
-    val code: String,
-    val name: String,
-    val roomTypes: List<NormalizedRoomType>,
-)
-
-data class NormalizedRoomType(
-    val code: String,
-    val name: String,
-    val maxOccupancy: Int,
 )
 
 /**

@@ -1,5 +1,7 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.mapping.AppliedCatalog
+import com.stayaggregator.mapping.MappingRepository
 import com.stayaggregator.supplier.CatalogAdapter
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
@@ -108,8 +110,10 @@ class CatalogSyncIntegrationTest {
         assertThat(hotelCodes()).containsExactly("B-1")
     }
 
-    private fun apply(catalog: FetchedCatalog): AppliedCatalog =
-        repository.applyCatalog(normalizer.normalize(catalog))
+    private fun apply(catalog: FetchedCatalog): AppliedCatalog {
+        val normalized = normalizer.normalize(catalog)
+        return repository.applyCatalog(normalized.supplierId, normalized.hotels)
+    }
 
     private fun sync(catalog: FetchedCatalog) {
         CatalogSyncService(listOf(FakeCatalogAdapter(catalog.supplierId, Mono.just(catalog))), normalizer, repository).syncAll()

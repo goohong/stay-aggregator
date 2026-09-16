@@ -1,4 +1,4 @@
-package com.stayaggregator.catalog
+package com.stayaggregator.mapping
 
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
@@ -8,6 +8,7 @@ import java.util.UUID
 /**
  * 공급사 코드와 내부 식별자의 매핑을 저장한다 (ADR-0032).
  *
+ * 매핑 테이블을 아는 유일한 곳이다. 목록 동기화가 쓰고 검색이 읽는다 (ADR-0040).
  * 한 공급사의 목록 반영은 통째로 반영되거나 통째로 취소된다 (ADR-0038).
  * 트랜잭션이 HTTP 호출을 감싸지 않도록, 공급사 호출은 이 메서드 밖에서 끝낸 뒤 들어온다.
  */
@@ -15,17 +16,17 @@ import java.util.UUID
 class MappingRepository(private val jdbcClient: JdbcClient) {
 
     @Transactional
-    fun applyCatalog(catalog: NormalizedCatalog): AppliedCatalog {
+    fun applyCatalog(supplierId: String, hotels: List<NormalizedHotel>): AppliedCatalog {
         // 이번 목록에 없는 행을 찾으려고 코드 수천 개를 조건에 넣는 대신,
         // 그 공급사 행을 먼저 모두 "없음"으로 표시하고 이번 목록에 있는 것만 되살린다.
         // 한 트랜잭션 안이라 커밋 전까지 중간 상태는 밖에서 보이지 않는다.
-        markAllMissing(catalog.supplierId)
+        markAllMissing(supplierId)
 
-        catalog.hotels.forEach { hotel -> upsertHotel(catalog.supplierId, hotel) }
+        hotels.forEach { hotel -> upsertHotel(supplierId, hotel) }
 
-        val hotelIds = hotelIdsByCode(catalog.supplierId)
+        val hotelIds = hotelIdsByCode(supplierId)
         var roomTypeCount = 0
-        catalog.hotels.forEach { hotel ->
+        hotels.forEach { hotel ->
             val hotelId = hotelIds.getValue(hotel.code)
             hotel.roomTypes.forEach { roomType ->
                 upsertRoomType(hotelId, roomType)
@@ -33,10 +34,10 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
             }
         }
         return AppliedCatalog(
-            hotels = catalog.hotels.size,
+            hotels = hotels.size,
             roomTypes = roomTypeCount,
             // 되살리기까지 끝난 뒤에 세야 이번 목록에서 실제로 빠진 행이 나온다
-            missingHotels = countMissingHotels(catalog.supplierId),
+            missingHotels = countMissingHotels(supplierId),
         )
     }
 
