@@ -28,11 +28,11 @@ class CatalogSyncService(
             val normalized = normalizer.normalize(fetched)
             val applied = repository.applyCatalog(normalized)
             log.info(
-                "목록 동기화 완료 supplier={} 숙소={} 객실타입={} 사라짐표시={} 제외={} {}",
+                "목록 동기화 완료 supplier={} 숙소={} 객실타입={} 목록에없는숙소={} 제외={} {}",
                 adapter.supplierId,
                 applied.hotels,
                 applied.roomTypes,
-                applied.markedMissing,
+                applied.missingHotels,
                 normalized.excluded.size,
                 normalized.excluded.joinToString { "${it.hotelCode}/${it.roomTypeCode}: ${it.reason}" },
             )

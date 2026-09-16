@@ -19,7 +19,7 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
         // 이번 목록에 없는 행을 찾으려고 코드 수천 개를 조건에 넣는 대신,
         // 그 공급사 행을 먼저 모두 "없음"으로 표시하고 이번 목록에 있는 것만 되살린다.
         // 한 트랜잭션 안이라 커밋 전까지 중간 상태는 밖에서 보이지 않는다.
-        val markedHotels = markAllMissing(catalog.supplierId)
+        markAllMissing(catalog.supplierId)
 
         catalog.hotels.forEach { hotel -> upsertHotel(catalog.supplierId, hotel) }
 
@@ -35,11 +35,12 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
         return AppliedCatalog(
             hotels = catalog.hotels.size,
             roomTypes = roomTypeCount,
-            markedMissing = markedHotels,
+            // 되살리기까지 끝난 뒤에 세야 이번 목록에서 실제로 빠진 행이 나온다
+            missingHotels = countMissingHotels(catalog.supplierId),
         )
     }
 
-    private fun markAllMissing(supplierId: String): Int {
+    private fun markAllMissing(supplierId: String) {
         jdbcClient.sql(
             """
             update room_type_mapping r
@@ -50,7 +51,7 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
             """.trimIndent(),
         ).param("supplier", supplierId).update()
 
-        return jdbcClient.sql(
+        jdbcClient.sql(
             """
             update hotel_mapping
                set missing_since = coalesce(missing_since, now())
@@ -59,6 +60,13 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
             """.trimIndent(),
         ).param("supplier", supplierId).update()
     }
+
+    /** 이번 목록에 없어 표시가 남은 숙소 수 */
+    private fun countMissingHotels(supplierId: String): Int =
+        jdbcClient.sql("select count(*) from hotel_mapping where supplier = :supplier and missing_since is not null")
+            .param("supplier", supplierId)
+            .query(Int::class.java)
+            .single()
 
     /** 이미 있으면 내부 식별자를 그대로 두고 이름만 갱신한다 (ADR-0011). 새로 만든 식별자는 쓰이지 않고 버려진다 */
     private fun upsertHotel(supplierId: String, hotel: NormalizedHotel) {
@@ -110,5 +118,6 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
 data class AppliedCatalog(
     val hotels: Int,
     val roomTypes: Int,
-    val markedMissing: Int,
+    /** 반영이 끝난 뒤에도 표시가 남은 숙소 수. 이번 목록에 없는 숙소다 */
+    val missingHotels: Int,
 )

@@ -79,6 +79,21 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
+    fun `반영 결과는 목록에 없어 표시가 남은 숙소만 센다`() {
+        val two = catalog(
+            hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)),
+            hotel("A-2", "한옥 스테이", roomType("ONDOL", "온돌", 2)),
+        )
+        assertThat(apply(two).missingHotels).isZero()
+
+        // 같은 목록을 다시 받으면, 반영 도중 전부 표시했다가 되살리므로 남는 것이 없다
+        assertThat(apply(two).missingHotels).isZero()
+
+        val one = catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)))
+        assertThat(apply(one).missingHotels).isEqualTo(1)
+    }
+
+    @Test
     fun `공급사 하나가 실패해도 다른 공급사는 반영된다`() {
         val failing = FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답")))
         val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
@@ -87,6 +102,9 @@ class CatalogSyncIntegrationTest {
 
         assertThat(hotelCodes()).containsExactly("B-1")
     }
+
+    private fun apply(catalog: FetchedCatalog): AppliedCatalog =
+        repository.applyCatalog(normalizer.normalize(catalog))
 
     private fun sync(catalog: FetchedCatalog) {
         CatalogSyncService(listOf(FakeCatalogAdapter(catalog.supplierId, Mono.just(catalog))), normalizer, repository).syncAll()
