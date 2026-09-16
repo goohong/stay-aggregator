@@ -40,7 +40,7 @@ class CatalogSyncService(
                 normalized.excluded.joinToString { "${it.hotelCode}/${it.roomTypeCode}: ${it.reason}" },
             )
         } catch (e: SupplierResponseException) {
-            // 공급사가 알린 실패다. 원인이 메시지에 있으므로 스택은 남기지 않는다 (ADR-0019).
+            // 응답을 스펙대로 받지 못한 실패다. 공급사가 알렸든 오지 않았든 원인이 메시지에 있어 스택은 남기지 않는다 (ADR-0019).
             log.warn("목록 동기화 실패 supplier={} 이유={}", adapter.supplierId, e.message)
         } catch (e: Exception) {
             // 공급사가 알린 실패가 아니면 우리 쪽 결함일 수 있어 어디서 났는지까지 남긴다.

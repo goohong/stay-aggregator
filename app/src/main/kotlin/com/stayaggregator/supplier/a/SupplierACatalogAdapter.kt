@@ -34,8 +34,8 @@ class SupplierACatalogAdapter(properties: StayProperties) : CatalogAdapter {
             .retrieve()
             .bodyToMono(SupplierAHotelsResponse::class.java)
             .timeout(config.timeout)
-            .map { response -> response.toFetchedCatalog() }
             .asSupplierFailure(SUPPLIER_ID)
+            .map { response -> response.toFetchedCatalog() }
 
     private fun SupplierAHotelsResponse.toFetchedCatalog() =
         FetchedCatalog(

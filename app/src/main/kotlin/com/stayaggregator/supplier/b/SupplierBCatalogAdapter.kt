@@ -35,8 +35,8 @@ class SupplierBCatalogAdapter(properties: StayProperties) : CatalogAdapter {
             .retrieve()
             .bodyToMono(SupplierBPropertiesResponse::class.java)
             .timeout(config.timeout)
-            .map { response -> response.toFetchedCatalog() }
             .asSupplierFailure(SUPPLIER_ID)
+            .map { response -> response.toFetchedCatalog() }
 
     private fun SupplierBPropertiesResponse.toFetchedCatalog(): FetchedCatalog {
         if (resultCode != SUCCESS_CODE) {
