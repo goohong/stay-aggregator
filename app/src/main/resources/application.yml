@@ -16,8 +16,5 @@ stay:
       api-key: mock
       timeout: PT30S
 
-  catalog:
-    sync:
-      # 기동 직후 한 번 돌리고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
-      initial-delay: PT0S
-      interval: PT24H
+  # 목록 동기화는 기동 직후 한 번 돌고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
+  # 기본값은 CatalogSyncScheduler 에 있다. 바꾸려면 stay.catalog.sync.initial-delay 와 interval 을 여기에 적는다.

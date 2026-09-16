@@ -10,7 +10,3 @@ stay:
       base-url: http://localhost:9090
       api-key: test
       timeout: PT1S
-  catalog:
-    sync:
-      initial-delay: PT0S
-      interval: PT24H
