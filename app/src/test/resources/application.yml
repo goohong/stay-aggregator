@@ -1,0 +1,15 @@
+# 테스트에서 쓰는 값이다. 운영에서 쓸 타임아웃 값은 근거를 정한 뒤 app/src/main/resources 에 적는다 (ADR-0039).
+stay:
+  suppliers:
+    a:
+      base-url: http://localhost:9090
+      api-key: test
+      timeout: PT1S
+    b:
+      base-url: http://localhost:9090
+      api-key: test
+      timeout: PT1S
+  catalog:
+    sync:
+      initial-delay: PT0S
+      interval: PT24H
