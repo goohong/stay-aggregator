@@ -68,7 +68,7 @@ date: 2026-09-15
 설정이 없을 때의 기본값은 `@Scheduled` 의 자리표시자에 적혀 있다
   → `app/src/main/kotlin/com/stayaggregator/catalog/CatalogSyncScheduler.kt` 의 `fixedDelayString = "\${stay.catalog.sync.interval:PT24H}"`
 
-운영자가 바꿀 수 있는지는 설정 파일의 같은 키로 확인한다
-  → `app/src/main/resources/application.yml` 의 `stay.catalog.sync.interval`
+운영자는 설정 키 `stay.catalog.sync.interval` 이나 환경 변수 `STAY_CATALOG_SYNC_INTERVAL` 로 그 기본값을 덮는다.
+받는 자리는 위 자리표시자이고, 저장소의 `application.yml` 에는 키를 적어 두지 않는다(기본값이 코드에 있어 두 곳에 같은 값이 남지 않게).
 
 주기가 실제로 흐르는 것은 하루가 지나야 확인되므로 테스트로 확인하지 않는다.

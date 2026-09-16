@@ -3,7 +3,7 @@ spring:
     name: stay-aggregator
 
 stay:
-  # 공급사마다 주소·인증 키·타임아웃을 한 묶음으로 둔다 (ADR-0038).
+  # 공급사마다 주소·인증 키를 한 묶음으로 두고 (ADR-0038), 타임아웃도 같은 자리에 둔다 (ADR-0039).
   # 저장소에는 Mock 을 가리키는 값만 둔다. 실제 값은 환경 변수로 덮어쓴다.
   # 예: STAY_SUPPLIERS_A_BASEURL, STAY_SUPPLIERS_A_APIKEY
   suppliers:
@@ -18,3 +18,4 @@ stay:
 
   # 목록 동기화는 기동 직후 한 번 돌고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
   # 기본값은 CatalogSyncScheduler 에 있다. 바꾸려면 stay.catalog.sync.initial-delay 와 interval 을 여기에 적는다.
+  # stay.catalog.sync.enabled 를 false 로 두면 동기화를 돌리지 않는다.
