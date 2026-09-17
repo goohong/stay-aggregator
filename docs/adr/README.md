@@ -68,4 +68,5 @@
 | [0061](0061-catalog-sync-min-interval.md) | 숙소 목록 갱신 주기의 최소 간격을 1시간으로 두고 설정 검사로 지키기로 결정 | accepted |
 | [0062](0062-name-mismatch-warning.md) | 목록과 재고 응답의 이름이 다르면 경고로 격리 기록에 남기기로 결정 | accepted |
 | [0063](0063-springdoc-openapi.md) | 검색 API 문서를 springdoc-openapi 로 코드에서 만들기로 결정 | accepted |
+| [0064](0064-reservation-proxy-design-only.md) | 예약 대행은 설계만 남기고 결과를 모르는 예약은 같은 멱등 키로 공급사에 물어 확정하기로 결정 | accepted |
 | [0065](0065-availability-cache-redis.md) | 재고·요금을 숙소 단위로 판정한 뒤 Redis 에 캐시하기로 결정 | accepted |
