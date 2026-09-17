@@ -101,6 +101,11 @@ ADR-0024·0025 는 이런 경우를 값을 보정해(빠진 날·음수는 0, �
     `SupplierCatalogAdapterTest.공급사 B 가 본문 결과 코드로 알린 실패도 같은 오류가 된다`,
     `SupplierCatalogAdapterTest.본문을 읽을 수 없으면 오류가 된다`
 
+한 신호로 모으는 범위가 공급사와 만나는 구간까지이고, 응답을 우리 형태로 바꾸는 코드의 오류는 들어오지 않는지
+  → `SupplierFailureTest.감싸기 위에서 난 오류는 공급사 실패가 된다`,
+    `SupplierFailureTest.감싸기 아래에서 난 오류는 그대로 간다`,
+    `SupplierFailureTest.원인 예외는 보존된다`
+
 두 번째·세 번째 질문(항목 하나하나의 값을 쓸 수 있는가)
   → `CatalogNormalizerTest` 의 여섯 건
 
