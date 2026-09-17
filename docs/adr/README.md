@@ -62,3 +62,5 @@
 | [0055](0055-quarantine-grouped-in-db.md) | 제외한 항목을 같은 문제끼리 묶어 DB 에 남기기로 결정 | accepted |
 | [0056](0056-circuit-breaker-per-supplier-outside-retry.md) | 서킷 브레이커를 공급사마다 두고 재시도 바깥에서 묶음의 최종 결과를 세기로 결정 | accepted |
 | [0057](0057-resilience4j-reactor-for-circuit-breaker.md) | 서킷 브레이커는 resilience4j-reactor 를 쓰고 재시도·타임아웃은 Reactor 연산자로 두기로 결정 | accepted |
+| [0058](0058-same-hotel-confirmed-pairs-only.md) | 동일 숙소는 사람이 확인한 짝만 응답에서 같은 값으로 묶기로 결정 | accepted |
+| [0059](0059-quarantine-package.md) | 격리 기록을 새 패키지 quarantine 에 두기로 결정 | accepted |
