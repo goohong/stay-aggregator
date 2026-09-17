@@ -58,3 +58,4 @@
 | [0051](0051-retry-transient-supplier-failures.md) | 일시적인 공급사 실패만 재시도하고 재시도 여부는 consumer 가 정하기로 결정 | accepted |
 | [0052](0052-no-past-date-check.md) | 체크인일이 지난 날짜인지는 검사하지 않기로 결정 | accepted |
 | [0053](0053-mixed-currency-exposure.md) | 통화가 다른 상품을 한 응답에 함께 내보내되 환산하지 않기로 결정 | accepted |
+| [0054](0054-exclusion-kind-by-value-only.md) | 제외한 항목은 문제가 된 값 하나로만 종류를 나누기로 결정 | accepted |
