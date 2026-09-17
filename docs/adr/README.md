@@ -72,3 +72,4 @@
 | [0065](0065-availability-cache-redis.md) | 재고·요금을 숙소 단위로 정규화한 뒤 Redis 에 캐시하기로 결정 | accepted |
 | [0066](0066-connect-timeout-in-shared-webclient.md) | 연결 타임아웃을 호출 타임아웃과 따로 두고 모든 어댑터가 한 함수로 WebClient 를 만들기로 결정 | accepted |
 | [0067](0067-rejection-carries-field.md) | 값 객체가 거부할 때 틀린 필드를 함께 알리고 정규화가 그 필드로 문제 값을 정하기로 결정 | accepted |
+| [0068](0068-search-values-from-relations.md) | 검색 연동 값을 관계식과 근거로 정하기로 결정 | accepted |
