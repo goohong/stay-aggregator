@@ -49,9 +49,11 @@ class SupplierCatalogAdapterTest {
             """.trimIndent(),
         )
 
-        val fetched = adapterA().fetchCatalog().block()!!
+        val adapter = adapterA()
+        val fetched = adapter.fetchCatalog().block()!!
 
-        assertThat(fetched.supplierId).isEqualTo("a")
+        // 어느 공급사인지는 응답이 아니라 어댑터가 안다 (ADR-0049)
+        assertThat(adapter.supplierId).isEqualTo("a")
         assertThat(fetched.hotels).singleElement()
             .satisfies({ hotel ->
                 assertThat(hotel.code).isEqualTo("A-1")

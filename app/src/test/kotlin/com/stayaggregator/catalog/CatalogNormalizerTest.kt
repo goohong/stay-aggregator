@@ -85,7 +85,7 @@ class CatalogNormalizerTest {
     @Test
     fun `숙소 목록을 담는 필드가 없으면 공급사 실패가 된다`() {
         // 빈 목록은 "없다"는 말이지만, 필드가 없는 것은 아무 말도 아니다 (ADR-0041)
-        assertThatThrownBy { normalizer.normalize(FetchedCatalog("a", null)) }
+        assertThatThrownBy { normalizer.normalize(FetchedCatalog(null)) }
             .isInstanceOf(SupplierResponseException::class.java)
             .hasMessageContaining("숙소 목록이 없다")
     }
@@ -184,7 +184,7 @@ class CatalogNormalizerTest {
             .satisfies({ excluded -> assertThat(excluded.reason).contains("두 번") })
     }
 
-    private fun catalog(vararg hotels: FetchedHotel) = FetchedCatalog("a", hotels.toList())
+    private fun catalog(vararg hotels: FetchedHotel) = FetchedCatalog(hotels.toList())
 
     private fun hotel(code: String?, name: String?, vararg roomTypes: FetchedRoomType) =
         FetchedHotel(code, name, roomTypes.toList())

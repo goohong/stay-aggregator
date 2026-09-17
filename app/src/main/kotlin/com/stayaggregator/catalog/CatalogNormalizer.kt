@@ -18,13 +18,15 @@ import org.springframework.stereotype.Component
  * (ADR-0027 의 첫 질문, ADR-0041). 이 판정은 공급사마다 다르지 않아 어댑터 밖 한곳에 둔다 (ADR-0031).
  *
  * 같은 코드가 두 번 왔는지는 항목 하나만 봐서는 알 수 없어 여기서 본다. 객체가 자기 불변식으로 지킬 수 없는 유일한 조건이다.
+ *
+ * 어느 공급사의 응답인지는 모른다. 판정 규칙이 공급사 공통이라 알 필요가 없고, 그 이름은 consumer 가 든다 (ADR-0049).
  */
 @Component
 class CatalogNormalizer {
 
     fun normalize(fetched: FetchedCatalog): NormalizedCatalog {
         val hotels = fetched.hotels
-            ?: throw SupplierResponseException("공급사 ${fetched.supplierId} 응답에 숙소 목록이 없다")
+            ?: throw SupplierResponseException("응답에 숙소 목록이 없다")
 
         val excluded = mutableListOf<ExcludedItem>()
         val normalized = mutableListOf<NormalizedHotel>()
@@ -42,7 +44,7 @@ class CatalogNormalizer {
             }
             normalizeHotel(code, sameCode.first(), excluded)?.let { normalized += it }
         }
-        return NormalizedCatalog(supplierId = fetched.supplierId, hotels = normalized, excluded = excluded)
+        return NormalizedCatalog(hotels = normalized, excluded = excluded)
     }
 
     private fun normalizeHotel(
@@ -110,7 +112,6 @@ class CatalogNormalizer {
 
 /** 이번 동기화에서 쓸 것과 뺀 것 */
 data class NormalizedCatalog(
-    val supplierId: String,
     val hotels: List<NormalizedHotel>,
     val excluded: List<ExcludedItem>,
 )

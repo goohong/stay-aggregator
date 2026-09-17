@@ -8,9 +8,10 @@ package com.stayaggregator.supplier
  * 아무 말도 하지 않은 것은 다른 상황이고, 그 차이로 판정이 갈린다 (ADR-0041).
  *
  * 무엇을 쓰고 무엇을 뺄지는 목록 동기화 쪽의 정규화가 ADR-0027 의 질문들로 정한다 (ADR-0030).
+ *
+ * 어느 공급사가 줬는지는 싣지 않는다. 그것은 어댑터가 알고, consumer 는 어댑터와 이 값을 함께 든다 (ADR-0049).
  */
 data class FetchedCatalog(
-    val supplierId: String,
     /** 없으면 응답을 스펙대로 읽지 못한 것이다 (ADR-0041) */
     val hotels: List<FetchedHotel>?,
 )

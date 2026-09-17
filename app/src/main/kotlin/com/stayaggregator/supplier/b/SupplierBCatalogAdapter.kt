@@ -43,7 +43,6 @@ class SupplierBCatalogAdapter(properties: StayProperties) : CatalogAdapter {
             throw SupplierResponseException("공급사 B 가 실패를 알렸다: resultCode=$resultCode, resultMessage=$resultMessage")
         }
         return FetchedCatalog(
-            supplierId = SUPPLIER_ID,
             // 없는 것을 빈 목록으로 바꾸지 않는다. 판정은 정규화가 한다 (ADR-0041)
             hotels = data?.items?.map { property ->
                 FetchedHotel(

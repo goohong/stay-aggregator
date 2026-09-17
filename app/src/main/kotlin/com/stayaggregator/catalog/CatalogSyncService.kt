@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service
  *
  * 공급사 하나가 실패해도 나머지는 그대로 간다 (ADR-0019). 실패한 공급사의 매핑은 이전 상태로 남는다.
  * 기다리는 자리는 여기다. 공급사 호출이 끝난 뒤에 저장이 시작되므로 트랜잭션이 HTTP 호출을 감싸지 않는다 (ADR-0038).
+ *
+ * 어느 공급사인지는 어댑터만 안다. 응답과 정규화 결과에는 없으므로 저장소에 넘길 때 어댑터 값을 쓴다 (ADR-0049).
  */
 @Service
 class CatalogSyncService(
@@ -29,7 +31,7 @@ class CatalogSyncService(
             val fetched = adapter.fetchCatalog().block()
                 ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
             val normalized = normalizer.normalize(fetched)
-            val applied = repository.applyCatalog(normalized.supplierId, normalized.hotels)
+            val applied = repository.applyCatalog(adapter.supplierId, normalized.hotels)
             log.info(
                 "목록 동기화 완료 supplier={} 숙소={} 객실타입={} 목록에없는숙소={} 제외={} {}",
                 adapter.supplierId,

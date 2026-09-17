@@ -121,7 +121,7 @@ class CatalogSyncIntegrationTest {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
 
         // 정규화가 공급사 실패로 던지고, 동기화는 그 공급사만 건너뛴다 (ADR-0041)
-        syncWith(FakeCatalogAdapter("a", Mono.just(FetchedCatalog("a", null))))
+        syncWith(FakeCatalogAdapter("a", Mono.just(FetchedCatalog(null))))
 
         assertThat(hotelCodes()).containsExactly("A-1")
         assertThat(missingSince("A-1")).isNull()
@@ -174,9 +174,9 @@ class CatalogSyncIntegrationTest {
     @Test
     fun `공급사를 하나 더 붙여도 consumer 코드를 고치지 않는다`() {
         syncWith(
-            FakeCatalogAdapter("a", Mono.just(FetchedCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)))))),
-            FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2)))))),
-            FakeCatalogAdapter("c", Mono.just(FetchedCatalog("c", listOf(hotel("C-1", "바다 리조트", roomType("SUITE", "스위트", 4)))))),
+            FakeCatalogAdapter("a", Mono.just(FetchedCatalog(listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)))))),
+            FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2)))))),
+            FakeCatalogAdapter("c", Mono.just(FetchedCatalog(listOf(hotel("C-1", "바다 리조트", roomType("SUITE", "스위트", 4)))))),
         )
 
         assertThat(hotelCodes()).containsExactly("A-1", "B-1", "C-1")
@@ -185,7 +185,7 @@ class CatalogSyncIntegrationTest {
     @Test
     fun `공급사 하나가 실패해도 다른 공급사는 반영된다`() {
         val failing = FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답")))
-        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
+        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
 
         CatalogSyncService(listOf(failing, working), normalizer, repository).syncAll()
 
@@ -200,9 +200,9 @@ class CatalogSyncIntegrationTest {
         // 그 공급사만 건너뛰는지 본다 (ADR-0019, ADR-0038).
         val rejected = FakeCatalogAdapter(
             "a",
-            Mono.just(FetchedCatalog("a", listOf(hotel("A-2", "널 문자\u0000가 든 이름", roomType("STD", "스탠다드", 2))))),
+            Mono.just(FetchedCatalog(listOf(hotel("A-2", "널 문자\u0000가 든 이름", roomType("STD", "스탠다드", 2))))),
         )
-        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
+        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
 
         syncWith(rejected, working)
 
@@ -214,7 +214,7 @@ class CatalogSyncIntegrationTest {
     fun `공급사가 알린 실패가 아니어도 다른 공급사는 반영된다`() {
         // 우리 쪽 결함으로 나는 예외다. 공급사 실패와 다른 가지를 타지만 건너뛰는 것은 같다 (ADR-0019)
         val broken = FakeCatalogAdapter("a", Mono.error(IllegalStateException("어댑터 안에서 난 오류")))
-        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
+        val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
 
         syncWith(broken, working)
 
@@ -231,13 +231,14 @@ class CatalogSyncIntegrationTest {
         assertThat(missingSince("A-1")).isNotNull()
     }
 
+    /** 이 파일의 단일 공급사 시나리오는 모두 "a" 다. 응답은 공급사를 모르므로 여기서 넣는다 (ADR-0049) */
     private fun apply(catalog: FetchedCatalog): AppliedCatalog {
         val normalized = normalizer.normalize(catalog)
-        return repository.applyCatalog(normalized.supplierId, normalized.hotels)
+        return repository.applyCatalog("a", normalized.hotels)
     }
 
     private fun sync(catalog: FetchedCatalog) {
-        syncWith(FakeCatalogAdapter(catalog.supplierId, Mono.just(catalog)))
+        syncWith(FakeCatalogAdapter("a", Mono.just(catalog)))
     }
 
     /** consumer 는 어댑터 목록을 주입받기만 한다. 공급사가 늘어도 이 호출은 그대로다 (ADR-0031) */
@@ -252,7 +253,7 @@ class CatalogSyncIntegrationTest {
         override fun fetchCatalog(): Mono<FetchedCatalog> = response
     }
 
-    private fun catalog(vararg hotels: FetchedHotel) = FetchedCatalog("a", hotels.toList())
+    private fun catalog(vararg hotels: FetchedHotel) = FetchedCatalog(hotels.toList())
 
     private fun hotel(code: String?, name: String?, vararg roomTypes: FetchedRoomType) =
         FetchedHotel(code, name, roomTypes.toList())
