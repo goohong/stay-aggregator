@@ -7,6 +7,8 @@ import com.stayaggregator.mapping.MappingRepository
 import com.stayaggregator.domain.NormalizedHotel
 import com.stayaggregator.domain.NormalizedRoomType
 import com.stayaggregator.supplier.AvailabilityAdapter
+import com.stayaggregator.supplier.ResilientAvailabilityAdapters
+import com.stayaggregator.supplier.SupplierCircuitBreakers
 import com.stayaggregator.supplier.AvailabilityRequest
 import com.stayaggregator.supplier.FetchedAvailability
 import com.stayaggregator.supplier.FetchedAvailabilityItem
@@ -393,7 +395,8 @@ class SearchServiceIntegrationTest {
             if (timeout >= properties.search.timeout) s else s.copy(availabilityTimeout = timeout.dividedBy(8), connectTimeout = timeout.dividedBy(16))
         }
         val props = StayProperties(suppliers, properties.search.copy(timeout = timeout, retry = properties.search.retry.copy(maxRetries = maxRetries), throttledRetry = throttledRetry))
-        return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, com.stayaggregator.supplier.SupplierCallMetrics(meterRegistry), props)
+        val wrapped = ResilientAvailabilityAdapters.wrap(adapters.toList(), breakers ?: SupplierCircuitBreakers(props), com.stayaggregator.supplier.SupplierCallMetrics(meterRegistry), props.search)
+        return SearchService(wrapped, repository, normalizer, quarantine, props)
     }
 
     private fun breakers() = SupplierCircuitBreakers(properties)

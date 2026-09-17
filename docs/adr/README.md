@@ -75,3 +75,4 @@
 | [0068](0068-search-values-from-relations.md) | 검색 연동 값을 관계식과 근거로 정하기로 결정 | accepted |
 | [0069](0069-domain-package.md) | 공급사와 무관한 값 객체를 domain 패키지로 모으기로 결정 | accepted |
 | [0070](0070-supplier-failure-sealed.md) | 공급사 실패 예외를 boolean 성질 대신 sealed 하위 타입으로 나누기로 결정 | accepted |
+| [0071](0071-resilience-as-adapter-decorator.md) | 재시도·서킷·지표를 검색 서비스가 아니라 어댑터를 감싸는 Decorator 에 두기로 결정 | accepted |

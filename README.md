@@ -127,12 +127,27 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 
 공급사 식별자는 어댑터의 상수 한 곳에만 적습니다. 응답 형태에는 싣지 않습니다 ([ADR-0049](docs/adr/0049-supplier-id-on-adapter-only.md)).
 
+## 숙소 목록과 재고·요금은 성격이 다르다
+
+공급사가 주는 두 가지는 바뀌는 속도가 다릅니다. 그래서 다루는 방법도 다릅니다.
+
+**숙소 목록은 드물게 바뀌므로 저장합니다.**
+
+- 앱을 띄울 때 한 번 받고, 그 뒤로는 앞선 실행이 끝난 시점부터 24시간마다 다시 받습니다 ([ADR-0013](docs/adr/0013-catalog-sync-on-startup-and-interval.md), [ADR-0016](docs/adr/0016-catalog-sync-interval-default-daily.md)). 주기는 설정으로 바꾸되 1시간보다 짧으면 앱이 기동에 실패합니다 ([ADR-0061](docs/adr/0061-catalog-sync-min-interval.md))
+- 저장하는 것은 공급사 코드와 내부 식별자의 **매핑**뿐입니다 ([ADR-0017](docs/adr/0017-mapping-in-server-rdb.md)). 내부 식별자는 무작위 UUID 이고 같은 상품은 다시 받아도 같은 값입니다 ([ADR-0011](docs/adr/0011-internal-id-random-uuid.md))
+- 이번 목록에 없는 숙소는 지우지 않고 `missing_since` 에 그 시각을 적어 검색 대상에서 뺍니다. 다시 나타나면 같은 내부 식별자로 값을 비웁니다 ([ADR-0037](docs/adr/0037-missing-catalog-entries-kept-and-marked.md))
+- 응답의 숙소명·객실 타입명은 이 저장값을 씁니다 ([ADR-0012](docs/adr/0012-static-info-from-catalog.md)). 검색 때 받은 이름이 저장값과 다르면 항목은 그대로 내보내고 경고로만 남겨, 교정은 다음 동기화에 맡깁니다 ([ADR-0014](docs/adr/0014-detect-drift-in-search-correct-in-sync.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md))
+
+**재고·요금은 매번 바뀌므로 저장하지 않습니다.**
+
+- 검색마다 공급사에 물어봅니다. 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 **chunk** 로 나눠 호출하고, 한 공급사에 동시에 보내는 chunk 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 ([ADR-0045](docs/adr/0045-search-concurrency-and-budget.md))
+- 같은 조건의 검색이 반복될 때를 위한 캐시는 숙소 단위로 Redis 에 두기로 정했고 아직 구현하지 않았습니다 ([ADR-0065](docs/adr/0065-availability-cache-redis.md))
+
 ## 견고성
 
 | | 어떻게 | |
 |---|---|---|
-| 병렬 호출 | 공급사들을 동시에 호출하고, 한 공급사 안에서도 chunk 를 동시에 호출합니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
-| 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 호출하고, 동시에 호출하는 chunk 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
+| 병렬 호출 | 공급사들을 동시에 호출하고, 한 공급사 안에서도 chunk 를 동시에 호출합니다. 동시에 보내는 수는 공급사당 4 로 제한합니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
 | 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 연결 수립에는 따로 짧은 타임아웃을 걸어, 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않습니다([ADR-0066](docs/adr/0066-connect-timeout-in-shared-webclient.md)). 호출 타임아웃은 검색 전체 타임아웃보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 백그라운드 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
 | 실패 분류 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 공급사 실패 예외로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |

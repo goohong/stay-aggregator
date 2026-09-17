@@ -1,7 +1,5 @@
-package com.stayaggregator.search
+package com.stayaggregator.supplier
 
-import com.stayaggregator.supplier.StayProperties
-import com.stayaggregator.supplier.SupplierFailure
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
@@ -12,7 +10,8 @@ import org.springframework.stereotype.Component
  * 공급사마다 하나씩 서킷을 둔다 (ADR-0056).
  *
  * resilience4j 의 Spring Boot 4 모듈이 릴리스되지 않아 설정 파일 연동이 없다. 그래서 [StayProperties] 에서 기준을 읽어 직접 만든다 (ADR-0057).
- * 검색에서만 쓴다. 목록 동기화는 하루 한 번 도는 백그라운드 작업이라 서킷으로 호출을 차단해 아낄 시간이 없다 (ADR-0056).
+ * 재고·요금 호출에만 쓴다. 목록 동기화는 하루 한 번 도는 백그라운드 작업이라 서킷으로 호출을 차단해 아낄 시간이 없다 (ADR-0056).
+ * 서킷 상태는 "그 공급사가 지금 죽었나"이지 검색만의 것이 아니라 `supplier` 에 둔다. 씌우는 곳은 [ResilientAvailabilityAdapter] 다 (ADR-0071).
  *
  * **실패로 세는 것은 공급사 실패뿐이다.** 공급사 실패가 아닌 오류(내부 오류)는 성공으로도 실패로도 세지 않는다.
  */

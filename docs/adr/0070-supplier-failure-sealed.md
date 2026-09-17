@@ -25,7 +25,7 @@ ADR-0051 은 "예외 타입을 나눈다"(나)를 검토하고 "consumer 가 두
 
 ## Options
 
-- **(가) sealed 계층으로 바꾼다** ← 채택 — `Timeout`, `Throttled`, `Unavailable`, `Rejected`, `Unreadable` 다섯 종류. 재시도 가능 여부는 종류가 정한다. 해석은 `when` 이라 종류가 늘면 컴파일이 알린다. 대신 만드는 곳이 종류를 골라야 하고, 테스트의 생성 지점을 고친다
+- **(가) sealed 계층으로 바꾼다** ← 채택 — `Timeout`, `Throttled`, `Unavailable`, `Rejected`, `Unreadable` 다섯 종류(뒤에 ADR-0071 이 `CircuitOpen` 을 더해 여섯). 재시도 가능 여부는 종류가 정한다. 해석은 `when` 이라 종류가 늘면 컴파일이 알린다. 대신 만드는 곳이 종류를 골라야 하고, 테스트의 생성 지점을 고친다
 - **(나) boolean 을 유지한다** — 바꿀 것이 없다. 대신 넷째 boolean 이 붙는 순간 조합이 8가지가 되고 뜻이 없는 조합(타임아웃이면서 요청 한도 초과)도 만들 수 있다
 
 ## Decision
@@ -39,6 +39,7 @@ ADR-0051 은 "예외 타입을 나눈다"(나)를 검토하고 "consumer 가 두
   | `Unavailable` | 5xx, B 의 `E5xx`, 연결 거절 | 예 |
   | `Rejected` | 그 밖의 4xx, B 의 `E400`·`E401`, 스펙에 없는 결과 코드 | 아니요 |
   | `Unreadable` | 본문 해석 실패, 목록 필드 없음, 빈 응답 | 아니요 |
+  | `CircuitOpen` | 서킷이 열려 호출하지 않음 ([ADR-0071](0071-resilience-as-adapter-decorator.md) 이 더함) | 아니요 (재시도 밖에서 남) |
 
 - consumer(검색, 목록 동기화, 서킷의 `ignoreException`)는 루트 `SupplierFailure` 만 잡는다. ADR-0027 의 "한 가지 실패"는 그대로다
 - 종류를 고르는 곳은 ADR-0051 이 정한 둘 그대로다. HTTP 계층은 `asSupplierFailure`, 본문 결과 코드는 어댑터

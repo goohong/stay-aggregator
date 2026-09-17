@@ -1,8 +1,6 @@
 package com.stayaggregator.supplier
 
 import com.stayaggregator.supplier.SupplierCallMetrics.Outcome
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException
-import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -16,8 +14,7 @@ class SupplierCallMetricsTest {
         assertThat(SupplierCallMetrics.outcomeOf(null)).isEqualTo(Outcome.SUCCESS)
         assertThat(SupplierCallMetrics.outcomeOf(SupplierFailure.Timeout("느림"))).isEqualTo(Outcome.TIMEOUT)
         assertThat(SupplierCallMetrics.outcomeOf(SupplierFailure.Unreadable("503"))).isEqualTo(Outcome.SUPPLIER_FAILURE)
-        assertThat(SupplierCallMetrics.outcomeOf(CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("a"))))
-            .isEqualTo(Outcome.CIRCUIT_OPEN)
+        assertThat(SupplierCallMetrics.outcomeOf(SupplierFailure.CircuitOpen("서킷 열림"))).isEqualTo(Outcome.CIRCUIT_OPEN)
     }
 
     @Test

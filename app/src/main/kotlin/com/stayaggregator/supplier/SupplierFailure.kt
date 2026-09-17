@@ -72,6 +72,14 @@ sealed class SupplierFailure(message: String, cause: Throwable? = null) : Runtim
     class Unreadable(message: String, cause: Throwable? = null) : SupplierFailure(message, cause) {
         override val transient = false
     }
+
+    /**
+     * 그 공급사의 서킷이 열려 있어 호출하지 않았다 (ADR-0056). 공급사가 낸 실패가 아니라 우리가 호출을 막은 것이라 서킷은 이것을 세지 않는다.
+     * [ResilientAvailabilityAdapter] 만 만든다. consumer 가 resilience4j 의 예외 타입을 몰라도 되게 여기로 옮긴다 (ADR-0071)
+     */
+    class CircuitOpen(message: String, cause: Throwable? = null) : SupplierFailure(message, cause) {
+        override val transient = false
+    }
 }
 
 fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =

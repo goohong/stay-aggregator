@@ -6,20 +6,16 @@ import com.stayaggregator.quarantine.QuarantineEntry
 import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.quarantine.RecordKind
 import com.stayaggregator.supplier.AvailabilityAdapter
+import com.stayaggregator.supplier.ResilientAvailabilityAdapters
 import com.stayaggregator.supplier.AvailabilityRequest
 import com.stayaggregator.domain.GuestCount
 import com.stayaggregator.domain.StayPeriod
 import com.stayaggregator.supplier.StayProperties
-import com.stayaggregator.supplier.SupplierCallMetrics
 import com.stayaggregator.supplier.SupplierFailure
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException
-import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.util.retry.Retry
-import reactor.util.retry.RetryBackoffSpec
 import java.util.concurrent.TimeoutException
 
 /**
@@ -28,8 +24,8 @@ import java.util.concurrent.TimeoutException
  * 공급사들은 동시에 호출하고, 공급사 하나가 실패해도 나머지 결과로 응답한다 (ADR-0046).
  * 한 공급사 안에서는 chunk 를 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 호출하고,
  * chunk 일부가 실패하면 성공한 chunk 는 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
- * chunk 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 재시도한다 (ADR-0051). 목록 동기화는 재시도하지 않는다 (ADR-0019).
- * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 chunk 의 최종 결과를 세고, 열려 있으면 그 공급사를 호출하지 않는다 (ADR-0056, ADR-0057).
+ * 재시도·서킷·지표는 여기 없다. 감싼 어댑터([ResilientAvailabilityAdapters])가 호출마다 붙인다 (ADR-0051, ADR-0056, ADR-0071).
+ * 여기서는 감싼 어댑터를 호출하고, 실패한 chunk 를 결과로 바꾸는 일만 한다.
  * 검색 전체 타임아웃은 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
  *
  * 블로킹으로 기다리는 곳은 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021).
@@ -39,16 +35,15 @@ import java.util.concurrent.TimeoutException
  */
 @Service
 class SearchService(
-    private val adapters: List<AvailabilityAdapter>,
+    resilientAdapters: ResilientAvailabilityAdapters,
     private val repository: MappingRepository,
     private val normalizer: AvailabilityNormalizer,
-    private val circuitBreakers: SupplierCircuitBreakers,
     private val quarantine: QuarantineRecorder,
-    private val metrics: SupplierCallMetrics,
     properties: StayProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val search = properties.search
+    private val adapters: List<AvailabilityAdapter> = resilientAdapters.adapters
 
     fun search(period: StayPeriod, guests: GuestCount): SearchResult {
         val results = Flux.fromIterable(adapters)
@@ -77,80 +72,14 @@ class SearchService(
             .map { outcomes -> combine(adapter.supplierId, outcomes, chunks.size) }
     }
 
-    /**
-     * chunk 하나. 실패해도 오류를 올리지 않고 실패했다는 결과로 바꾼다. 다른 chunk 가 이어져야 하기 때문이다 (ADR-0050).
-     *
-     * 재시도하는 것은 **공급사 호출까지만**이다. 응답을 우리 형태로 바꾸다 난 오류는 재시도해도 같은 결과이고,
-     * 그것은 애초에 일시적인 실패로 표시되지도 않는다 (ADR-0051).
-     */
+    /** chunk 하나. 실패해도 오류를 올리지 않고 실패했다는 결과로 바꾼다. 다른 chunk 가 이어져야 하기 때문이다 (ADR-0050) */
     private fun fetchChunk(adapter: AvailabilityAdapter, request: AvailabilityRequest, mapped: List<MappedHotel>): Mono<ChunkOutcome> =
-        Mono.defer {
-            val started = System.nanoTime()
-            adapter.fetchAvailability(request)
-                .retryWhen(retryTransient(adapter.supplierId, request))
-                // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 chunk 만 센다 (ADR-0056).
-                // 검색 전체 타임아웃으로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
-                .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
-                // 서킷과 같은 단위(재시도까지 거친 최종 결과)로 센다. 정규화 전에 두어 정규화 오류는 공급사 지표에 넣지 않는다 (ADR-0060).
-                // 검색 전체 타임아웃으로 취소된 chunk 는 끝나지 않아 세지 않는다
-                .doOnSuccess { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), null) }
-                .doOnError { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), it) }
-        }
+        adapter.fetchAvailability(request)
             .map<ChunkOutcome> { fetched -> ChunkOutcome.Succeeded(normalizer.normalize(fetched, mapped, request.period, request.hotelCodes)) }
             .onErrorResume { e ->
                 logChunkFailure(adapter.supplierId, request, e)
-                Mono.just(ChunkOutcome.Failed(reason = chunkFailureReason(adapter.supplierId, e)))
+                Mono.just(ChunkOutcome.Failed(reason = e.message ?: e.javaClass.simpleName))
             }
-
-    private fun chunkFailureReason(supplierId: String, e: Throwable): String =
-        when (e) {
-            is CallNotPermittedException -> "공급사 $supplierId 의 서킷이 열려 있어 호출하지 않았다"
-            else -> e.message ?: e.javaClass.simpleName
-        }
-
-    /**
-     * 재시도 가능한 실패만 재시도한다 (ADR-0051). 요청 한도 초과는 더 오래 기다리고 덜 재시도한다 (ADR-0068).
-     *
-     * 기다리는 시간은 실패 종류마다 Reactor 의 `Retry.backoff` 가 정한다. 지수 백오프에 무작위를 섞는 것도 그것이 한다.
-     * 여기서 더하는 것은 **횟수 한도**뿐이다. 한 chunk 가 지금까지 만난 실패 종류 중 가장 적은 재시도 횟수를 한도로 한다.
-     * 503 뒤에 429 가 와도 최악의 시간이 종류별 최악 중 큰 값을 넘지 않아, 설정 객체가 검사한 관계식이 그대로 성립한다 (ADR-0068 의 (A)).
-     *
-     * 다 써도 실패하면 **원래 실패를 그대로** 올린다. 다른 예외로 감싸면 consumer 가 보는 예외가 달라져 ADR-0027 이 정한 "한 가지 실패"가 깨진다.
-     */
-    private fun retryTransient(supplierId: String, request: AvailabilityRequest): Retry {
-        val general = backoff(search.retry, supplierId, request)
-        val throttled = backoff(search.throttledRetry, supplierId, request)
-        return Retry.from { signals ->
-            // Reactor 가 chunk 구독마다 이 함수를 다시 부르므로 한도는 chunk 마다 새로 시작한다
-            var limit = Long.MAX_VALUE
-            signals.concatMap { signal ->
-                val failure = signal.failure()
-                if (failure !is SupplierFailure || !failure.transient) {
-                    return@concatMap Mono.error<Long>(failure)
-                }
-                val spec = if (failure is SupplierFailure.Throttled) throttled else general
-                limit = minOf(limit, spec.maxAttempts)
-                if (signal.totalRetries() >= limit) Mono.error(failure) else spec.generateCompanion(Flux.just(signal.copy()))
-            }
-        }
-    }
-
-    private fun backoff(policy: StayProperties.RetryPolicy, supplierId: String, request: AvailabilityRequest): RetryBackoffSpec =
-        Retry.backoff(policy.maxRetries.toLong(), policy.minBackoff)
-            .maxBackoff(policy.maxBackoff)
-            // 설정이 검색 전체 타임아웃과의 관계를 이 비율로 계산한다 (StayProperties.RetryPolicy.worstCase)
-            .jitter(StayProperties.RetryPolicy.JITTER_FACTOR)
-            .doBeforeRetry { signal ->
-                log.info(
-                    "검색 chunk 재시도 supplier={} 숙소={}개 {}번째 최소백오프={} 이유={}",
-                    supplierId,
-                    request.hotelCodes.size,
-                    signal.totalRetries() + 1,
-                    policy.minBackoff,
-                    signal.failure().message,
-                )
-            }
-            .onRetryExhaustedThrow { _, signal -> signal.failure() }
 
     private fun combine(supplierId: String, outcomes: List<ChunkOutcome>, chunkCount: Int): SupplierResult {
         val succeeded = outcomes.filterIsInstance<ChunkOutcome.Succeeded>()
@@ -196,7 +125,7 @@ class SearchService(
     }
 
     private fun logChunkFailure(supplierId: String, request: AvailabilityRequest, e: Throwable) {
-        if (e is CallNotPermittedException) {
+        if (e is SupplierFailure.CircuitOpen) {
             // 서킷이 연 것은 상태 변경 때 한 번 남겼다. chunk 마다 경고를 찍지 않는다
             log.debug("검색 chunk 건너뜀 supplier={} 숙소={}개 서킷 열림", supplierId, request.hotelCodes.size)
         } else if (e is SupplierFailure) {
@@ -205,8 +134,6 @@ class SearchService(
             log.warn("검색 chunk 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message, e)
         }
     }
-
-    private fun elapsedSince(startedNanos: Long): java.time.Duration = java.time.Duration.ofNanos(System.nanoTime() - startedNanos)
 
     private sealed interface ChunkOutcome {
         data class Succeeded(val result: NormalizedAvailability) : ChunkOutcome

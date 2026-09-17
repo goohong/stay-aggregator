@@ -1,6 +1,5 @@
 package com.stayaggregator.supplier
 
-import io.github.resilience4j.circuitbreaker.CallNotPermittedException
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Timer
 import org.springframework.stereotype.Component
@@ -48,7 +47,7 @@ class SupplierCallMetrics(private val registry: MeterRegistry) {
         fun outcomeOf(error: Throwable?): Outcome =
             when {
                 error == null -> Outcome.SUCCESS
-                error is CallNotPermittedException -> Outcome.CIRCUIT_OPEN
+                error is SupplierFailure.CircuitOpen -> Outcome.CIRCUIT_OPEN
                 error is SupplierFailure.Timeout -> Outcome.TIMEOUT
                 error is SupplierFailure -> Outcome.SUPPLIER_FAILURE
                 else -> Outcome.INTERNAL_ERROR
