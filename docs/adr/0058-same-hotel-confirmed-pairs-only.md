@@ -19,7 +19,7 @@ date: 2026-09-17
 | 사실 | 원문 |
 |---|---|
 | 공급사가 주는 숙소 정보는 코드·숙소명·객실 타입(코드·이름·최대 수용 인원)뿐이다. 주소·좌표·전화번호가 없다 | 공급사 스펙. 지역 필터를 범위 밖으로 둔 이유를 "공급사가 지역 정보를 주지 않으므로"라고 적는다 |
-| 같은 숙소·같은 객실인데 공급사마다 객실 이름 표기가 다르고, 총액과 조식 조건이 다르다 | 공급사 스펙 부록 |
+| 같은 숙소·같은 객실인데 공급사마다 객실 이름 표기가 다르고, 총액과 조식 조건이 다르다 | 공급사 스펙 |
 | 매핑 업계 최대 사업자는 매핑의 최소 요건으로 특정한 이름과 **물리 주소**를 요구하고, 그렇지 않은 숙소는 수동 검토에서 제외한다 | [GIATA, Understanding Our Mapping Process](https://info.giata.com/en/knowledge/our-mapping-process) 절 "3. Minimum Requirements for Mapping a Supplier Code": "There must be a specific physical address" / "we identify and exclude properties that do not meet our qualification criteria" |
 | 필드 하나로는 같은 숙소를 판단하지 못하고, 정규화한 이름·좌표·주소·우편번호·성급·유형을 함께 본다 | [DIJI.TECH, The Same Hotel Three Times](https://www.diji.tech/en/blog/multi-supplier-hotel-inventory-mapping-and-deduplication): "The matching decision cannot be made by looking at a single field." |
 | 표준 숙소 식별자도 병합 때 한쪽으로 흡수되어 바뀌고, 옛 식별자를 쓰지 말라고 알린다 | [GIATA MultiCodes 웹서비스 명세](https://multicodes.giatamedia.com/webservice/specs/) §2.1.3 "List of moved properties": "The old GIATA-ID should no longer be used by the client." (독립 검토가 열어 인용한 것이고 이 ADR 을 쓰며 다시 대조하지 않았다) |
@@ -59,7 +59,7 @@ date: 2026-09-17
 
 - 이름 하나로는 같은 숙소를 판단할 수 없다. 업계는 주소가 없으면 매핑하지 않고 사람이 확인한다. 우리는 주소도 없다
 - 확인된 짝만 묶으면 **추정한 값을 사실처럼 내보내지 않는다**는 원칙을 지키면서 병합을 실제로 동작하게 할 수 있다
-- 항목을 합치지 않고 같은 값만 붙이면 조식·총액이 공급사마다 그대로 남아 "조건이 다른 상품을 한쪽으로 고르는" 일을 우리가 하지 않는다 (스펙 부록이 물은 "합친다면 조건 차이를 어떻게 다룰지")
+- 항목을 합치지 않고 같은 값만 붙이면 조식·총액이 공급사마다 그대로 남아 "조건이 다른 상품을 한쪽으로 고르는" 일을 우리가 하지 않는다 (스펙이 남긴 물음 "합친다면 조건 차이를 어떻게 다룰지")
 - 업계도 병합 때 식별자가 바뀌는 것을 막지 않고 알린다. 우리는 알릴 수단이 없으므로 계약에 그 성질을 적는다
 
 ## Consequences
