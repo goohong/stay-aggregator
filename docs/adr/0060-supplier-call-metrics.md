@@ -28,7 +28,9 @@ date: 2026-09-17
 ## Decision
 
 - **묶음 호출 하나마다** 걸린 시간과 결과를 센다. 이름은 `stay.supplier.availability`, 태그는 `supplier` 와 `outcome`
-- `outcome` 은 넷이다: `success`, `timeout`, `supplier_failure`, `circuit_open`
+- `outcome` 은 다섯이다: `success`, `timeout`, `supplier_failure`, `circuit_open`, `internal_error`
+  - `internal_error` 는 공급사 실패가 아닌 우리 쪽 오류다. 우리 결함이 공급사 성공률을 떨어뜨려 공급사 탓으로 보이지 않게 따로 센다. 서킷이 우리 쪽 오류를 세지 않는 것(ADR-0056)과 같은 기준이다
+  - 검색 시간 한계로 취소된 묶음은 끝나지 않아 세지 않는다. 타임아웃 비율에는 호출 하나의 타임아웃만 들어간다
   - 재시도까지 거친 **최종 결과**를 센다. 서킷이 세는 단위와 같다 ([ADR-0056](0056-circuit-breaker-per-supplier-outside-retry.md))
 - 목록 동기화도 공급사마다 결과를 센다. 이름은 `stay.supplier.catalog`, 같은 태그
 - 서킷 상태는 resilience4j 의 Micrometer 연결로 함께 내보낸다
@@ -64,7 +66,18 @@ date: 2026-09-17
 
 - **AI 주장과 근거** — (가)·(ㄱ)을 권했다
 - **사용자 판단** — (가)·(ㄱ)으로 정했다
+- **구현하며 더한 것** — AI 가 구현 중에 `internal_error` 를 여쭙지 않고 더하려다 멈추고 물었다. 사용자가 두기로 정했다
 
 ## Verification
 
-구현할 때 확인하고 테스트 이름을 여기에 적는다.
+결과 태그가 다섯으로 갈리고, 우리 쪽 오류가 공급사 실패에 섞이지 않는지
+  → `SupplierCallMetricsTest.실패 종류마다 결과 태그가 갈린다`
+  → `SupplierCallMetricsTest.공급사 실패가 아닌 우리 쪽 오류는 공급사 실패에 섞지 않는다`
+
+시간 초과가 실패 신호에 표시되는지
+  → `SupplierAvailabilityAdapterTest.정한 시간 안에 오지 않은 것은 시간 초과로 표시된다`
+
+검색이 묶음 호출마다 공급사·결과로 기록하는지
+  → `SearchServiceIntegrationTest.묶음 호출마다 공급사와 결과로 나눠 센다`
+
+`/actuator/metrics` 노출은 실행해서 확인하고 여기에 적는다

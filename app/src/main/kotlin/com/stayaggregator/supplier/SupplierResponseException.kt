@@ -19,4 +19,6 @@ class SupplierResponseException(
     message: String,
     cause: Throwable? = null,
     val transient: Boolean = false,
+    /** 정한 시간 안에 오지 않은 실패인가. 지표에서 타임아웃 비율을 따로 세려고 둔다 (ADR-0060) */
+    val timedOut: Boolean = false,
 ) : RuntimeException(message, cause)

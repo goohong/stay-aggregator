@@ -32,6 +32,11 @@ dependencies {
     // Boot 4 자동 설정 모듈은 릴리스되지 않아, 연산자 모듈만 넣고 서킷은 설정에서 읽어 직접 만든다.
     implementation("io.github.resilience4j:resilience4j-reactor:2.3.0")
     implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.3.0")
+    // 서킷 상태를 지표로 내보낸다 (ADR-0060). reactor 모듈이 runtime 으로 끌어오지만 코드에서 쓰려면 컴파일 범위가 필요하다
+    implementation("io.github.resilience4j:resilience4j-micrometer:2.3.0")
+
+    // 공급사 호출 지표를 Micrometer 로 세고 /actuator/metrics 로 내보낸다 (ADR-0060)
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
     // Kotlin 데이터 클래스로 JSON 을 받으려면 필요하다. Boot 4 는 Jackson 3 이라 tools.jackson 좌표를 쓴다 (ADR-0007).
     implementation("tools.jackson.module:jackson-module-kotlin")
 

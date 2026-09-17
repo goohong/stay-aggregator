@@ -31,6 +31,7 @@ fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =
             "공급사 $supplierId 응답을 쓸 수 없다: ${cause.javaClass.simpleName}: ${cause.message}",
             cause,
             transient = isTransient(cause),
+            timedOut = cause is java.util.concurrent.TimeoutException || isNettyTimeout((cause as? WebClientRequestException)?.cause),
         )
     }
 

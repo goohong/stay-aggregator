@@ -4,6 +4,7 @@ import com.stayaggregator.mapping.MappingRepository
 import com.stayaggregator.quarantine.QuarantineEntry
 import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.supplier.CatalogAdapter
+import com.stayaggregator.supplier.SupplierCallMetrics
 import com.stayaggregator.supplier.SupplierResponseException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -22,6 +23,7 @@ class CatalogSyncService(
     private val normalizer: CatalogNormalizer,
     private val repository: MappingRepository,
     private val quarantine: QuarantineRecorder,
+    private val metrics: SupplierCallMetrics,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -37,8 +39,16 @@ class CatalogSyncService(
 
     private fun sync(adapter: CatalogAdapter) {
         try {
-            val fetched = adapter.fetchCatalog().block()
-                ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
+            val started = System.nanoTime()
+            val fetched = try {
+                adapter.fetchCatalog().block()
+                    ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
+            } catch (e: Exception) {
+                // 공급사 호출까지만 센다. 판정·저장에서 난 오류는 공급사 지표에 넣지 않는다 (ADR-0060)
+                metrics.recordCatalog(adapter.supplierId, java.time.Duration.ofNanos(System.nanoTime() - started), e)
+                throw e
+            }
+            metrics.recordCatalog(adapter.supplierId, java.time.Duration.ofNanos(System.nanoTime() - started), null)
             val normalized = normalizer.normalize(fetched)
             quarantine.record(normalized.excluded.map { QuarantineEntry(adapter.supplierId, it.hotelCode, it.roomTypeCode, it.value, it.reason, it.source) })
             val applied = repository.applyCatalog(adapter.supplierId, normalized.hotels)

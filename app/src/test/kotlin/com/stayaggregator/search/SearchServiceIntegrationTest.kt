@@ -252,6 +252,24 @@ class SearchServiceIntegrationTest {
         assertThat(rows()).containsExactly("CURRENCY")
     }
 
+    // ── 지표 (ADR-0060) ──
+
+    @Test
+    fun `묶음 호출마다 공급사와 결과로 나눠 센다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
+        val a = FakeAdapter("a") { Mono.just(availability(itemA("A-1", "DLX", breakfast = false))) }
+        val b = FakeAdapter("b") { Mono.error(SupplierResponseException("공급사 b 503", transient = false)) }
+        val registry = io.micrometer.core.instrument.simple.SimpleMeterRegistry()
+
+        service(a, b, meterRegistry = registry).search(period, guests)
+
+        fun count(supplier: String, outcome: String) =
+            registry.find("stay.supplier.availability").tags("supplier", supplier, "outcome", outcome).timer()?.count() ?: 0L
+        assertThat(count("a", "success")).isEqualTo(1)
+        assertThat(count("b", "supplier_failure")).isEqualTo(1)
+    }
+
     // ── 서킷 브레이커 (ADR-0056) ── 테스트 설정은 최근 4묶음 중 50% 실패면 연다
 
     @Test
@@ -330,11 +348,12 @@ class SearchServiceIntegrationTest {
         budget: Duration = properties.search.budget,
         maxRetries: Int = 0,
         breakers: SupplierCircuitBreakers? = null,
+        meterRegistry: io.micrometer.core.instrument.MeterRegistry = io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
     ): SearchService {
         // 호출 하나의 타임아웃은 검색 시간 한계보다 짧아야 한다(StayProperties 가 지킴). 한계를 줄인 테스트는 함께 줄인다. 가짜 어댑터는 이 값을 쓰지 않는다
         val suppliers = properties.suppliers.mapValues { (_, s) -> if (s.availabilityTimeout < budget) s else s.copy(availabilityTimeout = budget.dividedBy(2)) }
         val props = StayProperties(suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries))
-        return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, props)
+        return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, com.stayaggregator.supplier.SupplierCallMetrics(meterRegistry), props)
     }
 
     private fun breakers() = SupplierCircuitBreakers(properties)

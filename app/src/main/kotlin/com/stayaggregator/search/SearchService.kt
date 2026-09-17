@@ -10,6 +10,7 @@ import com.stayaggregator.supplier.AvailabilityRequest
 import com.stayaggregator.supplier.GuestCount
 import com.stayaggregator.supplier.StayPeriod
 import com.stayaggregator.supplier.StayProperties
+import com.stayaggregator.supplier.SupplierCallMetrics
 import com.stayaggregator.supplier.SupplierResponseException
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
@@ -42,6 +43,7 @@ class SearchService(
     private val normalizer: AvailabilityNormalizer,
     private val circuitBreakers: SupplierCircuitBreakers,
     private val quarantine: QuarantineRecorder,
+    private val metrics: SupplierCallMetrics,
     properties: StayProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -81,11 +83,18 @@ class SearchService(
      * 그것은 애초에 일시적인 실패로 표시되지도 않는다 (ADR-0051).
      */
     private fun fetchChunk(adapter: AvailabilityAdapter, request: AvailabilityRequest, mapped: List<MappedHotel>): Mono<ChunkOutcome> =
-        adapter.fetchAvailability(request)
-            .retryWhen(retryTransient(adapter.supplierId, request))
-            // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
-            // 검색 시간 한계로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
-            .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
+        Mono.defer {
+            val started = System.nanoTime()
+            adapter.fetchAvailability(request)
+                .retryWhen(retryTransient(adapter.supplierId, request))
+                // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
+                // 검색 시간 한계로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
+                .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
+                // 서킷과 같은 단위(재시도까지 거친 최종 결과)로 센다. 판정 전에 두어 판정 오류는 공급사 지표에 넣지 않는다 (ADR-0060).
+                // 검색 시간 한계로 취소된 묶음은 끝나지 않아 세지 않는다
+                .doOnSuccess { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), null) }
+                .doOnError { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), it) }
+        }
             .map<ChunkOutcome> { fetched -> ChunkOutcome.Succeeded(normalizer.normalize(fetched, mapped, request.period, request.hotelCodes)) }
             .onErrorResume { e ->
                 logChunkFailure(adapter.supplierId, request, e)
@@ -172,6 +181,8 @@ class SearchService(
             log.warn("검색 묶음 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message, e)
         }
     }
+
+    private fun elapsedSince(startedNanos: Long): java.time.Duration = java.time.Duration.ofNanos(System.nanoTime() - startedNanos)
 
     private sealed interface ChunkOutcome {
         data class Succeeded(val result: NormalizedAvailability) : ChunkOutcome

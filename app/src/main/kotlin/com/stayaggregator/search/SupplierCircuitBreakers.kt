@@ -17,7 +17,11 @@ import org.springframework.stereotype.Component
  * **실패로 세는 것은 공급사 실패뿐이다.** 공급사 실패가 아닌 오류(우리 쪽 결함)는 성공으로도 실패로도 세지 않는다.
  */
 @Component
-class SupplierCircuitBreakers(properties: StayProperties) {
+class SupplierCircuitBreakers(
+    properties: StayProperties,
+    /** 있으면 서킷 상태를 지표로 내보낸다 (ADR-0060). 테스트에서는 없어도 된다 */
+    meterRegistry: io.micrometer.core.instrument.MeterRegistry? = null,
+) {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
@@ -29,6 +33,10 @@ class SupplierCircuitBreakers(properties: StayProperties) {
                 log.warn("공급사 서킷 상태 변경 supplier={} {}", breaker.name, transition.stateTransition)
             }
         }
+    }
+
+    init {
+        meterRegistry?.let { io.github.resilience4j.micrometer.tagged.TaggedCircuitBreakerMetrics.ofCircuitBreakerRegistry(registry).bindTo(it) }
     }
 
     /** 그 공급사의 서킷. 처음 부를 때 만들고 그 뒤로는 같은 것을 준다 */

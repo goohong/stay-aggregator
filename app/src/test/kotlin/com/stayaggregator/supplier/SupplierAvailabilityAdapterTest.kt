@@ -156,6 +156,18 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
+    fun `정한 시간 안에 오지 않은 것은 시간 초과로 표시된다`() {
+        server.createContext("/a/v1/availability") { exchange ->
+            Thread.sleep(2_000)
+            write(exchange, 200, """{"items":[]}""")
+        }
+
+        val thrown = catchThrowable { adapterA().fetchAvailability(request).block() }
+
+        assertThat((thrown as SupplierResponseException).timedOut).isTrue()
+    }
+
+    @Test
     fun `정한 시간 안에 오지 않은 것은 여지가 없다`() {
         // 느리다는 신호라 다시 불러도 느릴 가능성이 높다 (ADR-0051)
         server.createContext("/a/v1/availability") { exchange ->
