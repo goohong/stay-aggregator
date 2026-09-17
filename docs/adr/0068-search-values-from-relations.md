@@ -143,3 +143,19 @@ date: 2026-09-17
 
 설정한 서킷 기준이 서킷에 그대로 들어가는지
   → `SupplierCircuitBreakersTest.설정한 서킷 기준이 그대로 공급사 서킷에 들어간다`
+
+요청 한도 초과를 가려 표시하는지 (HTTP 는 공통 함수, B 결과 코드는 어댑터)
+  → `SupplierAvailabilityAdapterTest.HTTP 429 는 요청 한도 초과로 표시되고 5xx 는 아니다`
+  → `SupplierAvailabilityAdapterTest.공급사 B 의 E429 도 요청 한도 초과로 표시된다`
+
+요청 한도 초과는 한 번만, 1초 이상 기다려 재시도하는지. 설정 객체가 관계식 ③ 을 검사하는지
+  → `SearchServiceIntegrationTest.요청 한도 초과는 한 번만 재시도하고 최소 백오프 1초 이상 기다린다`
+  → `StayPropertiesTest.요청 한도 초과 재시도까지 다 쓴 시간이 검색 전체 타임아웃을 넘으면 만들 수 없다`
+
+재시도 중 실패 종류가 바뀌면 적은 한도에서 멈추는지 (A)
+  → `SearchServiceIntegrationTest.재시도 중 실패 종류가 바뀌면 만난 종류 중 가장 적은 재시도 횟수에서 멈춘다`
+
+실제 HTTP 에서 그렇게 도는지
+  → 2026-09-17 Mock 과 앱을 띄워 확인. A 를 무응답 모드로 두고 검색하면 응답이 2.19초에 나가고 A 는 `TimeoutException … within 2000ms` 로 실패, 재시도 로그가 없다.
+    B 는 Mock 모드에 429 가 없어, 목록은 Mock 으로 넘기고 재고·요금만 `E429` 로 답하는 로컬 프록시를 B 주소로 두었다.
+    재시도 로그가 한 줄(`검색 chunk 재시도 supplier=b 숙소=1개 1번째 최소백오프=PT1S`)이고 프록시가 받은 재고·요금 요청은 두 번, 두 로그 사이는 1.4초였다

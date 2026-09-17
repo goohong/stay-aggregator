@@ -228,6 +228,39 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
+    fun `요청 한도 초과는 한 번만 재시도하고 최소 백오프 1초 이상 기다린다`() {
+        // 5xx 기준(2회)이 아니라 요청 한도 초과 기준(1회, 1초)을 쓴다 (ADR-0068)
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val calledAt = CopyOnWriteArrayList<Long>()
+        val a = FakeAdapter("a") {
+            calledAt += System.nanoTime()
+            Mono.error(SupplierResponseException("공급사 a 429", transient = true, throttled = true))
+        }
+        val throttled = StayProperties.RetryPolicy(1, Duration.ofSeconds(1), Duration.ofMillis(1_500))
+
+        val result = service(a, timeout = Duration.ofSeconds(4), maxRetries = 2, throttledRetry = throttled).search(period, guests)
+
+        assertThat(a.requests).hasSize(2)
+        assertThat(Duration.ofNanos(calledAt[1] - calledAt[0])).isGreaterThanOrEqualTo(Duration.ofSeconds(1))
+        assertThat(result.suppliers.single().failureReason).isEqualTo("공급사 a 429")
+    }
+
+    @Test
+    fun `재시도 중 실패 종류가 바뀌면 만난 종류 중 가장 적은 재시도 횟수에서 멈춘다`() {
+        // 503 뒤 429: 5xx 한도는 2회지만 요청 한도 초과 한도 1회에서 멈춘다. 최악의 시간이 종류별 최악을 넘지 않게 한다 (ADR-0068 의 (A))
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val attempts = AtomicInteger()
+        val a = FakeAdapter("a") {
+            if (attempts.incrementAndGet() == 1) Mono.error(SupplierResponseException("공급사 a 503", transient = true))
+            else Mono.error(SupplierResponseException("공급사 a 429", transient = true, throttled = true))
+        }
+
+        service(a, maxRetries = 2).search(period, guests)
+
+        assertThat(a.requests).hasSize(2)
+    }
+
+    @Test
     fun `재시도를 0 으로 두면 한 번만 호출한다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val a = FakeAdapter("a") { Mono.error(SupplierResponseException("일시적", transient = true)) }
@@ -347,6 +380,7 @@ class SearchServiceIntegrationTest {
         vararg adapters: AvailabilityAdapter,
         timeout: Duration = properties.search.timeout,
         maxRetries: Int = 0,
+        throttledRetry: StayProperties.RetryPolicy = properties.search.throttledRetry,
         breakers: SupplierCircuitBreakers? = null,
         meterRegistry: io.micrometer.core.instrument.MeterRegistry = io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
     ): SearchService {
@@ -355,7 +389,7 @@ class SearchServiceIntegrationTest {
         val suppliers = properties.suppliers.mapValues { (_, s) ->
             if (timeout >= properties.search.timeout) s else s.copy(availabilityTimeout = timeout.dividedBy(8), connectTimeout = timeout.dividedBy(16))
         }
-        val props = StayProperties(suppliers, properties.search.copy(timeout = timeout, retry = properties.search.retry.copy(maxRetries = maxRetries)))
+        val props = StayProperties(suppliers, properties.search.copy(timeout = timeout, retry = properties.search.retry.copy(maxRetries = maxRetries), throttledRetry = throttledRetry))
         return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, com.stayaggregator.supplier.SupplierCallMetrics(meterRegistry), props)
     }
 

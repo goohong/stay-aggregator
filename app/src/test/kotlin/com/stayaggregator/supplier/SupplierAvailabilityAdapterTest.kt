@@ -148,6 +148,27 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
+    fun `HTTP 429 는 요청 한도 초과로 표시되고 5xx 는 아니다`() {
+        // 요청 한도 초과는 다른 기준으로 재시도한다 (ADR-0068)
+        respond("/a/v1/availability", status = 429, body = """{"error":"RATE_LIMIT_EXCEEDED"}""")
+        assertThat((catchThrowable { adapterA().fetchAvailability(request).block() } as SupplierResponseException).throttled).isTrue()
+
+        server.removeContext("/a/v1/availability")
+        respond("/a/v1/availability", status = 503, body = """{"error":"SERVICE_UNAVAILABLE"}""")
+        assertThat((catchThrowable { adapterA().fetchAvailability(request).block() } as SupplierResponseException).throttled).isFalse()
+    }
+
+    @Test
+    fun `공급사 B 의 E429 도 요청 한도 초과로 표시된다`() {
+        respond("/b/api/search", status = 200, body = """{"resultCode":"E429","resultMessage":"RATE_LIMIT_EXCEEDED","data":null}""")
+
+        val thrown = catchThrowable { adapterB().fetchAvailability(request).block() } as SupplierResponseException
+
+        assertThat(thrown.transient).isTrue()
+        assertThat(thrown.throttled).isTrue()
+    }
+
+    @Test
     fun `잘못된 요청은 재시도 가능하지 않다`() {
         // 같은 요청을 다시 보내면 같은 거절이다
         respond("/a/v1/availability", status = 400, body = """{"error":"TOO_MANY_HOTEL_CODES"}""")
@@ -254,6 +275,7 @@ class SupplierAvailabilityAdapterTest {
                 timeout = Duration.ofSeconds(2),
                 concurrencyPerSupplier = 4,
                 retry = StayProperties.RetryPolicy(maxRetries = 0, minBackoff = Duration.ofMillis(10), maxBackoff = Duration.ofMillis(50)),
+                throttledRetry = StayProperties.RetryPolicy(maxRetries = 0, minBackoff = Duration.ofMillis(10), maxBackoff = Duration.ofMillis(50)),
                 circuitBreaker = StayProperties.CircuitBreaker(50f, 4, 4, Duration.ofSeconds(1), 1),
             ),
         )

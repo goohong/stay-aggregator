@@ -103,13 +103,14 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
     /**
      * 두 API 의 공통 응답 구조(envelope)가 같아 실패 분류도 같다. HTTP 200 이어도 결과 코드가 성공이 아니면 공급사 실패다.
      *
-     * 재시도 가능한지도 여기서 정한다. 결과 코드 체계가 B 것이라 공통 함수가 아니라 어댑터가 본다 (ADR-0051).
+     * 재시도 가능한지, 요청 한도 초과인지도 여기서 정한다. 결과 코드 체계가 B 것이라 공통 함수가 아니라 어댑터가 본다 (ADR-0051, ADR-0068).
      */
     private fun failIfNotSuccess(resultCode: String?, resultMessage: String?) {
         if (resultCode != SUCCESS_CODE) {
             throw SupplierResponseException(
                 "공급사 B 가 실패를 알렸다: resultCode=$resultCode, resultMessage=$resultMessage",
                 transient = isTransient(resultCode),
+                throttled = resultCode == RATE_LIMITED_CODE,
             )
         }
     }

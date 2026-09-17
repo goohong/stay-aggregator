@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.util.retry.Retry
+import reactor.util.retry.RetryBackoffSpec
 import java.util.concurrent.TimeoutException
 
 /**
@@ -108,23 +109,44 @@ class SearchService(
         }
 
     /**
-     * 일시적인 실패만 재시도한다 (ADR-0051).
+     * 재시도 가능한 실패만 재시도한다 (ADR-0051). 요청 한도 초과는 더 오래 기다리고 덜 재시도한다 (ADR-0068).
      *
-     * 지수 백오프에 무작위를 섞는 것은 Reactor 가 기본으로 한다. 최대 백오프는 걸지 않으면 사실상 무한이라 반드시 건다.
+     * 기다리는 시간은 실패 종류마다 Reactor 의 `Retry.backoff` 가 정한다. 지수 백오프에 무작위를 섞는 것도 그것이 한다.
+     * 여기서 더하는 것은 **횟수 한도**뿐이다. 한 chunk 가 지금까지 만난 실패 종류 중 가장 적은 재시도 횟수를 한도로 한다.
+     * 503 뒤에 429 가 와도 최악의 시간이 종류별 최악 중 큰 값을 넘지 않아, 설정 객체가 검사한 관계식이 그대로 성립한다 (ADR-0068 의 (A)).
+     *
      * 다 써도 실패하면 **원래 실패를 그대로** 올린다. 다른 예외로 감싸면 consumer 가 보는 예외가 달라져 ADR-0027 이 정한 "한 가지 실패"가 깨진다.
      */
-    private fun retryTransient(supplierId: String, request: AvailabilityRequest): Retry =
-        Retry.backoff(search.retry.maxRetries.toLong(), search.retry.minBackoff)
-            .maxBackoff(search.retry.maxBackoff)
+    private fun retryTransient(supplierId: String, request: AvailabilityRequest): Retry {
+        val general = backoff(search.retry, supplierId, request)
+        val throttled = backoff(search.throttledRetry, supplierId, request)
+        return Retry.from { signals ->
+            // Reactor 가 chunk 구독마다 이 함수를 다시 부르므로 한도는 chunk 마다 새로 시작한다
+            var limit = Long.MAX_VALUE
+            signals.concatMap { signal ->
+                val failure = signal.failure()
+                if (failure !is SupplierResponseException || !failure.transient) {
+                    return@concatMap Mono.error<Long>(failure)
+                }
+                val spec = if (failure.throttled) throttled else general
+                limit = minOf(limit, spec.maxAttempts)
+                if (signal.totalRetries() >= limit) Mono.error(failure) else spec.generateCompanion(Flux.just(signal.copy()))
+            }
+        }
+    }
+
+    private fun backoff(policy: StayProperties.RetryPolicy, supplierId: String, request: AvailabilityRequest): RetryBackoffSpec =
+        Retry.backoff(policy.maxRetries.toLong(), policy.minBackoff)
+            .maxBackoff(policy.maxBackoff)
             // 설정이 검색 전체 타임아웃과의 관계를 이 비율로 계산한다 (StayProperties.RetryPolicy.worstCase)
             .jitter(StayProperties.RetryPolicy.JITTER_FACTOR)
-            .filter { it is SupplierResponseException && it.transient }
             .doBeforeRetry { signal ->
                 log.info(
-                    "검색 chunk 재시도 supplier={} 숙소={}개 {}번째 이유={}",
+                    "검색 chunk 재시도 supplier={} 숙소={}개 {}번째 최소백오프={} 이유={}",
                     supplierId,
                     request.hotelCodes.size,
                     signal.totalRetries() + 1,
+                    policy.minBackoff,
                     signal.failure().message,
                 )
             }

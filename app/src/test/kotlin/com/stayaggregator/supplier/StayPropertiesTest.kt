@@ -32,6 +32,18 @@ class StayPropertiesTest {
     }
 
     @Test
+    fun `요청 한도 초과 재시도까지 다 쓴 시간이 검색 전체 타임아웃을 넘으면 만들 수 없다`() {
+        // 2초 × 3 + 1.5초 + 1.5초 = 9초. 요청 한도 초과를 두 번 재시도하면 넘는다. 한 번이면 5.5초다 (ADR-0068 의 관계식 ③)
+        assertThatThrownBy {
+            properties(Duration.ofSeconds(2), Duration.ofSeconds(8), throttledRetry = StayProperties.RetryPolicy(2, Duration.ofSeconds(1), Duration.ofMillis(1_500)))
+        }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("요청 한도 초과 재시도까지 다 쓰면")
+        assertThat(StayProperties.RetryPolicy(1, Duration.ofSeconds(1), Duration.ofMillis(1_500)).worstCase(Duration.ofSeconds(2)))
+            .isEqualTo(Duration.ofMillis(5_500))
+    }
+
+    @Test
     fun `재시도까지 다 쓴 시간의 상한은 Reactor 가 대기에 무작위를 섞는 방식대로 계산한다`() {
         // 대기 i 번째는 min(최대 백오프, 1.5 × min(최소 백오프 × 2^i, 최대 백오프)) 이하다
         // 100ms·1s 로 두 번: 150ms + 300ms. 호출 2초 세 번과 더해 6.45초 (ADR-0068 의 관계식)
@@ -67,6 +79,7 @@ class StayPropertiesTest {
         assertThat(stay.search.timeout).isEqualTo(Duration.ofSeconds(8))
         assertThat(stay.search.concurrencyPerSupplier).isEqualTo(4)
         assertThat(stay.search.retry).isEqualTo(StayProperties.RetryPolicy(2, Duration.ofMillis(100), Duration.ofSeconds(1)))
+        assertThat(stay.search.throttledRetry).isEqualTo(StayProperties.RetryPolicy(1, Duration.ofSeconds(1), Duration.ofMillis(1_500)))
         assertThat(stay.search.circuitBreaker).isEqualTo(StayProperties.CircuitBreaker(50f, 20, 8, Duration.ofSeconds(30), 4))
         assertThat(stay.suppliers.values).allSatisfy { supplier ->
             assertThat(supplier.availabilityTimeout).isEqualTo(Duration.ofSeconds(2))
@@ -82,13 +95,18 @@ class StayPropertiesTest {
         return binder.bind("stay", StayProperties::class.java).get()
     }
 
-    private fun properties(availabilityTimeout: Duration, timeout: Duration) =
+    private fun properties(
+        availabilityTimeout: Duration,
+        timeout: Duration,
+        throttledRetry: StayProperties.RetryPolicy = StayProperties.RetryPolicy(1, Duration.ofSeconds(1), Duration.ofMillis(1_500)),
+    ) =
         StayProperties(
             suppliers = mapOf("a" to StayProperties.Supplier("http://localhost", "k", Duration.ofSeconds(30), availabilityTimeout, Duration.ofMillis(500))),
             search = StayProperties.Search(
                 timeout = timeout,
                 concurrencyPerSupplier = 4,
                 retry = StayProperties.RetryPolicy(2, Duration.ofMillis(100), Duration.ofSeconds(1)),
+                throttledRetry = throttledRetry,
                 circuitBreaker = StayProperties.CircuitBreaker(50f, 20, 8, Duration.ofSeconds(30), 4),
             ),
         )

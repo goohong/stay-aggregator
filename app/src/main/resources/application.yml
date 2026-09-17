@@ -45,6 +45,12 @@ stay:
       max-retries: 2
       min-backoff: PT0.1S
       max-backoff: PT1S
+    # 요청 한도 초과(429·E429). AWS SDK 의 throttling 기준 대기 1초를 따랐고, 2s × 2 + 1.5s = 5.5s 라 한 번만 재시도한다.
+    # 최대 백오프 1.5초는 무작위(0.5)가 잘리지 않는 값이다 (ADR-0068)
+    throttled-retry:
+      max-retries: 1
+      min-backoff: PT1S
+      max-backoff: PT1.5S
     # 반복해서 실패하는 공급사를 한동안 호출하지 않는다 (ADR-0056). 값마다 근거와 관계식은 ADR-0068 에 있다
     circuit-breaker:
       failure-rate-threshold: 50

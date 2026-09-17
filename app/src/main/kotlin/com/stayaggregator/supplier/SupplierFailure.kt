@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException
  *
  * 원인 클래스 이름을 메시지에 넣는다. 예외에 따라 `message` 가 비어 있고, 로그에서 실패 종류를 가릴 방법이 이것뿐이다.
  *
- * 여기서 [SupplierResponseException.transient] 도 정한다. HTTP 상태와 연결·시간 초과는 공급사마다 다르지 않아 공통 함수인 여기서 본다.
+ * 여기서 [SupplierResponseException.transient] 와 [SupplierResponseException.throttled] 도 정한다. HTTP 상태와 연결·시간 초과는 공급사마다 다르지 않아 공통 함수인 여기서 본다.
  * 본문 결과 코드는 체계가 공급사마다 달라 어댑터가 본다 (ADR-0051).
  */
 fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =
@@ -32,6 +32,7 @@ fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =
             cause,
             transient = isTransient(cause),
             timedOut = cause is java.util.concurrent.TimeoutException || isNettyTimeout((cause as? WebClientRequestException)?.cause),
+            throttled = isThrottled(cause),
         )
     }
 
@@ -44,13 +45,17 @@ fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =
 private fun isTransient(cause: Throwable): Boolean =
     when (cause) {
         // 공급사가 상태 코드로 알린 실패. 5xx 는 "지금은 안 된다", 429 는 "기다렸다 재시도하라" 다
-        is WebClientResponseException -> cause.statusCode.is5xxServerError || cause.statusCode.value() == TOO_MANY_REQUESTS
+        is WebClientResponseException -> cause.statusCode.is5xxServerError || isThrottled(cause)
         // 요청 단계의 실패. 연결을 거절당한 것은 빠르게 실패하고 공급사 재시작 같은 순간적 상황일 수 있다.
         // 다만 Netty 가 낸 시간 초과(연결·읽기)는 "느리다"는 신호라 일시적이지 않다.
         // 우리가 거는 Mono.timeout 은 exchange 바깥이라 감싸이지 않은 TimeoutException 으로 와 아래 else 로 간다
         is WebClientRequestException -> !isNettyTimeout(cause.cause)
         else -> false
     }
+
+/** 요청 한도 초과인지 본다. 재시도 가능하지만 5xx 와 다른 기준으로 기다린다 (ADR-0068) */
+private fun isThrottled(cause: Throwable): Boolean =
+    cause is WebClientResponseException && cause.statusCode.value() == TOO_MANY_REQUESTS
 
 private fun isNettyTimeout(cause: Throwable?): Boolean =
     cause is io.netty.channel.ConnectTimeoutException || cause is io.netty.handler.timeout.TimeoutException

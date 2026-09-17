@@ -21,4 +21,9 @@ class SupplierResponseException(
     val transient: Boolean = false,
     /** 타임아웃으로 난 실패인가. 지표에서 타임아웃 비율을 따로 세려고 둔다 (ADR-0060) */
     val timedOut: Boolean = false,
+    /**
+     * 공급사가 요청 한도 초과(HTTP 429, B 의 `E429`)를 알린 실패인가. 재시도 가능한 실패이지만 다른 기준으로 기다린다 (ADR-0068).
+     * [transient] 와 같은 곳에서 정한다. HTTP 상태는 [asSupplierFailure], 본문 결과 코드는 어댑터다
+     */
+    val throttled: Boolean = false,
 ) : RuntimeException(message, cause)

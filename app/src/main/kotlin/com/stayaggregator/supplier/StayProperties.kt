@@ -54,6 +54,8 @@ data class StayProperties(
         val concurrencyPerSupplier: Int,
         /** 5xx·연결 실패처럼 재시도 가능한 실패의 재시도 기준 (ADR-0051, ADR-0068) */
         val retry: RetryPolicy,
+        /** 요청 한도 초과(429·`E429`)의 재시도 기준. 공급사가 회복할 시간을 주려고 더 오래 기다리고 덜 재시도한다 (ADR-0068) */
+        val throttledRetry: RetryPolicy,
         /** 공급사마다 하나씩 두는 서킷의 기준 (ADR-0056). 모든 공급사가 같은 기준을 쓴다 */
         val circuitBreaker: CircuitBreaker,
     )
@@ -129,9 +131,11 @@ data class StayProperties(
         // 검색 전체 타임아웃으로 취소된 chunk 는 서킷이 실패로 세지 않는다. 재시도까지 다 쓴 chunk 가 그보다 먼저 끝나야
         // 무응답이거나 계속 실패하는 공급사가 실패로 세어져 서킷이 열린다 (ADR-0056, ADR-0068)
         suppliers.forEach { (id, supplier) ->
-            val worstCase = search.retry.worstCase(supplier.availabilityTimeout)
-            require(worstCase < search.timeout) {
-                "공급사 $id 의 chunk 하나가 재시도까지 다 쓰면 최대 $worstCase 걸린다(재고·요금 호출 타임아웃 ${supplier.availabilityTimeout}). 검색 전체 타임아웃(${search.timeout})보다 짧아야 한다"
+            listOf("재시도" to search.retry, "요청 한도 초과 재시도" to search.throttledRetry).forEach { (name, policy) ->
+                val worstCase = policy.worstCase(supplier.availabilityTimeout)
+                require(worstCase < search.timeout) {
+                    "공급사 $id 의 chunk 하나가 ${name}까지 다 쓰면 최대 $worstCase 걸린다(재고·요금 호출 타임아웃 ${supplier.availabilityTimeout}). 검색 전체 타임아웃(${search.timeout})보다 짧아야 한다"
+                }
             }
         }
     }

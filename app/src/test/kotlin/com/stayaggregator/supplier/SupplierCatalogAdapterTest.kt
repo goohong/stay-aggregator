@@ -179,6 +179,7 @@ class SupplierCatalogAdapterTest {
                 timeout = Duration.ofSeconds(2),
                 concurrencyPerSupplier = 4,
                 retry = StayProperties.RetryPolicy(maxRetries = 0, minBackoff = Duration.ofMillis(10), maxBackoff = Duration.ofMillis(50)),
+                throttledRetry = StayProperties.RetryPolicy(maxRetries = 0, minBackoff = Duration.ofMillis(10), maxBackoff = Duration.ofMillis(50)),
                 circuitBreaker = StayProperties.CircuitBreaker(50f, 4, 4, Duration.ofSeconds(1), 1),
             ),
         )

@@ -35,6 +35,7 @@
 | **동일 숙소 후보** | (동기화가 계산) | 정규화한 숙소명이 같은 다른 공급사 숙소 쌍. **추정이라 응답에 내지 않는다.** 사람이 확인하면 동일 숙소가 된다 |
 | **서킷** | `SupplierCircuitBreakers` | 공급사마다 하나. 재시도까지 거친 chunk 의 최종 결과를 세어, 실패가 많으면 **열어서** 한동안 그 공급사를 호출하지 않는다 ([ADR-0056](adr/0056-circuit-breaker-per-supplier-outside-retry.md)).<br>검색에만 있고 목록 동기화에는 없다. 공급사 실패만 센다 |
 | **일시적인 실패** | `SupplierResponseException.transient` | **재시도 가능한(transient)** 실패. 5xx·429·연결 실패가 여기 든다 ([ADR-0051](adr/0051-retry-transient-supplier-failures.md)).<br>타임아웃은 아니다. 느리다는 신호라 재시도해도 느리다.<br>**"재시도한다"는 뜻이 아니다.** 실제로 재시도할지는 호출하는 쪽이 정한다. 검색은 재시도하고 목록 동기화는 재시도하지 않는다 |
+| **요청 한도 초과** | `SupplierResponseException.throttled` | 공급사가 호출이 너무 많다고 알린 실패. A 의 HTTP 429, B 의 `E429`. 일시적인 실패에 들지만 **다른 기준으로 재시도한다**(더 오래 기다리고 덜 재시도한다) ([ADR-0068](adr/0068-search-values-from-relations.md)) |
 | **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 chunk 가 실패했거나, 검색 전체 타임아웃을 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 | **실패한 chunk** | `SupplierResult.failedChunks` | 성공한 공급사 안에서 호출하지 못한 chunk 수. 그 chunk 의 숙소는 응답에 없다. 상태는 성공이다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 

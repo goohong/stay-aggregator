@@ -18,6 +18,7 @@ class SupplierCircuitBreakersTest {
                 timeout = Duration.ofSeconds(8),
                 concurrencyPerSupplier = 4,
                 retry = StayProperties.RetryPolicy(2, Duration.ofMillis(100), Duration.ofSeconds(1)),
+                throttledRetry = StayProperties.RetryPolicy(1, Duration.ofSeconds(1), Duration.ofMillis(1_500)),
                 circuitBreaker = StayProperties.CircuitBreaker(50f, 20, 8, Duration.ofSeconds(30), 4),
             ),
         )
