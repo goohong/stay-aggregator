@@ -71,3 +71,4 @@
 | [0064](0064-reservation-proxy-design-only.md) | 예약 대행은 설계만 남기고 결과를 모르는 예약은 같은 멱등 키로 공급사에 물어 확정하기로 결정 | accepted |
 | [0065](0065-availability-cache-redis.md) | 재고·요금을 숙소 단위로 판정한 뒤 Redis 에 캐시하기로 결정 | accepted |
 | [0066](0066-connect-timeout-in-shared-webclient.md) | 연결 타임아웃을 호출 타임아웃과 따로 두고 모든 어댑터가 한 함수로 WebClient 를 만들기로 결정 | accepted |
+| [0067](0067-rejection-carries-field.md) | 값 객체가 거부할 때 틀린 필드를 함께 알리고 정규화가 그 필드로 문제 값을 정하기로 결정 | accepted |

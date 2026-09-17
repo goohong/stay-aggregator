@@ -1,5 +1,6 @@
 package com.stayaggregator.search
 
+import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.mapping.MappedHotel
 import com.stayaggregator.mapping.MappedRoomType
 import com.stayaggregator.supplier.FetchedAvailability
@@ -241,6 +242,25 @@ class AvailabilityNormalizerTest {
         val item = itemB(totalPrice = 1000, taxIncluded = true, breakfast = true, inventory = fullInventory()).copy(currency = null)
 
         assertOutOfSpec(item, "통화가 없다")
+    }
+
+    @Test
+    fun `통화 형식이 틀리면 요금이 아니라 통화 문제로 기록한다`() {
+        // 금액 객체가 알려 준 필드로 가른다. 0원짜리 금액을 만들어 통화만 따로 검사하지 않는다 (ADR-0067)
+        val item = itemB(totalPrice = 1000, taxIncluded = true, breakfast = true, inventory = fullInventory()).copy(currency = "krw")
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.excluded).singleElement().satisfies({ ex -> assertThat(ex.value).isEqualTo(ExcludedValue.CURRENCY) })
+    }
+
+    @Test
+    fun `금액이 음수면 요금 문제로 기록한다`() {
+        val item = itemB(totalPrice = -1, taxIncluded = true, breakfast = true, inventory = fullInventory())
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.excluded).singleElement().satisfies({ ex -> assertThat(ex.value).isEqualTo(ExcludedValue.RATE) })
     }
 
     @Test

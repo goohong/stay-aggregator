@@ -87,4 +87,4 @@ Sentry 는 "Events with the same fingerprint are grouped together into an issue.
   → `QuarantineIntegrationTest.문제가 된 값이 다르면 다른 행이다`
 
 값은 어디서 붙나
-  → 검색: `AvailabilityNormalizer` 가 판정 단계(`step`)마다 붙인다. 목록: `CatalogNormalizer.valueOf` 가 값 객체의 사유 문장에서 정한다
+  → 검색: `AvailabilityNormalizer` 가 판정 단계(`step`)마다 붙인다. 목록: `CatalogNormalizer` 가 값 객체가 거부하며 알린 필드에서 정한다 ([ADR-0067](0067-rejection-carries-field.md))

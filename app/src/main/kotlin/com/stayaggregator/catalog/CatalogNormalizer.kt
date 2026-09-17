@@ -91,11 +91,10 @@ class CatalogNormalizer {
     /**
      * 만들어 보고, 거부되면 그 사유를 모은다.
      *
-     * **람다에는 만드는 호출만 둔다.** 다른 계산을 넣으면 거기서 난 같은 종류의 예외가 항목 사유로 삼켜져,
-     * 우리 쪽 결함이 "값을 쓸 수 없다"로 기록된다. 만드는 쪽도 `require` 로만 거부한다.
+     * 문제가 된 값은 값을 담는 객체가 거부하며 알려 준 필드로 정한다 (ADR-0054, ADR-0067).
+     * `when` 이 필드를 빠짐없이 다루므로, 객체에 검사가 늘어 필드가 생기면 여기가 컴파일되지 않아 드러난다.
      *
-     * 공급사가 값을 빠뜨리는 빈도는 우리가 모른다(ADR-0037). 그래서 드문 일로도 흔한 일로도 보지 않고,
-     * 불변식을 만드는 객체 한 곳에 두는 쪽을 택했다(ADR-0041).
+     * **그 객체의 거부만 받는다.** 다른 예외는 우리 쪽 결함이라 항목 사유로 삼키지 않고 올려 보낸다.
      */
     private fun <T> build(
         hotelCode: String?,
@@ -103,30 +102,30 @@ class CatalogNormalizer {
         source: Any,
         excluded: MutableList<ExcludedItem>,
         create: () -> T,
-    ): T? =
-        try {
-            create()
-        } catch (e: IllegalArgumentException) {
-            val reason = e.message ?: "값을 쓸 수 없다"
-            excluded += ExcludedItem(hotelCode, roomTypeCode, valueOf(reason), reason, source)
-            null
+    ): T? {
+        val (value, reason) = try {
+            return create()
+        } catch (e: NormalizedHotel.Rejected) {
+            valueOf(e.field) to e.message
+        } catch (e: NormalizedRoomType.Rejected) {
+            valueOf(e.field) to e.message
+        }
+        excluded += ExcludedItem(hotelCode, roomTypeCode, value, reason ?: "값을 쓸 수 없다", source)
+        return null
+    }
+
+    private fun valueOf(field: NormalizedHotel.Field): ExcludedValue =
+        when (field) {
+            NormalizedHotel.Field.CODE -> ExcludedValue.HOTEL_CODE
+            NormalizedHotel.Field.NAME -> ExcludedValue.HOTEL_NAME
+            NormalizedHotel.Field.ROOM_TYPES -> ExcludedValue.STRUCTURE
         }
 
-    /**
-     * 값을 담는 객체가 거부하며 낸 사유 문장에서 문제가 된 값을 정한다 (ADR-0054).
-     *
-     * 사유 문장은 [NormalizedHotel]·[NormalizedRoomType] 생성자에 있는 것이고 여기서 전부 다룬다.
-     * 새 문장이 생기면 [ExcludedValue.OTHER] 로 떨어지고, 테스트가 그것을 잡는다.
-     */
-    private fun valueOf(reason: String): ExcludedValue =
-        when (reason) {
-            "숙소 코드가 없다" -> ExcludedValue.HOTEL_CODE
-            "숙소명이 없다" -> ExcludedValue.HOTEL_NAME
-            "팔 수 있는 객실 타입이 없다" -> ExcludedValue.STRUCTURE
-            "객실 타입 코드가 없다" -> ExcludedValue.ROOM_TYPE_CODE
-            "객실 타입명이 없다" -> ExcludedValue.ROOM_TYPE_NAME
-            "최대 수용 인원이 없다", "최대 수용 인원이 1 미만이다" -> ExcludedValue.MAX_OCCUPANCY
-            else -> ExcludedValue.OTHER
+    private fun valueOf(field: NormalizedRoomType.Field): ExcludedValue =
+        when (field) {
+            NormalizedRoomType.Field.CODE -> ExcludedValue.ROOM_TYPE_CODE
+            NormalizedRoomType.Field.NAME -> ExcludedValue.ROOM_TYPE_NAME
+            NormalizedRoomType.Field.MAX_OCCUPANCY -> ExcludedValue.MAX_OCCUPANCY
         }
 }
 

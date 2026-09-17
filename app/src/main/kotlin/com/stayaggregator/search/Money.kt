@@ -9,9 +9,14 @@ package com.stayaggregator.search
  * 통화는 스펙이 ISO 4217 코드라고 하므로 세 글자 대문자인지만 본다. 실제 통화 목록과 대조하지는 않는다.
  */
 data class Money(val amount: Long, val currency: String) {
+    /** 검사한 값 중 무엇이 틀렸나. 거부를 받은 쪽이 문장이 아니라 이 값으로 원인을 가른다 (ADR-0067) */
+    enum class Field { AMOUNT, CURRENCY }
+
+    class Rejected(val field: Field, message: String) : IllegalArgumentException(message)
+
     init {
-        require(amount >= 0) { "금액이 음수다" }
-        require(CURRENCY_CODE.matches(currency)) { "통화 코드가 ISO 4217 형식이 아니다: '$currency'" }
+        if (amount < 0) throw Rejected(Field.AMOUNT, "금액이 음수다")
+        if (!CURRENCY_CODE.matches(currency)) throw Rejected(Field.CURRENCY, "통화 코드가 ISO 4217 형식이 아니다: '$currency'")
     }
 
     operator fun plus(other: Money): Money {

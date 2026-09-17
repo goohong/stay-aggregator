@@ -145,11 +145,7 @@ class AvailabilityNormalizer {
         val breakfast = step(ExcludedValue.SALE_CONDITIONS) {
             requireNotNull(item.breakfastIncluded) { "조식 포함 여부가 없다" }
         }
-        val currency = step(ExcludedValue.CURRENCY) {
-            val code = requireNotNull(item.currency) { "통화가 없다" }
-            // 통화 형식은 금액 값 객체가 지킨다. 액수와 따로 봐야 통화 문제와 금액 문제가 갈린다
-            Money(0, code).currency
-        }
+        val currency = item.currency ?: throw Rejected(ExcludedValue.CURRENCY, "통화가 없다")
         val total = step(ExcludedValue.RATE) {
             when (val pricing = item.pricing) {
                 null -> throw IllegalArgumentException("요금이 없다")
@@ -168,6 +164,13 @@ class AvailabilityNormalizer {
     private fun <T> step(value: ExcludedValue, block: () -> T): T =
         try {
             block()
+        } catch (e: Money.Rejected) {
+            // 금액 객체는 금액과 통화를 함께 검사한다. 어느 쪽이 틀렸는지는 객체가 알려 준 필드로 가린다 (ADR-0067)
+            val rejected = when (e.field) {
+                Money.Field.AMOUNT -> value
+                Money.Field.CURRENCY -> ExcludedValue.CURRENCY
+            }
+            throw Rejected(rejected, e.message ?: "값을 쓸 수 없다")
         } catch (e: IllegalArgumentException) {
             throw Rejected(value, e.message ?: "값을 쓸 수 없다")
         }

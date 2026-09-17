@@ -1,5 +1,6 @@
 package com.stayaggregator.catalog
 
+import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
@@ -182,6 +183,29 @@ class CatalogNormalizerTest {
         assertThat(normalized.hotels).isEmpty()
         assertThat(normalized.excluded).singleElement()
             .satisfies({ excluded -> assertThat(excluded.reason).contains("두 번") })
+    }
+
+    @Test
+    fun `값 객체가 거부한 필드마다 격리 기록의 문제 값이 정해진다`() {
+        // 사유 문장을 비교하지 않고 필드로 정한다. 어느 것도 OTHER 로 떨어지지 않는다 (ADR-0054, ADR-0067)
+        val fetched = catalog(
+            hotel(null, "코드 없음", roomType("DLX", "디럭스", 2)),
+            hotel("A-2", null, roomType("DLX", "디럭스", 2)),
+            hotel("A-3", "객실 없음"),
+            hotel("A-4", "객실 문제", roomType(null, "코드 없음", 2), roomType("N", null, 2), roomType("M", "인원 없음", null), roomType("Z", "인원 0", 0), roomType("OK", "정상", 2)),
+        )
+
+        val normalized = normalizer.normalize(fetched)
+
+        assertThat(normalized.excluded).extracting<ExcludedValue> { it.value }.containsExactlyInAnyOrder(
+            ExcludedValue.HOTEL_CODE,
+            ExcludedValue.HOTEL_NAME,
+            ExcludedValue.STRUCTURE,
+            ExcludedValue.ROOM_TYPE_CODE,
+            ExcludedValue.ROOM_TYPE_NAME,
+            ExcludedValue.MAX_OCCUPANCY,
+            ExcludedValue.MAX_OCCUPANCY,
+        )
     }
 
     private fun catalog(vararg hotels: FetchedHotel) = FetchedCatalog(hotels.toList())
