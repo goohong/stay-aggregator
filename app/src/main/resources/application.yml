@@ -40,6 +40,10 @@ stay:
       wait-duration-in-open-state: PT30S
       permitted-number-of-calls-in-half-open-state: 3
 
+  quarantine:
+    # 마지막으로 본 지 이만큼 지난 격리 기록은 목록 동기화 때 지운다 (ADR-0055). 임시값이다
+    retention: P30D
+
   # 목록 동기화는 기동 직후 한 번 돌고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
   # 기본값은 CatalogSyncScheduler 에 있다. 바꾸려면 stay.catalog.sync.initial-delay 와 interval 을 여기에 적는다.
   # stay.catalog.sync.enabled 를 false 로 두면 동기화를 돌리지 않는다.

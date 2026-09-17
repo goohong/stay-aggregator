@@ -2,6 +2,7 @@ package com.stayaggregator.catalog
 
 import com.stayaggregator.mapping.NormalizedHotel
 import com.stayaggregator.mapping.NormalizedRoomType
+import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
@@ -39,7 +40,7 @@ class CatalogNormalizer {
             }
             // 같은 코드로 값이 다르게 오면 어느 쪽인지 정할 수 없어 뺀다. 값이 같으면 하나만 쓴다
             if (sameCode.distinct().size > 1) {
-                excluded += ExcludedItem(hotelCode = code, roomTypeCode = null, reason = "같은 숙소 코드가 다른 값으로 두 번 왔다")
+                excluded += ExcludedItem(hotelCode = code, roomTypeCode = null, value = ExcludedValue.HOTEL_CODE, reason = "같은 숙소 코드가 다른 값으로 두 번 왔다", source = sameCode)
                 return@forEach
             }
             normalizeHotel(code, sameCode.first(), excluded)?.let { normalized += it }
@@ -53,7 +54,7 @@ class CatalogNormalizer {
         excluded: MutableList<ExcludedItem>,
     ): NormalizedHotel? {
         val roomTypes = normalizeRoomTypes(code, hotel, excluded)
-        return build(code, null, excluded) { NormalizedHotel.of(code, hotel.name, roomTypes) }
+        return build(code, null, hotel, excluded) { NormalizedHotel.of(code, hotel.name, roomTypes) }
     }
 
     private fun normalizeRoomTypes(
@@ -71,7 +72,7 @@ class CatalogNormalizer {
                 return@forEach
             }
             if (sameCode.distinct().size > 1) {
-                excluded += ExcludedItem(hotelCode = hotelCode, roomTypeCode = code, reason = "같은 객실 타입 코드가 다른 값으로 두 번 왔다")
+                excluded += ExcludedItem(hotelCode = hotelCode, roomTypeCode = code, value = ExcludedValue.ROOM_TYPE_CODE, reason = "같은 객실 타입 코드가 다른 값으로 두 번 왔다", source = sameCode)
                 return@forEach
             }
             normalizeRoomType(hotelCode, code, sameCode.first(), excluded)?.let { roomTypes += it }
@@ -85,7 +86,7 @@ class CatalogNormalizer {
         roomType: FetchedRoomType,
         excluded: MutableList<ExcludedItem>,
     ): NormalizedRoomType? =
-        build(hotelCode, code, excluded) { NormalizedRoomType.of(roomType.code, roomType.name, roomType.maxOccupancy) }
+        build(hotelCode, code, roomType, excluded) { NormalizedRoomType.of(roomType.code, roomType.name, roomType.maxOccupancy) }
 
     /**
      * 만들어 보고, 거부되면 그 사유를 모은다.
@@ -99,14 +100,33 @@ class CatalogNormalizer {
     private fun <T> build(
         hotelCode: String?,
         roomTypeCode: String?,
+        source: Any,
         excluded: MutableList<ExcludedItem>,
         create: () -> T,
     ): T? =
         try {
             create()
         } catch (e: IllegalArgumentException) {
-            excluded += ExcludedItem(hotelCode = hotelCode, roomTypeCode = roomTypeCode, reason = e.message ?: "값을 쓸 수 없다")
+            val reason = e.message ?: "값을 쓸 수 없다"
+            excluded += ExcludedItem(hotelCode, roomTypeCode, valueOf(reason), reason, source)
             null
+        }
+
+    /**
+     * 값을 담는 객체가 거부하며 낸 사유 문장에서 문제가 된 값을 정한다 (ADR-0054).
+     *
+     * 사유 문장은 [NormalizedHotel]·[NormalizedRoomType] 생성자에 있는 것이고 여기서 전부 다룬다.
+     * 새 문장이 생기면 [ExcludedValue.OTHER] 로 떨어지고, 테스트가 그것을 잡는다.
+     */
+    private fun valueOf(reason: String): ExcludedValue =
+        when (reason) {
+            "숙소 코드가 없다" -> ExcludedValue.HOTEL_CODE
+            "숙소명이 없다" -> ExcludedValue.HOTEL_NAME
+            "팔 수 있는 객실 타입이 없다" -> ExcludedValue.STRUCTURE
+            "객실 타입 코드가 없다" -> ExcludedValue.ROOM_TYPE_CODE
+            "객실 타입명이 없다" -> ExcludedValue.ROOM_TYPE_NAME
+            "최대 수용 인원이 없다", "최대 수용 인원이 1 미만이다" -> ExcludedValue.MAX_OCCUPANCY
+            else -> ExcludedValue.OTHER
         }
 }
 
@@ -117,11 +137,14 @@ data class NormalizedCatalog(
 )
 
 /**
- * 값을 정할 수 없어 뺀 항목. 지금은 결과값과 로그로만 남긴다 (ADR-0039).
- * 원본을 따로 보관하는 것은 기록 형태를 정할 때 함께 본다 (Q17·Q18).
+ * 값을 정할 수 없어 뺀 항목. 결과값과 로그로 남기고, 같은 문제끼리 묶어 격리 기록에도 남긴다 (ADR-0039, ADR-0055).
  */
 data class ExcludedItem(
     val hotelCode: String?,
     val roomTypeCode: String?,
+    /** 문제가 된 값. 같은 문제로 묶는 기준이다 (ADR-0054) */
+    val value: ExcludedValue,
     val reason: String,
+    /** 우리가 읽어 들인 그 항목. 격리 기록에 JSON 으로 남긴다 */
+    val source: Any,
 )

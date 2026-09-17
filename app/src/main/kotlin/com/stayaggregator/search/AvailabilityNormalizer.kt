@@ -2,6 +2,7 @@ package com.stayaggregator.search
 
 import com.stayaggregator.mapping.MappedHotel
 import com.stayaggregator.mapping.MappedRoomType
+import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.supplier.FetchedAvailability
 import com.stayaggregator.supplier.FetchedAvailabilityItem
 import com.stayaggregator.supplier.FetchedDailyInventory
@@ -40,27 +41,33 @@ class AvailabilityNormalizer {
 
         items.forEach { item ->
             if (item.hotelCode.isNullOrBlank() || item.roomTypeCode.isNullOrBlank()) {
-                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, "숙소 코드나 객실 타입 코드가 없다")
+                val value = if (item.hotelCode.isNullOrBlank()) ExcludedValue.HOTEL_CODE else ExcludedValue.ROOM_TYPE_CODE
+                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, value, "숙소 코드나 객실 타입 코드가 없다", item)
                 return@forEach
             }
             val hotel = hotelsByCode[item.hotelCode]
             val roomType = hotel?.roomTypes?.firstOrNull { it.roomTypeCode == item.roomTypeCode }
             if (hotel == null || roomType == null) {
-                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.UNMAPPED, "매핑에 없다")
+                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.UNMAPPED, ExcludedValue.MAPPING, "매핑에 없다", item)
                 return@forEach
             }
             try {
-                available += AvailableRoomType(
-                    internalHotelId = hotel.internalHotelId,
-                    hotelName = hotel.name,
-                    internalRoomTypeId = roomType.internalRoomTypeId,
-                    roomTypeName = roomType.name,
-                    maxOccupancy = roomType.maxOccupancy,
-                    availableRooms = availableRooms(item.dailyInventory, nights),
-                    rate = rate(item, nights),
-                )
-            } catch (e: IllegalArgumentException) {
-                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, e.message ?: "값을 쓸 수 없다")
+                // 단계마다 문제가 된 값을 붙인다. 어느 단계에서 거부됐는지가 곧 무엇이 문제인지다 (ADR-0054)
+                val rooms = step(ExcludedValue.INVENTORY) { availableRooms(item.dailyInventory, nights) }
+                val rate = rate(item, nights)
+                available += step(ExcludedValue.INVENTORY) {
+                    AvailableRoomType(
+                        internalHotelId = hotel.internalHotelId,
+                        hotelName = hotel.name,
+                        internalRoomTypeId = roomType.internalRoomTypeId,
+                        roomTypeName = roomType.name,
+                        maxOccupancy = roomType.maxOccupancy,
+                        availableRooms = rooms,
+                        rate = rate,
+                    )
+                }
+            } catch (e: Rejected) {
+                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, e.value, e.reason, item)
             }
         }
         return NormalizedAvailability(available, excluded)
@@ -89,16 +96,38 @@ class AvailabilityNormalizer {
 
     /** 공급사가 준 요금 모양에 따라 세금 포함 총액 하나를 만든다 (ADR-0042, ADR-0027 의 요금 표) */
     private fun rate(item: FetchedAvailabilityItem, nights: List<LocalDate>): Rate {
-        require(item.breakfastIncluded != null) { "조식 포함 여부가 없다" }
-        val currency = item.currency
-        require(currency != null) { "통화가 없다" }
-        val total = when (val pricing = item.pricing) {
-            null -> throw IllegalArgumentException("요금이 없다")
-            is FetchedPricing.Total -> total(pricing, currency)
-            is FetchedPricing.Daily -> sumDaily(pricing.rates, currency, nights)
+        val breakfast = step(ExcludedValue.SALE_CONDITIONS) {
+            requireNotNull(item.breakfastIncluded) { "조식 포함 여부가 없다" }
         }
-        return Rate(total, RateConditions(breakfastIncluded = item.breakfastIncluded))
+        val currency = step(ExcludedValue.CURRENCY) {
+            val code = requireNotNull(item.currency) { "통화가 없다" }
+            // 통화 형식은 금액 값 객체가 지킨다. 액수와 따로 봐야 통화 문제와 금액 문제가 갈린다
+            Money(0, code).currency
+        }
+        val total = step(ExcludedValue.RATE) {
+            when (val pricing = item.pricing) {
+                null -> throw IllegalArgumentException("요금이 없다")
+                is FetchedPricing.Total -> total(pricing, currency)
+                is FetchedPricing.Daily -> sumDaily(pricing.rates, currency, nights)
+            }
+        }
+        return Rate(total, RateConditions(breakfastIncluded = breakfast))
     }
+
+    /**
+     * 만들어 보고, 거부되면 문제가 된 값을 붙여 올린다.
+     *
+     * 값이 쓸 만한지는 여전히 값을 담는 객체가 `require` 로 판정한다 (ADR-0041). 여기서는 그 거부에 "무엇이 문제였나"를 붙일 뿐이다.
+     */
+    private fun <T> step(value: ExcludedValue, block: () -> T): T =
+        try {
+            block()
+        } catch (e: IllegalArgumentException) {
+            throw Rejected(value, e.message ?: "값을 쓸 수 없다")
+        }
+
+    /** 한 항목을 뺄 때만 쓰는 신호. 정규화 밖으로 나가지 않는다 */
+    private class Rejected(val value: ExcludedValue, val reason: String) : RuntimeException(reason, null, false, false)
 
     private fun total(pricing: FetchedPricing.Total, currency: String): Money {
         require(pricing.totalPrice != null) { "총액이 없다" }
@@ -141,7 +170,11 @@ data class ExcludedRoomType(
     val hotelCode: String?,
     val roomTypeCode: String?,
     val kind: ExclusionKind,
+    /** 문제가 된 값. 같은 문제로 묶는 기준이다 (ADR-0054) */
+    val value: ExcludedValue,
     val reason: String,
+    /** 우리가 읽어 들인 그 항목. 격리 기록에 JSON 으로 남긴다 (ADR-0055) */
+    val source: FetchedAvailabilityItem,
 )
 
 enum class ExclusionKind {

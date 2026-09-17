@@ -1,6 +1,8 @@
 package com.stayaggregator.catalog
 
 import com.stayaggregator.mapping.MappingRepository
+import com.stayaggregator.quarantine.QuarantineEntry
+import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.supplier.CatalogAdapter
 import com.stayaggregator.supplier.SupplierResponseException
 import org.slf4j.LoggerFactory
@@ -19,11 +21,18 @@ class CatalogSyncService(
     private val adapters: List<CatalogAdapter>,
     private val normalizer: CatalogNormalizer,
     private val repository: MappingRepository,
+    private val quarantine: QuarantineRecorder,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
     fun syncAll() {
         adapters.forEach { adapter -> sync(adapter) }
+        // 오래된 격리 기록은 이미 도는 이 주기에 붙여 지운다. 새 스케줄을 만들지 않는다 (ADR-0055)
+        try {
+            quarantine.purgeExpired()
+        } catch (e: Exception) {
+            log.warn("격리 기록 정리 실패", e)
+        }
     }
 
     private fun sync(adapter: CatalogAdapter) {
@@ -31,6 +40,7 @@ class CatalogSyncService(
             val fetched = adapter.fetchCatalog().block()
                 ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
             val normalized = normalizer.normalize(fetched)
+            quarantine.record(normalized.excluded.map { QuarantineEntry(adapter.supplierId, it.hotelCode, it.roomTypeCode, it.value, it.reason, it.source) })
             val applied = repository.applyCatalog(adapter.supplierId, normalized.hotels)
             log.info(
                 "목록 동기화 완료 supplier={} 숙소={} 객실타입={} 목록에없는숙소={} 제외={} {}",

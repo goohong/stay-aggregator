@@ -75,9 +75,19 @@ date: 2026-09-17
 
 ## Verification
 
-구현할 때 확인하고 테스트 이름을 여기에 적는다.
+같은 문제가 여러 번 오면 한 행에 횟수가 늘고, 마지막 사유·원본이 바뀌고 처음 본 시각은 그대로인지
+  → `QuarantineIntegrationTest.같은 문제가 여러 번 오면 한 행에 횟수가 늘고 마지막 사유와 원본이 바뀐다`
 
-- 같은 문제가 여러 번 오면 행이 하나이고 횟수가 늘어나는지
-- 마지막 시각·사유·원본이 새로 온 것으로 바뀌고 처음 본 시각은 그대로인지
-- 기록이 실패해도 검색 응답은 정상으로 나가는지
-- 목록 동기화가 오래된 행을 지우는지
+코드가 비어 있는 문제끼리도 묶이는지 (`UNIQUE NULLS NOT DISTINCT`)
+  → `QuarantineIntegrationTest.코드가 비어 있는 문제끼리도 한 행으로 묶인다`
+
+오래된 행만 지우는지
+  → `QuarantineIntegrationTest.마지막으로 본 시각이 기준보다 오래된 행만 지운다`
+  → 목록 동기화가 부르는 자리: `CatalogSyncService.syncAll` 의 `quarantine.purgeExpired()`
+
+기록이 뒤에서 쓰이는지, 검색에서 뺀 항목이 남는지
+  → `QuarantineIntegrationTest.기록은 뒤에서 쓰여 곧 남는다`
+  → `SearchServiceIntegrationTest.스펙과 달라 뺀 항목은 격리 기록에 남는다`
+
+기록이 실패해도 응답이 나가는지
+  → `QuarantineRecorder.record` 가 가상 스레드에서 쓰고 예외를 잡아 로그만 남긴다. 실패를 일부러 만드는 테스트는 없다

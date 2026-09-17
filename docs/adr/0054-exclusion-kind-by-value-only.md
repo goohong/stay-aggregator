@@ -80,8 +80,11 @@ Sentry 는 "Events with the same fingerprint are grouped together into an issue.
 
 ## Verification
 
-아직 구현 전이다. 격리 기록을 구현할 때 확인하고 그 테스트 이름을 여기에 적는다.
+같은 값의 문제가 한 기록으로 묶이고, 날짜가 다른 같은 문제도 묶이며, 마지막 사유와 원본이 바뀌는지
+  → `QuarantineIntegrationTest.같은 문제가 여러 번 오면 한 행에 횟수가 늘고 마지막 사유와 원본이 바뀐다`
 
-- 같은 공급사·숙소·객실 타입·값의 문제가 여러 번 오면 한 기록에 횟수가 늘어나는지
-- 날짜가 다른 같은 문제("숙박일 X 의 재고가 없다")가 한 기록으로 묶이는지
-- 마지막 사유 문장과 마지막 원본이 새로 온 것으로 바뀌는지
+값이 다르면 다른 기록인지
+  → `QuarantineIntegrationTest.문제가 된 값이 다르면 다른 행이다`
+
+값은 어디서 붙나
+  → 검색: `AvailabilityNormalizer` 가 판정 단계(`step`)마다 붙인다. 목록: `CatalogNormalizer.valueOf` 가 값 객체의 사유 문장에서 정한다

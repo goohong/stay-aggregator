@@ -52,6 +52,9 @@ class CatalogSyncIntegrationTest {
     @Autowired
     private lateinit var jdbcClient: JdbcClient
 
+    @Autowired
+    private lateinit var quarantine: com.stayaggregator.quarantine.QuarantineRecorder
+
     @BeforeEach
     fun clearTables() {
         jdbcClient.sql("truncate table room_type_mapping, hotel_mapping").update()
@@ -187,7 +190,7 @@ class CatalogSyncIntegrationTest {
         val failing = FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답")))
         val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
 
-        CatalogSyncService(listOf(failing, working), normalizer, repository).syncAll()
+        CatalogSyncService(listOf(failing, working), normalizer, repository, quarantine).syncAll()
 
         assertThat(hotelCodes()).containsExactly("B-1")
     }
@@ -243,7 +246,7 @@ class CatalogSyncIntegrationTest {
 
     /** consumer 는 어댑터 목록을 주입받기만 한다. 공급사가 늘어도 이 호출은 그대로다 (ADR-0031) */
     private fun syncWith(vararg adapters: CatalogAdapter) {
-        CatalogSyncService(adapters.toList(), normalizer, repository).syncAll()
+        CatalogSyncService(adapters.toList(), normalizer, repository, quarantine).syncAll()
     }
 
     private class FakeCatalogAdapter(

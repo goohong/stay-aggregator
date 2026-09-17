@@ -25,3 +25,5 @@ stay:
       minimum-number-of-calls: 4
       wait-duration-in-open-state: PT1S
       permitted-number-of-calls-in-half-open-state: 1
+  quarantine:
+    retention: P30D

@@ -59,6 +59,9 @@ class SearchServiceIntegrationTest {
     @Autowired
     private lateinit var jdbcClient: JdbcClient
 
+    @Autowired
+    private lateinit var quarantine: com.stayaggregator.quarantine.QuarantineRecorder
+
     private val oct5 = LocalDate.of(2026, 10, 5)
     private val oct6 = LocalDate.of(2026, 10, 6)
     private val oct7 = LocalDate.of(2026, 10, 7)
@@ -234,6 +237,21 @@ class SearchServiceIntegrationTest {
         assertThat(a.requests).hasSize(1)
     }
 
+    @Test
+    fun `스펙과 달라 뺀 항목은 격리 기록에 남는다`() {
+        jdbcClient.sql("truncate table quarantine_record").update()
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val a = FakeAdapter("a") { Mono.just(availability(itemA("A-1", "DLX", breakfast = false).copy(currency = null))) }
+
+        service(a).search(period, guests)
+
+        // 뒤에서 쓰이므로 잠깐 기다린다 (ADR-0055)
+        val deadline = System.currentTimeMillis() + 5_000
+        fun rows() = jdbcClient.sql("select excluded_value from quarantine_record").query(String::class.java).list()
+        while (rows().isEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(50)
+        assertThat(rows()).containsExactly("CURRENCY")
+    }
+
     // ── 서킷 브레이커 (ADR-0056) ── 테스트 설정은 최근 4묶음 중 50% 실패면 연다
 
     @Test
@@ -310,8 +328,10 @@ class SearchServiceIntegrationTest {
         maxRetries: Int = 0,
         breakers: SupplierCircuitBreakers? = null,
     ): SearchService {
-        val props = StayProperties(properties.suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries))
-        return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), props)
+        // 호출 하나의 타임아웃은 검색 시간 한계보다 짧아야 한다(StayProperties 가 지킴). 한계를 줄인 테스트는 함께 줄인다. 가짜 어댑터는 이 값을 쓰지 않는다
+        val suppliers = properties.suppliers.mapValues { (_, s) -> if (s.availabilityTimeout < budget) s else s.copy(availabilityTimeout = budget.dividedBy(2)) }
+        val props = StayProperties(suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries))
+        return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, props)
     }
 
     private fun breakers() = SupplierCircuitBreakers(properties)

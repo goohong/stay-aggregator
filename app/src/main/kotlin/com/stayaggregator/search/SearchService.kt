@@ -2,6 +2,8 @@ package com.stayaggregator.search
 
 import com.stayaggregator.mapping.MappedHotel
 import com.stayaggregator.mapping.MappingRepository
+import com.stayaggregator.quarantine.QuarantineEntry
+import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.supplier.AvailabilityAdapter
 import com.stayaggregator.supplier.AvailabilityRequest
 import com.stayaggregator.supplier.GuestCount
@@ -38,6 +40,7 @@ class SearchService(
     private val repository: MappingRepository,
     private val normalizer: AvailabilityNormalizer,
     private val circuitBreakers: SupplierCircuitBreakers,
+    private val quarantine: QuarantineRecorder,
     properties: StayProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -129,6 +132,8 @@ class SearchService(
         val excluded = normalized.flatMap { it.excluded }
         if (excluded.isNotEmpty()) {
             log.info("검색 제외 supplier={} {}", supplierId, excluded.joinToString { "${it.hotelCode}/${it.roomTypeCode} ${it.kind}: ${it.reason}" })
+            // 응답을 기다리게 하지 않고 뒤에서 쓴다 (ADR-0055)
+            quarantine.record(excluded.map { QuarantineEntry(supplierId, it.hotelCode, it.roomTypeCode, it.value, it.reason, it.source) })
         }
         return SupplierResult.succeeded(
             supplierId,
