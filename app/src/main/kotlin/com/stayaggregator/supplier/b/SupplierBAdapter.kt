@@ -18,7 +18,7 @@ import reactor.core.publisher.Mono
  * 이것이 ADR-0027 의 첫 질문에 대한 답이고, 항목의 값이 쓸 만한지는 여기서 보지 않는다 (ADR-0031).
  */
 @Component
-class SupplierBCatalogAdapter(properties: StayProperties) : CatalogAdapter {
+class SupplierBAdapter(properties: StayProperties) : CatalogAdapter {
 
     override val supplierId = SUPPLIER_ID
 

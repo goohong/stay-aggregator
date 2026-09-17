@@ -1,7 +1,7 @@
 package com.stayaggregator.supplier
 
-import com.stayaggregator.supplier.a.SupplierACatalogAdapter
-import com.stayaggregator.supplier.b.SupplierBCatalogAdapter
+import com.stayaggregator.supplier.a.SupplierAAdapter
+import com.stayaggregator.supplier.b.SupplierBAdapter
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.assertj.core.api.Assertions.assertThat
@@ -159,10 +159,10 @@ class SupplierCatalogAdapterTest {
     }
 
     private fun adapterA(timeout: Duration = Duration.ofSeconds(1), atPort: Int = port) =
-        SupplierACatalogAdapter(properties("a", timeout, atPort))
+        SupplierAAdapter(properties("a", timeout, atPort))
 
     private fun adapterB(timeout: Duration = Duration.ofSeconds(1), atPort: Int = port) =
-        SupplierBCatalogAdapter(properties("b", timeout, atPort))
+        SupplierBAdapter(properties("b", timeout, atPort))
 
     private fun properties(supplierId: String, timeout: Duration, atPort: Int) =
         StayProperties(
