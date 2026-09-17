@@ -46,3 +46,4 @@
 | [0039](0039-catalog-sync-remaining.md) | 목록 동기화 구현 단위의 나머지 결정 (타임아웃 위치·기록 최소 형태·테스트 데이터 정리·Mock 목록 모드) | accepted |
 | [0040](0040-package-structure.md) | 패키지를 기능별로 나누고 의존 방향을 한 줄로 정하기로 결정 | accepted |
 | [0041](0041-validate-in-constructors.md) | 공급사 응답 값의 검증을 담는 객체의 생성자에 두기로 결정 | accepted |
+| [0042](0042-rate-as-tax-included-total.md) | 요금은 세금 포함 기간 전체 총액 하나로 담기로 결정 | accepted |
