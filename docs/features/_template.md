@@ -9,7 +9,7 @@ last_reviewed: YYYY-MM-DD
 
 ## 무엇을 하는가
 
-3~5줄. 이 기능이 무엇을 하고 왜 필요한지만. 범위·요구사항·API 명세는 여기 쓰지 않는다.
+3~5줄. 이 기능이 무엇을 하고 왜 필요한지만. 범위·요구사항·API 스펙은 여기 쓰지 않는다.
 그건 각각 `docs/architecture.md`, `docs/domain-model.md`, `docs/api.md` 가 맡는다.
 
 ## 오픈 질문

@@ -9,7 +9,7 @@ date: 2026-09-17
 
 ## Context
 
-재고·요금 호출은 숙소 코드 50개 이하의 chunk 로 나눠 부른다 ([ADR-0045](0045-search-concurrency-and-budget.md)). 숙소가 3,000개면 공급사당 60번이다.
+재고·요금 호출은 숙소 코드 50개 이하의 chunk 로 나눠 호출한다 ([ADR-0045](0045-search-concurrency-and-budget.md)). 숙소가 3,000개면 공급사당 60번이다.
 [ADR-0027](0027-spec-violation-handling-criteria.md) 첫 질문은 "응답 전체를 읽을 수 없으면 그 공급사의 응답 전체를 버린다"인데, 이 문장은 응답 하나를 두고 쓴 것이라
 **chunk 60개 중 하나가 실패하면** 어떻게 하는지는 정한 곳이 없다.
 

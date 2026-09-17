@@ -42,7 +42,7 @@ stay:
     max-retries: 2
     retry-min-backoff: PT0.1S
     retry-max-backoff: PT1S
-    # 반복해서 실패하는 공급사를 한동안 부르지 않는다 (ADR-0056). 모두 임시값이다.
+    # 반복해서 실패하는 공급사를 한동안 호출하지 않는다 (ADR-0056). 모두 임시값이다.
     circuit-breaker:
       failure-rate-threshold: 50
       sliding-window-size: 20

@@ -3,7 +3,7 @@ package com.stayaggregator.supplier
 import reactor.core.publisher.Mono
 
 /**
- * 공급사의 숙소 목록 API 를 부르고, 공급사마다 다른 표현을 [FetchedCatalog] 로 바꾼다 (ADR-0031).
+ * 공급사의 숙소 목록 API 를 호출하고, 공급사마다 다른 표현을 [FetchedCatalog] 로 바꾼다 (ADR-0031).
  *
  * 여기서 하는 분류는 ADR-0027 첫 질문 중 **공급사마다 다른 부분**이다. HTTP 상태 코드, 본문의 결과 코드, 본문을 읽을 수 있는가다.
  * 읽을 수 없으면 공급사 실패 예외를 낸다.

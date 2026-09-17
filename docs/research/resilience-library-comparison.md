@@ -12,14 +12,14 @@ checked: 2026-09-17
 
 ## 요약
 
-- resilience4j 의 재시도와 타임아웃 연산자는 **안에서 Reactor 의 같은 연산자를 부른다.** 바꿔도 동작은 같고 한 겹이 늘어난다
+- resilience4j 의 재시도와 타임아웃 연산자는 **안에서 Reactor 의 같은 연산자를 호출한다.** 바꿔도 동작은 같고 한 겹이 늘어난다
 - 서킷 브레이커는 Reactor 에 없다
 - resilience4j 의 설정 파일·지표 엔드포인트 연동은 Spring Boot 모듈의 기능인데 **Boot 4 모듈은 릴리스되지 않았다**
 - `resilience4j-reactor:2.3.0` 은 reactor-core 3.8.7 에서 컴파일되고 서킷 열림까지 실행으로 확인됐다
 
-## 1. 안에서 무엇을 부르는가 (javap 로 확인)
+## 1. 안에서 무엇을 호출하는가 (javap 로 확인)
 
-| resilience4j 클래스 | 안에서 부르는 Reactor 연산자 |
+| resilience4j 클래스 | 안에서 호출하는 Reactor 연산자 |
 |---|---|
 | `reactor.retry.RetryOperator` | `reactor.util.retry.Retry.withThrowable`, `Mono.retryWhen`, `Flux.retryWhen` |
 | `reactor.timelimiter.TimeLimiterOperator` | `Mono.timeout(Duration)`, `doOnSuccess`, `doOnError` |
@@ -30,7 +30,7 @@ checked: 2026-09-17
 
 `reactor.circuitbreaker.operator.MonoCircuitBreaker` 와 `CircuitBreakerSubscriber` 가 서킷에 알리는 시점이다.
 
-| 시점 | 부르는 것 |
+| 시점 | 호출하는 것 |
 |---|---|
 | 구독할 때 | `tryAcquirePermission` |
 | 값이 왔을 때 | `onResult` (걸린 시간과 함께) |
@@ -69,7 +69,7 @@ checked: 2026-09-17
 
 ## 5. Reactor 쪽이 다른 점
 
-- **넘친 호출을 기다리게 한다.** `flatMap(mapper, n)` 은 n 개를 넘는 chunk 를 기다렸다 부른다. resilience4j 의 Reactor bulkhead 연산자는 `tryAcquirePermission` 만 부르고 실패하면 `BulkheadFullException` 을 낸다(javap). 그대로 바꾸면 chunk 가 실패로 바뀐다
+- **넘친 호출을 기다리게 한다.** `flatMap(mapper, n)` 은 n 개를 넘는 chunk 를 기다렸다 호출한다. resilience4j 의 Reactor bulkhead 연산자는 `tryAcquirePermission` 만 호출하고 실패하면 `BulkheadFullException` 을 낸다(javap). 그대로 바꾸면 chunk 가 실패로 바뀐다
 - **다 써도 실패하면 원래 실패를 올린다.** 지금 코드는 `onRetryExhaustedThrow { signal.failure() }` 로 원래 예외를 올린다 ([ADR-0027](../adr/0027-spec-violation-handling-criteria.md) 의 "한 가지 실패"). resilience4j 가 어떻게 올리는지는 확인 못 함
 
 ## 확인하지 못한 것

@@ -40,7 +40,7 @@ docs/features/stay-integration.md   ← 하나로 시작. 커지면 그때 쪼�
   ## 결정 로그         풀린 것. ADR 링크만, 내용은 베끼지 않는다
 ```
 
-범위·요구사항·API 명세 절은 두지 않는다. 그 내용은 각각 `docs/architecture.md`,
+범위·요구사항·API 스펙 절은 두지 않는다. 그 내용은 각각 `docs/architecture.md`,
 `docs/domain-model.md`, `docs/api.md`, 그리고 ADR 이 맡는다.
 
 **이유** — 표준 모델 설계에 결정이 여러 개 몰릴 것으로 보이고, 지금 하고
@@ -59,6 +59,6 @@ docs/features/stay-integration.md   ← 하나로 시작. 커지면 그때 쪼�
 
 ## Verification
 
-`docs/features/` 에 있는 문서가 범위·요구사항·API 명세 절을 담고 있지 않은지.
+`docs/features/` 에 있는 문서가 범위·요구사항·API 스펙 절을 담고 있지 않은지.
 결정 로그의 각 항목이 ADR 링크로만 되어 있고 선택지나 이유를 다시 쓰지
 않았는지.

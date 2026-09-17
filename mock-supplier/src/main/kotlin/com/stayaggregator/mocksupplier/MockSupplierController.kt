@@ -13,7 +13,7 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 공급사 A·B 를 흉내낸다. 요청 파라미터는 보지 않고 [SupplierFixtures] 의 고정 응답을 준다.
+ * 공급사 A·B 를 모사한다. 요청 파라미터는 보지 않고 [SupplierFixtures] 의 고정 응답을 준다.
  *
  * `POST /control/{a|b}/mode?value=normal|error|no-response|delay&delaySeconds=N`
  *
@@ -55,7 +55,7 @@ class MockSupplierController {
 
     /**
      * 숙소 코드가 50개를 넘으면 공급사 스펙대로 거절한다 (ADR-0045). 그 밖의 파라미터는 보지 않는다.
-     * 스펙에 오류로 적힌 것까지만 흉내 낸다.
+     * 스펙에 오류로 적힌 것까지만 모사한다.
      */
     @GetMapping("/a/v1/availability", produces = [APPLICATION_JSON_VALUE])
     fun availabilityA(@RequestParam("hotelCodes", defaultValue = "") hotelCodes: String): ResponseEntity<String> {

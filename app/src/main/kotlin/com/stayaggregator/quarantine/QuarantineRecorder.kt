@@ -25,7 +25,7 @@ class QuarantineRecorder(
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
 
-    /** 기록마다 가상 스레드 하나. 블로킹 JDBC 를 요청 스레드 밖에서 부르려는 것이다 */
+    /** 기록마다 가상 스레드 하나. 블로킹 JDBC 를 요청 스레드 밖에서 호출하려는 것이다 */
     private val executor: ExecutorService = Executors.newVirtualThreadPerTaskExecutor()
 
     fun record(entries: List<QuarantineEntry>) {
@@ -42,7 +42,7 @@ class QuarantineRecorder(
         }
     }
 
-    /** 보관 기간보다 오래 보지 않은 기록을 지운다. 목록 동기화가 돌 때 부른다 (ADR-0055) */
+    /** 보관 기간보다 오래 보지 않은 기록을 지운다. 목록 동기화가 돌 때 호출한다 (ADR-0055) */
     fun purgeExpired(): Int {
         val deleted = repository.deleteNotSeenSince(Instant.now().minus(properties.retention))
         if (deleted > 0) log.info("격리 기록 정리 지운행={} 보관기간={}", deleted, properties.retention)

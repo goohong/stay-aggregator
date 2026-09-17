@@ -27,7 +27,7 @@ data class SearchResponse(
         val roomTypeCount: Int,
         /** 스펙과 달라 응답에서 뺀 객실 타입 수 */
         val outOfSpecCount: Int,
-        /** 부르지 못한 chunk 수. 0 이 아니면 이 공급사의 일부 숙소는 이 응답에 없다 */
+        /** 호출하지 못한 chunk 수. 0 이 아니면 이 공급사의 일부 숙소는 이 응답에 없다 */
         val failedChunks: Int,
     )
 

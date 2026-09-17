@@ -18,8 +18,8 @@ date: 2026-09-17
 - **앞 단계가 끝났는데 뒤 단계가 실패한다.** 공급사에 예약이 확정됐는데 우리 DB 에 확정을 기록하지 못한다. 이것이 보상의 본래 자리다
 - **앞 단계가 끝났는지 모른다.** 예약 요청을 보냈는데 응답이 없으면 공급사에 방이 잡혔는지 모른다. 되돌릴지 말지 정하기 전에 먼저 사실을 알아야 한다
 
-**공급사 규약에는 예약 API 가 없다.** 숙소 목록 API 와 재고·요금 API 뿐이다.
-Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/main/kotlin/com/stayaggregator/mocksupplier/MockSupplierController.kt` 의 `/a/v1/hotels`·`/b/api/properties`·`/a/v1/availability`·`/b/api/search`, 모두 `GET`).
+**공급사 스펙에는 예약 API 가 없다.** 숙소 목록 API 와 재고·요금 API 뿐이다.
+Mock 이 모사하는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/main/kotlin/com/stayaggregator/mocksupplier/MockSupplierController.kt` 의 `/a/v1/hotels`·`/b/api/properties`·`/a/v1/availability`·`/b/api/search`, 모두 `GET`).
 
 이미 정해진 것 중 예약에 닿는 것
 
@@ -29,7 +29,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 | [ADR-0058](0058-same-hotel-confirmed-pairs-only.md) | `sameHotelId` 는 짝이 바뀌면 값이 바뀐다. 저장해 두고 다시 찾는 키로 쓰지 않는다 |
 | [ADR-0042](0042-rate-as-tax-included-total.md) | 요금은 세금 포함 기간 전체 총액 하나다 |
 | [ADR-0027](0027-spec-violation-handling-criteria.md) | 정한 시간 안에 오지 않은 것도 공급사 실패에 든다 ([용어](../glossary.md) "공급사 실패") |
-| [ADR-0051](0051-retry-transient-supplier-failures.md) | 재시도는 일시적인 실패만, 여부는 consumer 가 정한다. 그 전제는 재고·요금 조회가 `GET` 이라 여러 번 불러도 같다는 것이었다 |
+| [ADR-0051](0051-retry-transient-supplier-failures.md) | 재시도는 일시적인 실패만, 여부는 consumer 가 정한다. 그 전제는 재고·요금 조회가 `GET` 이라 여러 번 호출해도 같다는 것이었다 |
 | [ADR-0056](0056-circuit-breaker-per-supplier-outside-retry.md) | 서킷은 공급사마다 하나이고 검색에만 있다 |
 
 확인한 사실
@@ -40,7 +40,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 | 멱등 키는 같은 작업을 두 번 하지 않고 요청을 다시 보내기 위한 것이다 | [Stripe, Idempotent requests](https://docs.stripe.com/api/idempotent_requests): "The API supports idempotency for safely retrying requests without accidentally performing the same operation twice." |
 | 같은 키로 다시 보내면 처음 결과를 그대로 돌려준다. 실패였어도 그렇다 | 같은 곳: "Subsequent requests with the same key return the same result, including `500` errors." |
 | 키는 영원히 남지 않는다. 지워진 뒤 같은 키를 쓰면 새 요청으로 처리한다 | 같은 곳: "You can remove keys from the system automatically after they're at least 24 hours old. We generate a new request if a key is reused after the original is pruned." |
-| 키는 부르는 쪽이 만든다 | 같은 곳: "A client generates an idempotency key, which is a unique key that the server uses to recognize subsequent retries of the same request." |
+| 키는 호출하는 쪽이 만든다 | 같은 곳: "A client generates an idempotency key, which is a unique key that the server uses to recognize subsequent retries of the same request." |
 | `POST` 같은 멱등하지 않은 메서드를 실패에 견디게 하려고 헤더를 표준화하려는 초안이 있다. **만료된 초안이다** | [IETF, The Idempotency-Key HTTP Header Field](https://datatracker.ietf.org/doc/draft-ietf-httpapi-idempotency-key-header/) (draft-07, Expired Internet-Draft) Abstract: "The HTTP Idempotency-Key request header field can be used to make non-idempotent HTTP methods such as POST or PATCH fault-tolerant." |
 
 세 원문은 2026-09-17 에 열어 위 문장을 대조했다.
@@ -49,7 +49,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 
 구현 여부
 - **(가) 설계만 문서로 남긴다** ← 채택 — 없는 API 를 지어내지 않는다. 대신 동작하는 코드가 없다
-- **(나) 예약 API 를 Mock 에 만들고 간단히 구현한다** — 실행해 볼 수 있다. 대신 공급사 규약에 없는 요청·응답 모양을 우리가 정하게 되고, 그 모양에 맞춘 코드는 실제 공급사가 붙을 때 맞는다는 근거가 없다
+- **(나) 예약 API 를 Mock 에 만들고 간단히 구현한다** — 실행해 볼 수 있다. 대신 공급사 스펙에 없는 요청·응답 모양을 우리가 정하게 되고, 그 모양에 맞춘 코드는 실제 공급사가 붙을 때 맞는다는 근거가 없다
 
 결과를 모르는 예약을 수습하는 방법
 - **(ㄱ) 예약 요청에 우리가 만든 고유한 표식(멱등 키)을 붙이고, 응답이 없으면 새로 예약하지 않고 그 표식으로 "이 예약이 됐나"를 공급사에 물어 확정한다** ← 채택 —
@@ -63,7 +63,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 
 ### 가정
 
-이 설계는 공급사에 대한 가정 위에 있다. **공급사 규약으로 확인한 것이 아니다.**
+이 설계는 공급사에 대한 가정 위에 있다. **공급사 스펙으로 확인한 것이 아니다.**
 
 1. 공급사가 예약 생성·조회·취소 API 를 준다
 2. 예약 생성 요청에 우리가 만든 멱등 키를 받는다. 같은 키로 온 요청은 같은 예약으로 본다
@@ -74,7 +74,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 ### 예약을 받는 값
 
 - **내부 식별자(`hotelId`, `roomTypeId`)** 와 숙박 구간·인원, 고객이 본 요금(세금 포함 총액)을 받는다
-- 내부 식별자를 매핑에서 공급사·공급사 코드로 바꿔 공급사를 부른다. 내부 식별자가 공급사 상품 하나를 가리키므로(ADR-0010) 어느 공급사인지 따로 받지 않는다
+- 내부 식별자를 매핑에서 공급사·공급사 코드로 바꿔 공급사를 호출한다. 내부 식별자가 공급사 상품 하나를 가리키므로(ADR-0010) 어느 공급사인지 따로 받지 않는다
 - **`sameHotelId` 로는 예약하지 않는다.** 짝이 바뀌면 값이 바뀌고(ADR-0058), 공급사 상품 하나를 가리키지도 않는다
 
 ### 우리 쪽 상태
@@ -113,14 +113,14 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
   - 있다 → 확정
   - 없다 → 실패
   - 이번에도 답이 없다 → 확인 필요로 두고 나중에 다시 묻는다
-- **묻는 것은 공급사 상태를 바꾸지 않는 조회라 여러 번 불러도 된다.** 재시도는 ADR-0051 의 일시적인 실패 기준을 따를 수 있다
+- **묻는 것은 공급사 상태를 바꾸지 않는 조회라 여러 번 호출해도 된다.** 재시도는 ADR-0051 의 일시적인 실패 기준을 따를 수 있다
 - **멱등 키를 공급사가 기억하는 기간 안에 끝내야 한다.** Stripe 의 예처럼 키가 지워진 뒤에는 같은 키도 새 요청으로 처리될 수 있다(위 확인한 사실).
   그 기간이 가까워지도록 확인 필요로 남은 예약은 자동으로 풀지 않고 사람이 보게 넘긴다
 
 ### 재시도
 
-- **예약 생성은 멱등 키 없이 재시도하지 않는다.** ADR-0051 이 재시도를 안전하다고 본 전제는 재고·요금 조회가 `GET` 이라 여러 번 불러도 같다는 것이었다.
-  예약 생성은 부를 때마다 예약이 하나씩 생길 수 있어 그 전제가 없다
+- **예약 생성은 멱등 키 없이 재시도하지 않는다.** ADR-0051 이 재시도를 안전하다고 본 전제는 재고·요금 조회가 `GET` 이라 여러 번 호출해도 같다는 것이었다.
+  예약 생성은 호출할 때마다 예약이 하나씩 생길 수 있어 그 전제가 없다
 - 멱등 키가 있어도 응답이 없을 때는 **다시 보내지 않고 묻는다.** 두 번 보내지 않는 쪽이 가정 2 가 어긋났을 때의 피해가 작다
 
 ### 취소
@@ -150,7 +150,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 
 **이유**
 
-- 공급사 규약에 예약 API 가 없다. 그 위에 코드를 쓰면 요청·응답 모양을 우리가 지어내게 되고, 그 코드는 설명할 근거가 없다
+- 공급사 스펙에 예약 API 가 없다. 그 위에 코드를 쓰면 요청·응답 모양을 우리가 지어내게 되고, 그 코드는 설명할 근거가 없다
 - 결과를 모를 때 취소를 보내면 **실제로 된 예약을 우리가 없앨 수 있다.** 고객은 예약이 됐는지도 취소됐는지도 모른다.
   그리고 취소도 응답이 안 오면 똑같이 결과를 모르게 되어 문제가 한 단계 옮겨질 뿐이다
 - 같은 표식으로 물으면 사실(공급사에 예약이 있는가)을 확인한 뒤에 상태를 정한다. 추정으로 상태를 바꾸지 않는다
@@ -183,7 +183,7 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
   또 "실패 보상"은 AI 가 만든 말이다. 쓰이는 말은 보상 트랜잭션(compensating transaction)이고, 요구사항 문장은 "보상 처리"다.
   사용자가 "실패 보상이라는 말을 정말 써?" 라고 다시 물어 드러났다. Context 를 보상 트랜잭션의 뜻으로 고치고, 빠졌던 "공급사는 확정했는데 우리 기록이 실패" 경우를 물었다
 - **사용자 판단(보상)** — 기록을 재시도하고, 그래도 안 되면 공급사 예약을 취소하는 안으로 정했다. 사람에게 넘기는 안은 택하지 않았다
-- **사용자 판단** — 추천안(같은 표식으로 다시 묻는다)으로 정했다. 공급사 규약에 예약 API 가 없으므로 설계만 문서로 남기기로 했다
+- **사용자 판단** — 추천안(같은 표식으로 다시 묻는다)으로 정했다. 공급사 스펙에 예약 API 가 없으므로 설계만 문서로 남기기로 했다
 - **이어서 정한 것** — 설계를 쓴 에이전트가 "타임아웃·5xx 는 예약에서는 확인 필요"로 판단했고, 사용자가 그 판단을 확인했다(검색과 다르게 본다).
   재확인 요금이 다르면 고객에게 다시 묻기, 목록에서 빠진 상품은 예약 막기도 사용자가 정했다
 
@@ -194,5 +194,5 @@ Mock 이 흉내 내는 공급사 API 도 그 둘뿐이다 (`mock-supplier/src/ma
 예약 관련 코드가 저장소에 없는지
   → `grep -rni "reserv\|booking" app/src/main/kotlin` 가 아무것도 찾지 않는다 (2026-09-17 실행, 출력 없음, 종료 코드 1)
 
-공급사 API 를 흉내 내는 Mock 에 예약 API 가 없는지
+공급사 API 를 모사하는 Mock 에 예약 API 가 없는지
   → `mock-supplier/src/main/kotlin/com/stayaggregator/mocksupplier/MockSupplierController.kt` 의 공급사 경로는 목록·재고 조회 넷이고 모두 `@GetMapping` 이다

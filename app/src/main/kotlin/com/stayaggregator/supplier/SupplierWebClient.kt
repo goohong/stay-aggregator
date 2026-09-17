@@ -6,7 +6,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
 
 /**
- * 공급사 하나를 부르는 WebClient 를 만든다. 모든 어댑터가 이것으로 만든다 (ADR-0066).
+ * 공급사 하나를 호출하는 WebClient 를 만든다. 모든 어댑터가 이것으로 만든다 (ADR-0066).
  *
  * **연결 타임아웃은 여기서만 건다.** 호출 하나의 타임아웃([StayProperties.Supplier.availabilityTimeout] 등)은
  * 연결부터 응답까지 전체에 걸리고, 이 값은 그중 연결 수립에만 걸린다. 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않는다.

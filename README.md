@@ -20,7 +20,7 @@ Gradle 은 저장소에 포함된 래퍼를 씁니다. 따로 설치하지 않�
 | 모듈 | 하는 일 |
 |---|---|
 | `app` | 연동 백엔드 |
-| `mock-supplier` | 공급사 A·B 를 흉내내는 별도 서버. 앱과 코드도 의존성도 공유하지 않고 HTTP 로만 만납니다 ([ADR-0005](docs/adr/0005-separate-mock-module.md)) |
+| `mock-supplier` | 공급사 A·B 를 모사하는 별도 서버. 앱과 코드도 의존성도 공유하지 않고 HTTP 로만 만납니다 ([ADR-0005](docs/adr/0005-separate-mock-module.md)) |
 
 ## 실행
 
@@ -40,7 +40,7 @@ PostgreSQL 은 `compose.yml` 의 것을 앱이 함께 띄웁니다.
 GET /api/v1/stays/search?checkIn=2026-10-05&checkOut=2026-10-08&adults=2&children=0
 ```
 
-Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정으로 줍니다. 다른 날짜로 불러도 같은 값이 옵니다.
+Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정으로 줍니다. 다른 날짜로 호출해도 같은 값이 옵니다.
 
 체크아웃일은 숙박에 넣지 않습니다. 위 요청은 3박입니다 ([ADR-0043](docs/adr/0043-stay-period-value-object.md)).
 
@@ -72,7 +72,7 @@ Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정
 | 필드 | 뜻 |
 |---|---|
 | `status` | `FAILED` 는 **그 공급사 결과를 아예 만들지 못했다**는 뜻입니다. 매핑을 못 읽었거나, 모든 호출이 실패했거나, 검색 전체 타임아웃을 넘겼습니다 ([ADR-0050](docs/adr/0050-partial-chunk-failure.md)) |
-| `outOfSpecCount` | 응답이 규약과 달라 결과에서 뺀 객실 타입 수입니다. 0 이 아니면 그 공급사 결과가 줄어든 것입니다 ([ADR-0046](docs/adr/0046-supplier-status-in-search-response.md)) |
+| `outOfSpecCount` | 응답이 스펙과 달라 결과에서 뺀 객실 타입 수입니다. 0 이 아니면 그 공급사 결과가 줄어든 것입니다 ([ADR-0046](docs/adr/0046-supplier-status-in-search-response.md)) |
 | `failedChunks` | 성공했지만 호출하지 못한 chunk 수입니다. 0 이 아니면 그 공급사의 일부 숙소는 이 응답에 없습니다 |
 | `availableRooms` | 요청 기간 전체에 예약할 수 있는 객실 수입니다. **0 이어도 빼지 않고 내보냅니다** ([ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md)) |
 | `rate.totalAmount` | 세금을 포함한 **기간 전체 총액**입니다. 1박 얼마인지는 보여주는 쪽이 총액과 `nights` 로 계산합니다 ([ADR-0042](docs/adr/0042-rate-as-tax-included-total.md)) |
@@ -117,7 +117,7 @@ curl -X POST 'localhost:9090/control/a/mode?value=normal'                # 되�
 | 만들거나 고칠 것 | 내용 |
 |---|---|
 | `app/.../supplier/c/SupplierCAdapter.kt` | `SupplierAdapter` 를 구현합니다. 목록 조회와 재고·요금 조회 둘 다입니다. 하나를 빠뜨리면 컴파일되지 않습니다 |
-| `app/.../supplier/c/SupplierC*Response.kt` | 그 공급사의 응답을 받는 DTO 둘. 규약의 필드를 모두 받기만 하고 검증하지 않습니다 ([ADR-0030](docs/adr/0030-supplier-response-dto-receives-without-validation.md)) |
+| `app/.../supplier/c/SupplierC*Response.kt` | 그 공급사의 응답을 받는 DTO 둘. 스펙의 필드를 모두 받기만 하고 검증하지 않습니다 ([ADR-0030](docs/adr/0030-supplier-response-dto-receives-without-validation.md)) |
 | `application.yml` 의 `stay.suppliers.c` | 주소·인증 키·타임아웃 두 개 |
 
 consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사가 늘어도 호출하는 쪽 코드가 그대로입니다
@@ -131,18 +131,18 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 
 | | 어떻게 | |
 |---|---|---|
-| 병렬 호출 | 공급사들을 동시에 부르고, 한 공급사 안에서도 chunk 를 동시에 호출합니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
-| 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 부르고, 동시에 호출하는 chunk 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
+| 병렬 호출 | 공급사들을 동시에 호출하고, 한 공급사 안에서도 chunk 를 동시에 호출합니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
+| 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 호출하고, 동시에 호출하는 chunk 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
 | 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 연결 수립에는 따로 짧은 타임아웃을 걸어, 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않습니다([ADR-0066](docs/adr/0066-connect-timeout-in-shared-webclient.md)). 호출 하나의 타임아웃은 검색 전체 한계보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 배경 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
 | 실패 분류 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 공급사 실패 예외로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 재시도 | **일시적인 실패만** 재시도합니다. 지수 백오프에 무작위를 섞습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md) |
-| 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 chunk 가 많으면 한동안 그 공급사를 부르지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
+| 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 chunk 가 많으면 한동안 그 공급사를 호출하지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
 | 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·우리 쪽 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
 | 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 그룹화해 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 목록과 재고 응답의 이름이 다른 것은 항목을 빼지 않고 경고로 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
 
 재시도·타임아웃·동시 실행 수 제한은 **이미 쓰는 Reactor 의 연산자**로, 서킷은 **resilience4j** 로 했습니다.
-resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자를 부르는 것을 확인해, 옮겨도 동작이 같아 옮기지 않았습니다.
+resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자를 호출하는 것을 확인해, 옮겨도 동작이 같아 옮기지 않았습니다.
 서킷은 Reactor 에 없어 완성된 라이브러리를 썼습니다 ([ADR-0057](docs/adr/0057-resilience4j-reactor-for-circuit-breaker.md), [비교 기록](docs/research/resilience-library-comparison.md)).
 
 **타임아웃은 재시도하지 않습니다.** 타임아웃은 "공급사가 느리다"는 신호라 재시도해도 느릴 가능성이 높습니다.
@@ -158,7 +158,7 @@ chunk 수는 숙소 수로 정해지므로, 숙소 규모와 실제 공급사의
 
 - **공급사 HTTP 원문 그대로의 보관.** 격리 기록의 원본은 우리가 읽어 들인 항목 하나입니다. 원문은 숙소 50개가 한 덩어리라 항목 하나를 떼기 어렵습니다 ([ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md))
 - **경보와 대시보드.** 지표는 세어 내보내지만, 무엇에 경보를 걸지는 설계로만 남겼습니다 ([ADR-0060](docs/adr/0060-supplier-call-metrics.md))
-- **예약 대행.** 공급사 규약에 예약 API 가 없어 설계만 남겼습니다 ([ADR-0064](docs/adr/0064-reservation-proxy-design-only.md))
+- **예약 대행.** 공급사 스펙에 예약 API 가 없어 설계만 남겼습니다 ([ADR-0064](docs/adr/0064-reservation-proxy-design-only.md))
 - **체크인일이 지난 날짜인지 검사.** 숙소의 시간대를 우리가 모릅니다. 서버 기준으로 막으면 현지로는 아직 어제인 숙소의 합법인 요청을 막게 됩니다 ([ADR-0052](docs/adr/0052-no-past-date-check.md))
 - **숙소명으로 같은 숙소를 추정해 합치기.** 공통 키도 주소도 없어 동명 숙소를 잘못 합칠 수 있습니다.
   사람이 확인한 짝만 같은 값으로 묶기로 정했고 아직 구현하지 않았습니다. 지금은 각각 내보내고 `supplier` 를 함께 싣습니다 ([ADR-0058](docs/adr/0058-same-hotel-confirmed-pairs-only.md))
@@ -177,7 +177,7 @@ chunk 수는 숙소 수로 정해지므로, 숙소 규모와 실제 공급사의
 | 목록에서 빠진 숙소도 행을 남기고 표시만 한다 | 지웠다가 다시 나타나면 내부 식별자가 바뀐다 | [ADR-0037](docs/adr/0037-missing-catalog-entries-kept-and-marked.md) |
 | 연박 예약 가능 수는 날짜별 잔여 수의 최솟값 | 기간 전체를 팔려면 매일 밤 방이 한 실씩 있어야 한다 | [ADR-0023](docs/adr/0023-multi-night-availability-minimum.md) |
 | 예약 불가 상품도 0 으로 노출한다 | 매진을 보여 줄지는 화면이 정할 일이라 서버가 정보를 버리지 않는다 | [ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md) |
-| 규약과 다른 공급사 응답은 세 질문으로 분류한다 | 응답을 읽을 수 있나 / 계산에 쓰이나 / 값을 하나로 정할 수 있나 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
+| 스펙과 다른 공급사 응답은 세 질문으로 분류한다 | 응답을 읽을 수 있나 / 계산에 쓰이나 / 값을 하나로 정할 수 있나 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 값 검증은 그 값을 담는 객체의 생성자에 둔다 | 조건과 사유가 한자리에 있고, 검증을 거치지 않은 객체가 존재할 수 없다 | [ADR-0041](docs/adr/0041-validate-in-constructors.md) |
 
 ## 문서

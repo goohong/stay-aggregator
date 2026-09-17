@@ -39,7 +39,7 @@ class SupplierCircuitBreakers(
         meterRegistry?.let { io.github.resilience4j.micrometer.tagged.TaggedCircuitBreakerMetrics.ofCircuitBreakerRegistry(registry).bindTo(it) }
     }
 
-    /** 그 공급사의 서킷. 처음 부를 때 만들고 그 뒤로는 같은 것을 준다 */
+    /** 그 공급사의 서킷. 처음 호출할 때 만들고 그 뒤로는 같은 것을 준다 */
     fun of(supplierId: String): CircuitBreaker = registry.circuitBreaker(supplierId)
 
     private fun config(c: StayProperties.CircuitBreaker): CircuitBreakerConfig =

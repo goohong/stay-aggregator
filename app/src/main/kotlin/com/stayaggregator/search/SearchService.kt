@@ -24,8 +24,8 @@ import java.util.concurrent.TimeoutException
 /**
  * 검색 한 건. 공급사마다 매핑을 읽고, chunk 로 나눠 재고·요금을 물은 뒤, 정규화해서 합친다.
  *
- * 공급사들은 동시에 부르고, 공급사 하나가 실패해도 나머지 결과로 응답한다 (ADR-0046).
- * 한 공급사 안에서는 chunk 를 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 부르고,
+ * 공급사들은 동시에 호출하고, 공급사 하나가 실패해도 나머지 결과로 응답한다 (ADR-0046).
+ * 한 공급사 안에서는 chunk 를 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 호출하고,
  * chunk 일부가 실패하면 성공한 chunk 는 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
  * chunk 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 재시도한다 (ADR-0051). 목록 동기화는 재시도하지 않는다 (ADR-0019).
  * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 chunk 의 최종 결과를 세고, 열려 있으면 그 공급사를 호출하지 않는다 (ADR-0056, ADR-0057).
@@ -64,7 +64,7 @@ class SearchService(
             .timeout(search.timeout)
             .onErrorResume { e -> Mono.just(failed(adapter.supplierId, e)) }
 
-    /** 매핑의 숙소 코드를 50개씩 나눠 부르고, chunk 마다 정규화한 결과를 모은다 */
+    /** 매핑의 숙소 코드를 50개씩 나눠 호출하고, chunk 마다 정규화한 결과를 모은다 */
     private fun fetchAll(adapter: AvailabilityAdapter, mapped: List<MappedHotel>, period: StayPeriod, guests: GuestCount): Mono<SupplierResult> {
         if (mapped.isEmpty()) {
             return Mono.just(SupplierResult.succeeded(adapter.supplierId, emptyList(), outOfSpecCount = 0, failedChunks = 0))
@@ -103,7 +103,7 @@ class SearchService(
 
     private fun chunkFailureReason(supplierId: String, e: Throwable): String =
         when (e) {
-            is CallNotPermittedException -> "공급사 $supplierId 의 서킷이 열려 있어 부르지 않았다"
+            is CallNotPermittedException -> "공급사 $supplierId 의 서킷이 열려 있어 호출하지 않았다"
             else -> e.message ?: e.javaClass.simpleName
         }
 

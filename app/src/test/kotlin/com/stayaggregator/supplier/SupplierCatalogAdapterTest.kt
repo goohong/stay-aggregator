@@ -18,7 +18,7 @@ import java.util.concurrent.TimeoutException
 /**
  * 어댑터가 실제 HTTP 응답을 받아 공통 형태로 바꾸는지, 공급사마다 다른 실패 표현을 같은 공급사 실패 예외로 바꾸는지 확인한다.
  *
- * 공급사는 JDK 에 들어 있는 작은 HTTP 서버로 흉내 낸다. Mock 모듈은 별도 프로세스라(ADR-0005)
+ * 공급사는 JDK 에 들어 있는 작은 HTTP 서버로 모사한다. Mock 모듈은 별도 프로세스라(ADR-0005)
  * 테스트에서 띄우지 않고, 여기서는 어댑터 하나만 본다.
  */
 class SupplierCatalogAdapterTest {

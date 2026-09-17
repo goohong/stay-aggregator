@@ -25,7 +25,7 @@ data class SupplierResult(
     val roomTypes: List<AvailableRoomType>,
     /** 스펙과 달라 응답에서 뺀 객실 타입 수 */
     val outOfSpecCount: Int,
-    /** 부르지 못한 chunk 수. 그 chunk 의 숙소는 이 응답에 없다 */
+    /** 호출하지 못한 chunk 수. 그 chunk 의 숙소는 이 응답에 없다 */
     val failedChunks: Int,
     /** 실패했을 때 왜 실패했는지. 성공이면 null */
     val failureReason: String?,

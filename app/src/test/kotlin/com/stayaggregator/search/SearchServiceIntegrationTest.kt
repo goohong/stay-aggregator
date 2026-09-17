@@ -173,8 +173,8 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `매핑이 비어 있는 공급사는 부르지 않고 성공 0건이다`() {
-        val a = FakeAdapter("a") { Mono.error(IllegalStateException("불리면 안 된다")) }
+    fun `매핑이 비어 있는 공급사는 호출하지 않고 성공 0건이다`() {
+        val a = FakeAdapter("a") { Mono.error(IllegalStateException("호출되면 안 된다")) }
 
         val result = service(a).search(period, guests)
 
@@ -228,7 +228,7 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `재시도를 0 으로 두면 한 번만 부른다`() {
+    fun `재시도를 0 으로 두면 한 번만 호출한다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val a = FakeAdapter("a") { Mono.error(SupplierResponseException("일시적", transient = true)) }
 
