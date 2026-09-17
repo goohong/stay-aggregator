@@ -180,6 +180,7 @@ class SupplierCatalogAdapterTest {
                 maxRetries = 0,
                 retryMinBackoff = Duration.ofMillis(10),
                 retryMaxBackoff = Duration.ofMillis(50),
+                circuitBreaker = StayProperties.CircuitBreaker(50f, 4, 4, Duration.ofSeconds(1), 1),
             ),
         )
 

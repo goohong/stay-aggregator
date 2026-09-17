@@ -234,6 +234,62 @@ class SearchServiceIntegrationTest {
         assertThat(a.requests).hasSize(1)
     }
 
+    // ── 서킷 브레이커 (ADR-0056) ── 테스트 설정은 최근 4묶음 중 50% 실패면 연다
+
+    @Test
+    fun `공급사가 계속 실패하면 서킷이 열리고 그 뒤 검색은 그 공급사를 부르지 않는다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
+        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 503", transient = true)) }
+        val b = FakeAdapter("b") { Mono.just(availability(itemB("B-1", "R-1", total = 200_000, breakfast = false))) }
+        val breakers = breakers()
+        val service = service(a, b, breakers = breakers)
+
+        repeat(4) { service.search(period, guests) }
+        val callsBeforeOpen = a.requests.size
+        val result = service.search(period, guests)
+
+        assertThat(breakers.of("a").state).isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.OPEN)
+        // 열린 뒤에는 부르지 않는다
+        assertThat(a.requests).hasSize(callsBeforeOpen)
+        val resultA = result.suppliers.single { it.supplierId == "a" }
+        assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
+        assertThat(resultA.failureReason).contains("서킷이 열려 있어")
+        // 다른 공급사는 그대로 나간다
+        assertThat(result.suppliers.single { it.supplierId == "b" }.status).isEqualTo(SupplierStatus.SUCCEEDED)
+        assertThat(breakers.of("b").state).isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED)
+    }
+
+    @Test
+    fun `재시도 끝에 성공한 묶음은 서킷이 실패로 세지 않는다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val attempts = AtomicInteger()
+        val a = FakeAdapter("a") {
+            if (attempts.incrementAndGet() % 2 == 1) Mono.error(SupplierResponseException("일시적", transient = true))
+            else Mono.just(availability(itemA("A-1", "DLX", breakfast = false)))
+        }
+        val breakers = breakers()
+
+        repeat(4) { service(a, maxRetries = 1, breakers = breakers).search(period, guests) }
+
+        val metrics = breakers.of("a").metrics
+        assertThat(metrics.numberOfSuccessfulCalls).isEqualTo(4)
+        assertThat(metrics.numberOfFailedCalls).isZero()
+    }
+
+    @Test
+    fun `공급사 실패가 아닌 우리 쪽 오류는 서킷이 세지 않는다`() {
+        // 우리 결함 때문에 멀쩡한 공급사를 끊지 않는다 (ADR-0056)
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val a = FakeAdapter("a") { Mono.error(IllegalStateException("우리 쪽 결함")) }
+        val breakers = breakers()
+
+        repeat(6) { service(a, breakers = breakers).search(period, guests) }
+
+        assertThat(breakers.of("a").state).isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED)
+        assertThat(a.requests).hasSize(6)
+    }
+
     @Test
     fun `검색 서비스는 재고 조회 인터페이스의 목록만 주입받는다`() {
         // 가짜가 AvailabilityAdapter 만 구현해도 서비스가 만들어진다. 목록 조회 기능을 채울 필요가 없다 (ADR-0031)
@@ -244,13 +300,21 @@ class SearchServiceIntegrationTest {
 
     // ── 도우미 ──
 
-    private fun service(vararg adapters: AvailabilityAdapter, budget: Duration = properties.search.budget, maxRetries: Int = 0) =
-        SearchService(
-            adapters.toList(),
-            repository,
-            normalizer,
-            StayProperties(properties.suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries)),
-        )
+    /**
+     * 테스트마다 서킷을 새로 만든다. 앞 테스트의 실패가 서킷에 남아 다음 테스트를 막지 않게 한다.
+     * 서킷을 직접 보고 싶은 테스트는 [breakers] 로 넘긴다.
+     */
+    private fun service(
+        vararg adapters: AvailabilityAdapter,
+        budget: Duration = properties.search.budget,
+        maxRetries: Int = 0,
+        breakers: SupplierCircuitBreakers? = null,
+    ): SearchService {
+        val props = StayProperties(properties.suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries))
+        return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), props)
+    }
+
+    private fun breakers() = SupplierCircuitBreakers(properties)
 
     private class FakeAdapter(
         override val supplierId: String,

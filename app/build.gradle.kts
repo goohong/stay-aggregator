@@ -28,6 +28,10 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     // 공급사 호출은 WebClient 로 한다 (ADR-0020). 이 스타터는 리액티브 서버를 끌고 오지 않는다 (ADR-0007).
     implementation("org.springframework.boot:spring-boot-starter-webclient")
+    // 반복해서 실패하는 공급사를 한동안 부르지 않는다 (ADR-0056). Reactor 에 없어 완성된 라이브러리를 쓴다 (ADR-0057).
+    // Boot 4 자동 설정 모듈은 릴리스되지 않아, 연산자 모듈만 넣고 서킷은 설정에서 읽어 직접 만든다.
+    implementation("io.github.resilience4j:resilience4j-reactor:2.3.0")
+    implementation("io.github.resilience4j:resilience4j-circuitbreaker:2.3.0")
     // Kotlin 데이터 클래스로 JSON 을 받으려면 필요하다. Boot 4 는 Jackson 3 이라 tools.jackson 좌표를 쓴다 (ADR-0007).
     implementation("tools.jackson.module:jackson-module-kotlin")
 

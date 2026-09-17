@@ -32,6 +32,13 @@ stay:
     max-retries: 2
     retry-min-backoff: PT0.1S
     retry-max-backoff: PT1S
+    # 반복해서 실패하는 공급사를 한동안 부르지 않는다 (ADR-0056). 모두 임시값이다.
+    circuit-breaker:
+      failure-rate-threshold: 50
+      sliding-window-size: 20
+      minimum-number-of-calls: 10
+      wait-duration-in-open-state: PT30S
+      permitted-number-of-calls-in-half-open-state: 3
 
   # 목록 동기화는 기동 직후 한 번 돌고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
   # 기본값은 CatalogSyncScheduler 에 있다. 바꾸려면 stay.catalog.sync.initial-delay 와 interval 을 여기에 적는다.

@@ -48,9 +48,35 @@ data class StayProperties(
         val retryMinBackoff: Duration,
         /** 재시도 대기의 상한. 걸지 않으면 사실상 무한이다 (ADR-0051) */
         val retryMaxBackoff: Duration,
+        /** 공급사마다 하나씩 두는 서킷의 기준 (ADR-0056). 모든 공급사가 같은 기준을 쓴다 */
+        val circuitBreaker: CircuitBreaker,
     ) {
         init {
             require(maxRetries >= 0) { "재시도 횟수가 음수다" }
+        }
+    }
+
+    /**
+     * 서킷을 여닫는 기준. 값은 아직 임시값이고 선택 항목을 마친 뒤 근거를 붙여 정한다 (ADR-0056).
+     * 세는 단위는 호출 한 번이 아니라 **재시도까지 거친 묶음 하나의 최종 결과**다.
+     */
+    data class CircuitBreaker(
+        /** 최근 묶음 중 실패한 비율이 이 퍼센트 이상이면 연다 */
+        val failureRateThreshold: Float,
+        /** 실패율을 계산할 최근 묶음 수 */
+        val slidingWindowSize: Int,
+        /** 이만큼 묶음이 쌓이기 전에는 실패율을 계산하지 않는다. 몇 번 실패로 바로 열리지 않게 한다 */
+        val minimumNumberOfCalls: Int,
+        /** 연 뒤 이 시간 동안은 부르지 않는다 */
+        val waitDurationInOpenState: Duration,
+        /** 이 시간이 지난 뒤 시험 삼아 부르는 묶음 수 */
+        val permittedNumberOfCallsInHalfOpenState: Int,
+    ) {
+        init {
+            require(failureRateThreshold > 0 && failureRateThreshold <= 100) { "실패율 기준은 0 초과 100 이하여야 한다" }
+            require(slidingWindowSize >= 1) { "실패율을 계산할 묶음 수가 1 미만이다" }
+            require(minimumNumberOfCalls >= 1) { "최소 묶음 수가 1 미만이다" }
+            require(permittedNumberOfCallsInHalfOpenState >= 1) { "시험 삼아 부를 묶음 수가 1 미만이다" }
         }
     }
 

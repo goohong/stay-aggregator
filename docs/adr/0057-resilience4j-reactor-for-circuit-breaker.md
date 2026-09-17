@@ -78,7 +78,9 @@ date: 2026-09-17
 
 ## Verification
 
-구현할 때 확인하고 테스트 이름을 여기에 적는다.
+서킷이 우리 Reactor 체인에서 실제로 열리는지
+  → `SearchServiceIntegrationTest.공급사가 계속 실패하면 서킷이 열리고 그 뒤 검색은 그 공급사를 부르지 않는다`
 
-- 서킷이 열리는지(ADR-0056 의 Verification 과 같은 테스트)
-- 의존성을 넣은 뒤 `slf4j-api` 가 Boot 가 관리하는 2.0.x 로 풀리는지 (`./gradlew :app:dependencies --configuration runtimeClasspath`)
+의존성을 넣은 뒤 버전이 어떻게 풀리는지
+  → `./gradlew :app:dependencies --configuration runtimeClasspath` (2026-09-17) 에서 `reactor-core:3.4.24 -> 3.8.7`, `slf4j-api:1.7.30 -> 2.0.18`.
+    Boot 가 관리하는 버전으로 올라가 충돌이 없다

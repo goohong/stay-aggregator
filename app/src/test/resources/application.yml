@@ -19,3 +19,9 @@ stay:
     max-retries: 2
     retry-min-backoff: PT0.01S
     retry-max-backoff: PT0.05S
+    circuit-breaker:
+      failure-rate-threshold: 50
+      sliding-window-size: 4
+      minimum-number-of-calls: 4
+      wait-duration-in-open-state: PT1S
+      permitted-number-of-calls-in-half-open-state: 1

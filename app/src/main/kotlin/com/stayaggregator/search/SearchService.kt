@@ -8,6 +8,8 @@ import com.stayaggregator.supplier.GuestCount
 import com.stayaggregator.supplier.StayPeriod
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierResponseException
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
@@ -22,6 +24,7 @@ import java.util.concurrent.TimeoutException
  * 한 공급사 안에서는 묶음을 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 부르고,
  * 묶음 일부가 실패하면 성공한 묶음은 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
  * 묶음 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 다시 부른다 (ADR-0051). 목록 동기화는 다시 부르지 않는다 (ADR-0019).
+ * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 묶음의 최종 결과를 세고, 열려 있으면 그 공급사를 부르지 않는다 (ADR-0056, ADR-0057).
  * 검색 전체 시간 한계는 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
  *
  * 기다리는 자리는 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021).
@@ -34,6 +37,7 @@ class SearchService(
     private val adapters: List<AvailabilityAdapter>,
     private val repository: MappingRepository,
     private val normalizer: AvailabilityNormalizer,
+    private val circuitBreakers: SupplierCircuitBreakers,
     properties: StayProperties,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
@@ -75,11 +79,20 @@ class SearchService(
     private fun fetchChunk(adapter: AvailabilityAdapter, request: AvailabilityRequest, mapped: List<MappedHotel>): Mono<ChunkOutcome> =
         adapter.fetchAvailability(request)
             .retryWhen(retryTransient(adapter.supplierId, request))
+            // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
+            // 검색 시간 한계로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
+            .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
             .map<ChunkOutcome> { fetched -> ChunkOutcome.Succeeded(normalizer.normalize(fetched, mapped, request.period)) }
             .onErrorResume { e ->
                 logChunkFailure(adapter.supplierId, request, e)
-                Mono.just(ChunkOutcome.Failed(reason = e.message ?: e.javaClass.simpleName))
+                Mono.just(ChunkOutcome.Failed(reason = chunkFailureReason(adapter.supplierId, e)))
             }
+
+    private fun chunkFailureReason(supplierId: String, e: Throwable): String =
+        when (e) {
+            is CallNotPermittedException -> "공급사 $supplierId 의 서킷이 열려 있어 부르지 않았다"
+            else -> e.message ?: e.javaClass.simpleName
+        }
 
     /**
      * 일시적인 실패만 다시 부른다 (ADR-0051).
@@ -140,7 +153,10 @@ class SearchService(
     }
 
     private fun logChunkFailure(supplierId: String, request: AvailabilityRequest, e: Throwable) {
-        if (e is SupplierResponseException) {
+        if (e is CallNotPermittedException) {
+            // 서킷이 연 것은 상태 변경 때 한 번 남겼다. 묶음마다 경고를 찍지 않는다
+            log.debug("검색 묶음 건너뜀 supplier={} 숙소={}개 서킷 열림", supplierId, request.hotelCodes.size)
+        } else if (e is SupplierResponseException) {
             log.warn("검색 묶음 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message)
         } else {
             log.warn("검색 묶음 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message, e)

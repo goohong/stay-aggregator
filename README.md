@@ -134,6 +134,11 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
 | 실패 판정 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 신호로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 재시도 | **일시적인 실패만** 다시 부릅니다. 지수 백오프에 무작위를 섞습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md) |
+| 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 묶음이 많으면 한동안 그 공급사를 부르지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
+
+재시도·타임아웃·동시 실행 수 제한은 **이미 쓰는 Reactor 의 연산자**로, 서킷은 **resilience4j** 로 했습니다.
+resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자를 부르는 것을 확인해, 옮겨도 동작이 같아 옮기지 않았습니다.
+서킷은 Reactor 에 없어 완성된 라이브러리를 썼습니다 ([ADR-0057](docs/adr/0057-resilience4j-reactor-for-circuit-breaker.md), [비교 기록](docs/research/resilience-library-comparison.md)).
 
 **재시도에서 타임아웃은 다시 부르지 않습니다.** 타임아웃은 "공급사가 느리다"는 신호라 다시 불러도 느릴 가능성이 높습니다.
 반대로 503·429·연결 실패는 순간적일 수 있어 다시 부릅니다. 어느 쪽인지는 실패 신호가 들고 다니고,
@@ -146,7 +151,6 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 
 ## 하지 않은 것
 
-- **서킷 브레이커.** 반복해서 실패하는 공급사를 아예 끊는 것은 아직 안 합니다. 동시 실행 수 제한이 1차 방어입니다 (ADR-0045)
 - **변환하지 못한 원본 응답의 보관.** 지금 남기는 것은 제외 사유와 로그까지입니다
 - **연동 지표·모니터링.** 로그에 원인 종류가 남게 해 두어 나중에 셀 수 있습니다 ([용어](docs/glossary.md))
 - **체크인일이 지난 날짜인지 검사.** 숙소의 시간대를 우리가 모릅니다. 서버 기준으로 막으면 현지로는 아직 어제인 숙소의 합법인 요청을 막게 됩니다 ([ADR-0052](docs/adr/0052-no-past-date-check.md))
