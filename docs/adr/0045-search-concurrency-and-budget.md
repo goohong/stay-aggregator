@@ -19,12 +19,14 @@ date: 2026-09-17
 | 재고·요금 API 는 한 번에 숙소 코드 **50개**까지 받고, **초과하면 오류**다. 공급사 A 는 HTTP 400 `TOO_MANY_HOTEL_CODES`, B 는 HTTP 200 + `E400` 으로 거절한다 | 공급사 스펙의 본문과 오류 표 |
 | 예시 데이터는 이 상한에 걸리지 않는다. 숙소가 수천 개로 늘 때 어떻게 할지를 설계 문서에 남기라고 한다 | 같은 곳 |
 | 두 공급사 모두 **호출 한도 초과** 오류가 따로 있다 (A 는 429, B 는 `E429`). 한도 수치는 스펙에 없다 | 오류 표 |
-| WebClient 의 기본 커넥션 풀은 **프로세서 수의 두 배, 최소 16** 이다. 풀이 차면 대기 큐에 들어가 기본 **45초**를 기다린다 | [Reactor Netty `ConnectionProvider`](https://projectreactor.io/docs/netty/release/api/reactor/netty/resources/ConnectionProvider.html) 의 `DEFAULT_POOL_MAX_CONNECTIONS` ("Fallback to 2 * available number of processors (but with a minimum value of 16)"), [HttpClient Timeout](https://github.com/reactor/reactor-netty/blob/main/docs/modules/ROOT/pages/http-client.adoc) ("Default: 45s") |
+| ~~WebClient 의 기본 커넥션 풀은 프로세서 수의 두 배, 최소 16 이다~~ (2026-09-17 정정, 아래 줄) 풀이 차면 대기 큐에 들어가 기본 **45초**를 기다린다 | [Reactor Netty `ConnectionProvider`](https://projectreactor.io/docs/netty/release/api/reactor/netty/resources/ConnectionProvider.html) 의 `DEFAULT_POOL_MAX_CONNECTIONS` ("Fallback to 2 * available number of processors (but with a minimum value of 16)"), [HttpClient Timeout](https://github.com/reactor/reactor-netty/blob/main/docs/modules/ROOT/pages/http-client.adoc) ("Default: 45s") |
+| **정정.** 위 "최소 16" 은 `ConnectionProvider` 를 직접 만들 때의 상수다. 우리가 쓰는 `HttpClient.create()` 는 공유 풀을 쓰고, 그 풀의 최대 연결 수는 **`max(그 상수, 500)`** 이며 **원격 주소마다 따로** 둔다 | reactor-netty-core 1.3.7 소스 `TcpResources.create`: `int defaultMaxConnections = Math.max(ConnectionProvider.DEFAULT_POOL_MAX_CONNECTIONS, 500);` / `PooledConnectionProvider.acquire`: `PoolKey holder = new PoolKey(remoteAddress, config.channelHash());` (Gradle 캐시의 sources jar 에서 확인) |
 | DB 커넥션 풀은 HikariCP 기본 **10** 이다 | [ADR-0021](0021-block-on-virtual-threads.md) 에 기록 |
 | 동시 호출 수는 `Flux.flatMap(mapper, concurrency)` 의 인자로 제한한다 | [ADR-0009](0009-reactor-over-coroutines.md) |
 
-숙소가 3,000개면 공급사당 60회, 두 공급사면 120회다. 제한 없이 모두 띄우면 기본 풀(최소 16)을 넘어
-100회 넘는 호출이 대기 큐에서 최대 45초를 기다린다. 검색 한 건이 그만큼 늘어진다.
+숙소가 3,000개면 공급사당 60회, 두 공급사면 120회다. 처음에는 제한 없이 모두 띄우면 기본 풀(최소 16)을 넘어
+100회 넘는 호출이 대기 큐에서 최대 45초를 기다린다고 적었다. **풀 크기를 잘못 읽은 것이다(위 정정).** 공급사 하나에 60회는 그 공급사 주소의 풀(500)을 넘지 않는다.
+제한하지 않았을 때 남는 문제는 공급사 하나에 호출 60개를 한꺼번에 보내는 것이다. 호출 한도 수치는 스펙에 없다.
 
 ## Options
 
@@ -41,7 +43,8 @@ Mock 의 숙소 코드 수 검사
 
 - **대상 숙소 코드를 공급사별로 모아 50개 이하의 chunk 로 나눠 호출한다.** 이것은 우리 판단이 아니라 공급사가 거절하는 제약이다
 - **chunk 호출의 동시 실행 수를 제한한다.** `flatMap` 의 `concurrency` 인자로 준다.
-  값은 **WebClient 기본 풀 크기를 넘지 않게** 잡는다. 시작값은 공급사당 4 로 둔다
+  시작값은 공급사당 4 로 둔다. 처음에는 "WebClient 기본 풀 크기(최소 16)를 넘지 않게"를 이유로 들었으나 그 풀 크기는 잘못 읽은 것이었다.
+  4 는 유지한다. 공급사에 한꺼번에 보내는 호출 수를 제한하는 값이고 크기는 판단값이다 ([ADR-0068](0068-search-values-from-relations.md))
 - **검색 한 건 전체에 타임아웃을 둔다(검색 전체 타임아웃).** 그 안에 끝내지 못한 공급사는 부분 실패로 내보내고 나머지 결과로 응답한다.
   호출 타임아웃과 별개다. 목록 동기화의 30초([ADR-0039](0039-catalog-sync-remaining.md))는 백그라운드 작업 값이라 검색에 쓰지 않는다
 - **커넥션 풀 크기는 기본값을 쓴다.** WebClient 도 DB 도 지금 만질 근거가 없다
@@ -50,7 +53,8 @@ Mock 의 숙소 코드 수 검사
 **이유**
 
 - 50개는 지키지 않으면 그 호출이 통째로 실패하고, 실패 형식이 공급사마다 달라 부분 실패 처리까지 번진다
-- 제한 없이 띄우면 기본 풀을 넘어 대기 큐에서 기다린다. 그 기다림은 호출 타임아웃 바깥이라 호출 타임아웃으로 취소되지 않는다
+- 제한 없이 띄우면 공급사 하나에 호출을 한꺼번에 보낸다. 호출 한도 수치를 모르므로 그 수를 우리가 제한한다.
+  (처음에는 "기본 풀을 넘어 대기 큐에서 기다린다"를 이유로 들었다. 공유 풀은 원격 주소마다 500 이라 숙소 3,000개에서도 넘지 않는다. 2026-09-17 정정)
 - 호출마다 타임아웃만 걸면 호출이 수십 번일 때 검색 한 건이 그만큼 길어진다. 고객이 기다리는 요청이므로 검색 전체에도 타임아웃이 있어야 한다
 - 풀 크기는 측정이 있어야 정할 수 있다. 지금 Mock 은 1~2ms 로 답하고 숙소가 셋이라 어떤 값을 넣어도 차이가 보이지 않는다
 
@@ -62,10 +66,10 @@ Mock 의 숙소 코드 수 검사
 - 나눠 호출하는 것이 테스트로 확인된다
 
 **잃는 것**
-- **동시 실행 수와 검색 전체 타임아웃의 숫자에 측정 근거가 없다.** "기본 풀을 넘지 않는다"에서 끌어낸 값이고,
+- **동시 실행 수와 검색 전체 타임아웃의 숫자에 측정 근거가 없다.** "기본 풀을 넘지 않는다"에서 끌어낸 값이고(그 풀 크기는 잘못 읽은 것이었다),
   타임아웃을 정할 때 있었던 중간 장비 기본값 같은 외부 근거조차 없다.
   2026-09-17 에 [ADR-0068](0068-search-values-from-relations.md) 이 측정 대신 관계식과 인용·판단으로 값을 정했다(재고·요금 호출 타임아웃 5초 → 2초)
-- 프로세서 수에 따라 기본 풀이 달라져 환경마다 동시성이 다르다
+- ~~프로세서 수에 따라 기본 풀이 달라져 환경마다 동시성이 다르다~~ 공유 풀은 `max(프로세서 수 × 2, 500)` 이라 프로세서가 250개를 넘지 않으면 500 이다 (2026-09-17 정정)
 - Mock 코드가 는다. 검증 수단을 늘리는 것이라 안내서가 말한 "Mock 자체는 채점하지 않는다"와 상충하지 않지만,
   어디까지 모사할지 선은 필요하다. **공급사 스펙에 오류로 적힌 것까지만 모사하고 그 밖은 하지 않는다**
 
@@ -80,6 +84,7 @@ Mock 의 숙소 코드 수 검사
 ## Discussion
 
 - **AI 주장과 근거** — (가)를 권하면서 근거로 기본 풀 크기와 대기 45초를 들었다. 약점으로 값에 측정 근거가 없다는 점을 들었다
+- **정정 (2026-09-17)** — 그 풀 크기는 `ConnectionProvider` 를 직접 만들 때의 상수였고, `HttpClient.create()` 의 공유 풀은 원격 주소마다 500 이다. 다른 에이전트가 Reactor Netty 소스에서 찾았고 같은 소스를 다시 열어 확인했다. 동시 실행 수 4 는 유지하고 이유 문장만 고쳤다
 - **사용자 판단** — (가)로 가되 값의 근거는 나중에 만들어 튜닝하기로 했다
 - **반박** — Mock 에 검사를 더하는 것이 "Mock 에 시간을 쓰지 말라"와 부딪히지 않느냐는 AI 의 우려에 대해,
   그 제약은 완성도를 채점하지 않으니 다듬지 말라는 뜻이고 우리 구현을 확인하는 가장 확실한 방법이면 쓰는 것이 맞다고 정리했다.

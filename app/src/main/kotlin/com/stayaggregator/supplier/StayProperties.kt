@@ -50,7 +50,7 @@ data class StayProperties(
          * 이 안에 끝내지 못한 공급사는 실패로 내보내고 나머지 결과로 응답한다 (ADR-0045).
          */
         val timeout: Duration,
-        /** 공급사 하나에서 chunk 호출을 동시에 몇 개 띄우는가. WebClient 기본 풀 크기를 넘지 않게 잡는다 (ADR-0045) */
+        /** 공급사 하나에서 chunk 호출을 동시에 몇 개 띄우는가. 공급사에 한꺼번에 보내는 호출 수를 제한한다 (ADR-0045) */
         val concurrencyPerSupplier: Int,
         /** 5xx·연결 실패처럼 재시도 가능한 실패의 재시도 기준 (ADR-0051, ADR-0068) */
         val retry: RetryPolicy,
