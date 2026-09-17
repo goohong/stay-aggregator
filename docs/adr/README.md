@@ -59,3 +59,6 @@
 | [0052](0052-no-past-date-check.md) | 체크인일이 지난 날짜인지는 검사하지 않기로 결정 | accepted |
 | [0053](0053-mixed-currency-exposure.md) | 통화가 다른 상품을 한 응답에 함께 내보내되 환산하지 않기로 결정 | accepted |
 | [0054](0054-exclusion-kind-by-value-only.md) | 제외한 항목은 문제가 된 값 하나로만 종류를 나누기로 결정 | accepted |
+| [0055](0055-quarantine-grouped-in-db.md) | 제외한 항목을 같은 문제끼리 묶어 DB 에 남기기로 결정 | accepted |
+| [0056](0056-circuit-breaker-per-supplier-outside-retry.md) | 서킷 브레이커를 공급사마다 두고 재시도 바깥에서 묶음의 최종 결과를 세기로 결정 | accepted |
+| [0057](0057-resilience4j-reactor-for-circuit-breaker.md) | 서킷 브레이커는 resilience4j-reactor 를 쓰고 재시도·타임아웃은 Reactor 연산자로 두기로 결정 | accepted |
