@@ -114,8 +114,47 @@ class CatalogNormalizerTest {
         val normalized = normalizer.normalize(fetched)
 
         assertThat(normalized.hotels).isEmpty()
+        // 순서는 구현 세부라 고정하지 않는다
         assertThat(normalized.excluded).extracting<String> { it.reason }
-            .containsExactly("최대 수용 인원이 1 미만이다", "팔 수 있는 객실 타입이 없다")
+            .containsExactlyInAnyOrder("최대 수용 인원이 없다", "팔 수 있는 객실 타입이 없다")
+    }
+
+    @Test
+    fun `최대 수용 인원이 없는 것과 1 미만인 것의 사유를 구분한다`() {
+        // 없는 값을 0 으로 바꿔 넘기면 "없다"가 "1 미만이다"로 기록되어 로그가 원인을 잘못 짚게 한다 (ADR-0041)
+        val fetched = catalog(
+            hotel(
+                "A-1", "강변 호텔",
+                roomType("DLX", "디럭스", null),
+                roomType("STD", "스탠다드", 0),
+                roomType("TWN", "트윈", 2),
+            ),
+        )
+
+        val normalized = normalizer.normalize(fetched)
+
+        assertThat(normalized.hotels).singleElement()
+            .satisfies({ hotel -> assertThat(hotel.roomTypes).extracting<String> { it.code }.containsExactly("TWN") })
+        assertThat(normalized.excluded.map { it.roomTypeCode to it.reason })
+            .containsExactlyInAnyOrder(
+                "DLX" to "최대 수용 인원이 없다",
+                "STD" to "최대 수용 인원이 1 미만이다",
+            )
+    }
+
+    @Test
+    fun `숙소 코드가 없는 숙소가 둘이면 같은 코드로 묶지 않는다`() {
+        // 코드가 없는 두 숙소는 같은 코드가 아니다. 묶으면 사유가 "두 번 왔다"로 사실과 달라진다
+        val fetched = catalog(
+            hotel(null, "이름이 다른 숙소 1", roomType("DLX", "디럭스", 2)),
+            hotel(null, "이름이 다른 숙소 2", roomType("STD", "스탠다드", 2)),
+        )
+
+        val normalized = normalizer.normalize(fetched)
+
+        assertThat(normalized.hotels).isEmpty()
+        assertThat(normalized.excluded).hasSize(2)
+            .allSatisfy { excluded -> assertThat(excluded.reason).isEqualTo("숙소 코드가 없다") }
     }
 
     @Test

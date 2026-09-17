@@ -18,6 +18,16 @@ data class NormalizedHotel(
         // 팔 수 있는 객실 타입이 하나도 없는 숙소는 검색에 걸려도 내놓을 것이 없다 (ADR-0041)
         require(roomTypes.isNotEmpty()) { "팔 수 있는 객실 타입이 없다" }
     }
+
+    companion object {
+        /**
+         * 값이 없을 수 있는 자리에서 만든다. 공급사 응답이 그런 자리다.
+         *
+         * 넘겨받은 목록을 복사해 든다. 그러지 않으면 밖에서 그 목록을 비워 불변식을 지나칠 수 있다.
+         */
+        fun of(code: String?, name: String?, roomTypes: List<NormalizedRoomType>) =
+            NormalizedHotel(code.orEmpty(), name.orEmpty(), roomTypes.toList())
+    }
 }
 
 data class NormalizedRoomType(
@@ -30,5 +40,19 @@ data class NormalizedRoomType(
         require(name.isNotBlank()) { "객실 타입명이 없다" }
         // 한 명도 묵을 수 없는 객실 타입은 팔 수 없다. 재고 수를 다룰 때와 같은 기준이다 (ADR-0027, ADR-0039)
         require(maxOccupancy >= 1) { "최대 수용 인원이 1 미만이다" }
+    }
+
+    companion object {
+        /**
+         * 값이 없을 수 있는 자리에서 만든다.
+         *
+         * **없는 값과 쓸 수 없는 값의 사유를 구분한다.** 없는 인원을 0 으로 바꿔 생성자에 넘기면
+         * "없다"가 "1 미만이다"로 기록되어, 로그만 보고 원인을 잘못 짚게 된다.
+         * 글자 값은 없는 것과 빈 것이 같은 사유("코드가 없다")라 그대로 넘긴다.
+         */
+        fun of(code: String?, name: String?, maxOccupancy: Int?): NormalizedRoomType {
+            require(maxOccupancy != null) { "최대 수용 인원이 없다" }
+            return NormalizedRoomType(code.orEmpty(), name.orEmpty(), maxOccupancy)
+        }
     }
 }
