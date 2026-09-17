@@ -56,3 +56,5 @@
 | [0049](0049-supplier-id-on-adapter-only.md) | 공급사 식별자는 어댑터만 갖고 응답 공통 형태에는 싣지 않기로 결정 | accepted |
 | [0050](0050-partial-chunk-failure.md) | 한 공급사의 묶음 호출이 일부만 실패하면 성공한 묶음은 내보내고 실패한 묶음 수를 싣기로 결정 | accepted |
 | [0051](0051-retry-transient-supplier-failures.md) | 일시적인 공급사 실패만 재시도하고 재시도 여부는 consumer 가 정하기로 결정 | accepted |
+| [0052](0052-no-past-date-check.md) | 체크인일이 지난 날짜인지는 검사하지 않기로 결정 | accepted |
+| [0053](0053-mixed-currency-exposure.md) | 통화가 다른 상품을 한 응답에 함께 내보내되 환산하지 않기로 결정 | accepted |
