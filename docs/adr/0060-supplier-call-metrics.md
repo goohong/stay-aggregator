@@ -74,7 +74,7 @@ date: 2026-09-17
   → `SupplierCallMetricsTest.실패 종류마다 결과 태그가 갈린다`
   → `SupplierCallMetricsTest.공급사 실패가 아닌 우리 쪽 오류는 공급사 실패에 섞지 않는다`
 
-시간 초과가 실패 신호에 표시되는지
+타임아웃이 공급사 실패 예외에 표시되는지
   → `SupplierAvailabilityAdapterTest.정한 시간 안에 오지 않은 것은 시간 초과로 표시된다`
 
 검색이 chunk 호출마다 공급사·결과로 기록하는지

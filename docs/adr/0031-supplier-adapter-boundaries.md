@@ -102,7 +102,7 @@ date: 2026-09-16
   → `SupplierAvailabilityAdapterTest.공급사 A 의 날짜별 요금과 재고를 갈라서 그대로 넘긴다`
   → `SupplierAvailabilityAdapterTest.공급사 B 의 총액 요금을 그대로 넘긴다`
 
-두 경계가 실패를 같은 신호로 바꾸는지
+두 경계가 실패를 같은 예외로 바꾸는지
   → `SupplierAvailabilityAdapterTest.공급사 B 가 본문 결과 코드로 알린 실패는 목록 경계와 같은 오류가 된다`
 
 검색 서비스가 재고 조회 인터페이스만 주입받는지

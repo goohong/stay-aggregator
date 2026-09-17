@@ -27,8 +27,8 @@ import java.util.concurrent.TimeoutException
  * 공급사들은 동시에 부르고, 공급사 하나가 실패해도 나머지 결과로 응답한다 (ADR-0046).
  * 한 공급사 안에서는 chunk 를 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 부르고,
  * chunk 일부가 실패하면 성공한 chunk 는 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
- * chunk 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 다시 부른다 (ADR-0051). 목록 동기화는 다시 부르지 않는다 (ADR-0019).
- * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 chunk 의 최종 결과를 세고, 열려 있으면 그 공급사를 부르지 않는다 (ADR-0056, ADR-0057).
+ * chunk 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 재시도한다 (ADR-0051). 목록 동기화는 재시도하지 않는다 (ADR-0019).
+ * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 chunk 의 최종 결과를 세고, 열려 있으면 그 공급사를 호출하지 않는다 (ADR-0056, ADR-0057).
  * 검색 전체 타임아웃은 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
  *
  * 기다리는 자리는 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021).
@@ -79,7 +79,7 @@ class SearchService(
     /**
      * chunk 하나. 실패해도 오류를 올리지 않고 실패했다는 결과로 바꾼다. 다른 chunk 가 이어져야 하기 때문이다 (ADR-0050).
      *
-     * 다시 부르는 것은 **공급사 호출까지만**이다. 응답을 우리 형태로 바꾸다 난 오류를 다시 불러도 같은 결과이고,
+     * 재시도하는 것은 **공급사 호출까지만**이다. 응답을 우리 형태로 바꾸다 난 오류는 재시도해도 같은 결과이고,
      * 그것은 애초에 일시적인 실패로 표시되지도 않는다 (ADR-0051).
      */
     private fun fetchChunk(adapter: AvailabilityAdapter, request: AvailabilityRequest, mapped: List<MappedHotel>): Mono<ChunkOutcome> =
@@ -108,10 +108,10 @@ class SearchService(
         }
 
     /**
-     * 일시적인 실패만 다시 부른다 (ADR-0051).
+     * 일시적인 실패만 재시도한다 (ADR-0051).
      *
-     * 지수 백오프에 무작위를 섞는 것은 Reactor 가 기본으로 한다. 최대 대기는 걸지 않으면 사실상 무한이라 반드시 건다.
-     * 다 써도 실패하면 **원래 실패를 그대로** 올린다. 감싸면 consumer 가 보는 신호가 달라져 ADR-0027 이 정한 "한 가지 실패"가 깨진다.
+     * 지수 백오프에 무작위를 섞는 것은 Reactor 가 기본으로 한다. 최대 백오프는 걸지 않으면 사실상 무한이라 반드시 건다.
+     * 다 써도 실패하면 **원래 실패를 그대로** 올린다. 다른 예외로 감싸면 consumer 가 보는 예외가 달라져 ADR-0027 이 정한 "한 가지 실패"가 깨진다.
      */
     private fun retryTransient(supplierId: String, request: AvailabilityRequest): Retry =
         Retry.backoff(search.maxRetries.toLong(), search.retryMinBackoff)

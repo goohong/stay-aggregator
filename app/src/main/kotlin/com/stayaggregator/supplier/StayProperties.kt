@@ -53,21 +53,21 @@ data class StayProperties(
         /** 공급사 하나에서 chunk 호출을 동시에 몇 개 띄우는가. WebClient 기본 풀 크기를 넘지 않게 잡는다 (ADR-0045) */
         val concurrencyPerSupplier: Int,
         /**
-         * 일시적인 실패를 다시 부르는 최대 횟수. 첫 호출은 여기 들지 않는다. 2 면 최대 세 번 부른다 (ADR-0051).
+         * 일시적인 실패를 재시도하는 최대 횟수. 첫 호출은 여기 들지 않는다. 2 면 최대 세 번 호출한다 (ADR-0051).
          * 0 이면 재시도하지 않는다.
          */
         val maxRetries: Int,
-        /** 첫 재시도 전에 기다리는 기준 시간. 여기서부터 두 배씩 늘고 Reactor 가 무작위를 섞는다 (ADR-0051) */
+        /** 최소 백오프. 첫 재시도 전에 기다리는 시간이고 여기서부터 두 배씩 늘고 Reactor 가 무작위를 섞는다 (ADR-0051) */
         val retryMinBackoff: Duration,
-        /** 재시도 대기의 상한. 걸지 않으면 사실상 무한이다 (ADR-0051) */
+        /** 최대 백오프. 재시도 대기의 상한이고 걸지 않으면 사실상 무한이다 (ADR-0051) */
         val retryMaxBackoff: Duration,
         /** 공급사마다 하나씩 두는 서킷의 기준 (ADR-0056). 모든 공급사가 같은 기준을 쓴다 */
         val circuitBreaker: CircuitBreaker,
     ) {
         init {
             require(maxRetries >= 0) { "재시도 횟수가 음수다" }
-            require(!retryMinBackoff.isNegative) { "재시도 기준 대기가 음수다" }
-            require(retryMaxBackoff >= retryMinBackoff) { "재시도 최대 대기가 기준 대기보다 짧다" }
+            require(!retryMinBackoff.isNegative) { "재시도 최소 백오프가 음수다" }
+            require(retryMaxBackoff >= retryMinBackoff) { "재시도 최대 백오프가 최소 백오프보다 짧다" }
         }
     }
 
@@ -76,23 +76,23 @@ data class StayProperties(
      * 세는 단위는 호출 한 번이 아니라 **재시도까지 거친 chunk 하나의 최종 결과**다.
      */
     data class CircuitBreaker(
-        /** 최근 chunk 중 실패한 비율이 이 퍼센트 이상이면 연다 */
+        /** 실패율 임계값(%). 최근 chunk 중 실패한 비율이 이 값 이상이면 연다 */
         val failureRateThreshold: Float,
-        /** 실패율을 계산할 최근 chunk 수 */
+        /** 슬라이딩 윈도 크기. 실패율을 계산할 최근 chunk 수 */
         val slidingWindowSize: Int,
-        /** 이만큼 chunk 가 쌓이기 전에는 실패율을 계산하지 않는다. 몇 번 실패로 바로 열리지 않게 한다 */
+        /** 최소 호출 수. 이만큼 chunk 가 쌓이기 전에는 실패율을 계산하지 않는다. 몇 번 실패로 바로 열리지 않게 한다 */
         val minimumNumberOfCalls: Int,
-        /** 연 뒤 이 시간 동안은 부르지 않는다 */
+        /** 열림(OPEN) 상태 유지 시간. 이 시간 동안은 호출하지 않는다 */
         val waitDurationInOpenState: Duration,
-        /** 이 시간이 지난 뒤 시험 삼아 부르는 chunk 수 */
+        /** 반열림(HALF_OPEN) 상태에서 허용하는 chunk 호출 수 */
         val permittedNumberOfCallsInHalfOpenState: Int,
     ) {
         init {
-            require(failureRateThreshold > 0 && failureRateThreshold <= 100) { "실패율 기준은 0 초과 100 이하여야 한다" }
-            require(slidingWindowSize >= 1) { "실패율을 계산할 chunk 수가 1 미만이다" }
-            require(minimumNumberOfCalls >= 1) { "최소 chunk 수가 1 미만이다" }
-            require(permittedNumberOfCallsInHalfOpenState >= 1) { "시험 삼아 부를 chunk 수가 1 미만이다" }
-            require(waitDurationInOpenState.toMillis() >= 1) { "서킷을 열어 두는 시간이 1ms 미만이다" }
+            require(failureRateThreshold > 0 && failureRateThreshold <= 100) { "실패율 임계값은 0 초과 100 이하여야 한다" }
+            require(slidingWindowSize >= 1) { "슬라이딩 윈도 크기가 1 미만이다" }
+            require(minimumNumberOfCalls >= 1) { "최소 호출 수가 1 미만이다" }
+            require(permittedNumberOfCallsInHalfOpenState >= 1) { "반열림 상태에서 허용하는 호출 수가 1 미만이다" }
+            require(waitDurationInOpenState.toMillis() >= 1) { "열림 상태 유지 시간이 1ms 미만이다" }
         }
     }
 

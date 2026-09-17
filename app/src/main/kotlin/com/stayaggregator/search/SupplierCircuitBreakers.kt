@@ -50,7 +50,7 @@ class SupplierCircuitBreakers(
             .minimumNumberOfCalls(c.minimumNumberOfCalls)
             .waitDurationInOpenState(c.waitDurationInOpenState)
             .permittedNumberOfCallsInHalfOpenState(c.permittedNumberOfCallsInHalfOpenState)
-            // 연 뒤 기다린 시간이 지나면 다음 검색이 올 때 반쯤 열린 상태로 넘어간다.
+            // 연 뒤 기다린 시간이 지나면 다음 검색이 올 때 반열림(HALF_OPEN) 상태로 넘어간다.
             // 자동 전환은 켜지 않는다. 켜면 서킷마다 시간을 재는 작업이 따로 돈다
             // 공급사 실패가 아닌 것은 **무시한다.** recordException 으로 거르면 거른 것이 성공으로 세어져 실패율이 희석된다.
             // 문서: "The Predicate must return false, if the exception should count as a success, unless the exception is explicitly ignored"

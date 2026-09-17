@@ -33,8 +33,8 @@
 | **공급사 실패** | `SupplierResponseException` | 응답을 스펙대로 받지 못한 것. HTTP 상태, 본문의 결과 코드, 본문을 읽지 못한 것,<br>정한 시간 안에 오지 않은 것, 연결하지 못한 것이 모두 여기 든다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md)).<br>공급사가 "실패"라고 말한 것만이 아니다 |
 | **동일 숙소** | `same_hotel_id`, `sameHotelId` | **사람이 확인한** 같은 숙소의 모음. 확인된 짝끼리 같은 값을 갖고, 짝이 없는 숙소도 자기 값을 갖는다 ([ADR-0058](adr/0058-same-hotel-confirmed-pairs-only.md)).<br>이번 응답 안에서 모으는 데 쓰는 값이다. 짝이 바뀌면 값이 바뀌니 저장해 다시 찾는 키로 쓰지 않는다. 숙소를 가리키는 값은 내부 숙소 식별자다 |
 | **동일 숙소 후보** | (동기화가 계산) | 정규화한 숙소명이 같은 다른 공급사 숙소 쌍. **추정이라 응답에 내지 않는다.** 사람이 확인하면 동일 숙소가 된다 |
-| **서킷** | `SupplierCircuitBreakers` | 공급사마다 하나. 재시도까지 거친 chunk 의 최종 결과를 세어, 실패가 많으면 **열어서** 한동안 그 공급사를 부르지 않는다 ([ADR-0056](adr/0056-circuit-breaker-per-supplier-outside-retry.md)).<br>검색에만 있고 목록 동기화에는 없다. 공급사 실패만 센다 |
-| **일시적인 실패** | `SupplierResponseException.transient` | **다시 불러 볼 여지가 있는** 실패. 5xx·429·연결 실패가 여기 든다 ([ADR-0051](adr/0051-retry-transient-supplier-failures.md)).<br>타임아웃은 아니다. 느리다는 신호라 다시 불러도 느리다.<br>**"다시 부른다"는 뜻이 아니다.** 실제로 부를지는 부르는 쪽이 정한다. 검색은 부르고 목록 동기화는 부르지 않는다 |
+| **서킷** | `SupplierCircuitBreakers` | 공급사마다 하나. 재시도까지 거친 chunk 의 최종 결과를 세어, 실패가 많으면 **열어서** 한동안 그 공급사를 호출하지 않는다 ([ADR-0056](adr/0056-circuit-breaker-per-supplier-outside-retry.md)).<br>검색에만 있고 목록 동기화에는 없다. 공급사 실패만 센다 |
+| **일시적인 실패** | `SupplierResponseException.transient` | **재시도 가능한(transient)** 실패. 5xx·429·연결 실패가 여기 든다 ([ADR-0051](adr/0051-retry-transient-supplier-failures.md)).<br>타임아웃은 아니다. 느리다는 신호라 재시도해도 느리다.<br>**"재시도한다"는 뜻이 아니다.** 실제로 재시도할지는 호출하는 쪽이 정한다. 검색은 재시도하고 목록 동기화는 재시도하지 않는다 |
 | **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 chunk 가 실패했거나, 검색 전체 타임아웃을 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 | **실패한 chunk** | `SupplierResult.failedChunks` | 성공한 공급사 안에서 호출하지 못한 chunk 수. 그 chunk 의 숙소는 응답에 없다. 상태는 성공이다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 

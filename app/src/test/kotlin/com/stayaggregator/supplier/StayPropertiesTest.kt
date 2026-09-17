@@ -26,10 +26,10 @@ class StayPropertiesTest {
     }
 
     @Test
-    fun `재시도 최대 대기가 기준 대기보다 짧으면 만들 수 없다`() {
+    fun `재시도 최대 백오프가 최소 백오프보다 짧으면 만들 수 없다`() {
         assertThatThrownBy { search(min = Duration.ofSeconds(1), max = Duration.ofMillis(100)) }
             .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessage("재시도 최대 대기가 기준 대기보다 짧다")
+            .hasMessage("재시도 최대 백오프가 최소 백오프보다 짧다")
     }
 
     private fun properties(availabilityTimeout: Duration, timeout: Duration) =

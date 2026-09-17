@@ -186,7 +186,7 @@ class SearchServiceIntegrationTest {
     // ── 재시도 (ADR-0051) ──
 
     @Test
-    fun `일시적인 실패는 다시 부르고 성공하면 그 결과를 쓴다`() {
+    fun `일시적인 실패는 재시도하고 성공하면 그 결과를 쓴다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val attempts = AtomicInteger()
         val a = FakeAdapter("a") {
@@ -202,7 +202,7 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `일시적이지 않은 실패는 다시 부르지 않는다`() {
+    fun `일시적이지 않은 실패는 재시도하지 않는다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val a = FakeAdapter("a") { Mono.error(SupplierResponseException("잘못된 요청", transient = false)) }
 
@@ -213,7 +213,7 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `다시 불러도 계속 실패하면 정한 횟수에서 멈추고 원래 실패로 나간다`() {
+    fun `재시도해도 계속 실패하면 정한 횟수에서 멈추고 원래 실패로 나간다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 가 503 을 알렸다", transient = true)) }
 
@@ -223,7 +223,7 @@ class SearchServiceIntegrationTest {
         assertThat(a.requests).hasSize(3)
         val supplier = result.suppliers.single()
         assertThat(supplier.status).isEqualTo(SupplierStatus.FAILED)
-        // 감싸지 않고 원래 사유가 그대로 나간다
+        // 다른 예외로 감싸지 않고 원래 사유가 그대로 나간다
         assertThat(supplier.failureReason).isEqualTo("공급사 a 가 503 을 알렸다")
     }
 
@@ -273,7 +273,7 @@ class SearchServiceIntegrationTest {
     // ── 서킷 브레이커 (ADR-0056) ── 테스트 설정은 최근 chunk 4개 중 50% 실패면 연다
 
     @Test
-    fun `공급사가 계속 실패하면 서킷이 열리고 그 뒤 검색은 그 공급사를 부르지 않는다`() {
+    fun `공급사가 계속 실패하면 서킷이 열리고 그 뒤 검색은 그 공급사를 호출하지 않는다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
         val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 503", transient = true)) }
@@ -286,7 +286,7 @@ class SearchServiceIntegrationTest {
         val result = service.search(period, guests)
 
         assertThat(breakers.of("a").state).isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.OPEN)
-        // 열린 뒤에는 부르지 않는다
+        // 열린 뒤에는 호출하지 않는다
         assertThat(a.requests).hasSize(callsBeforeOpen)
         val resultA = result.suppliers.single { it.supplierId == "a" }
         assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
@@ -365,9 +365,9 @@ class SearchServiceIntegrationTest {
         val requests = CopyOnWriteArrayList<AvailabilityRequest>()
 
         /**
-         * `defer` 로 감싸 **구독할 때마다** 다시 부른 것으로 센다.
+         * `defer` 로 감싸 **구독할 때마다** 호출 한 번으로 센다.
          * 재시도는 같은 `Mono` 를 다시 구독하는 것이라, 밖에서 한 번만 세면 재시도가 보이지 않는다.
-         * 실제 어댑터의 WebClient 체인도 다시 구독하면 실제로 다시 부른다.
+         * 실제 어댑터의 WebClient 체인도 다시 구독하면 실제로 다시 호출한다.
          */
         override fun fetchAvailability(request: AvailabilityRequest): Mono<FetchedAvailability> =
             Mono.defer {

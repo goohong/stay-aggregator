@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono
 import java.util.concurrent.TimeoutException
 
 /**
- * 공급사마다 다른 실패 표현을 한 가지 신호로 바꾼다 (ADR-0027 의 첫 질문, ADR-0031).
+ * 공급사마다 다른 실패 표현을 한 가지 예외([SupplierResponseException])로 바꾼다 (ADR-0027 의 첫 질문, ADR-0031).
  *
  * HTTP 상태 코드로 오는 실패, 본문을 읽지 못한 것, 연결하지 못한 것, 정한 시간 안에 오지 않은 것이 여기로 들어온다.
  * 공급사가 본문의 결과 코드로 알린 실패는 어댑터가 응답을 바꾸는 중에, 즉 이 함수 **아래에서** [SupplierResponseException] 으로 바꾼다.
@@ -36,14 +36,14 @@ fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =
     }
 
 /**
- * 다시 불러 볼 여지가 있는 실패인지 본다 (ADR-0051 의 표).
+ * 재시도 가능한(transient) 실패인지 본다 (ADR-0051 의 표).
  *
- * **정한 시간 안에 오지 않은 것은 여지가 없다고 본다.** 우리가 건 타임아웃이든 Netty 의 연결·읽기 타임아웃이든 같다. 공급사가 느리다는 신호이고, 느린 공급사를 다시 불러도 느릴 가능성이 높다.
- * 본문을 읽지 못한 것도 없다. 응답 구조의 문제라 다시 불러도 같다. 둘 다 여기서 걸리지 않고 기본값(아니요)으로 떨어진다.
+ * **타임아웃은 재시도 가능하지 않다고 본다.** 우리가 건 타임아웃이든 Netty 의 연결·읽기 타임아웃이든 같다. 공급사가 느리다는 신호이고, 느린 공급사를 재시도해도 느릴 가능성이 높다.
+ * 본문을 읽지 못한 것도 재시도 가능하지 않다. 응답 구조의 문제라 재시도해도 같다. 둘 다 여기서 걸리지 않고 기본값(아니요)으로 떨어진다.
  */
 private fun isTransient(cause: Throwable): Boolean =
     when (cause) {
-        // 공급사가 상태 코드로 알린 실패. 5xx 는 "지금은 안 된다", 429 는 "기다렸다 다시 불러라" 다
+        // 공급사가 상태 코드로 알린 실패. 5xx 는 "지금은 안 된다", 429 는 "기다렸다 재시도하라" 다
         is WebClientResponseException -> cause.statusCode.is5xxServerError || cause.statusCode.value() == TOO_MANY_REQUESTS
         // 요청 단계의 실패. 연결을 거절당한 것은 빠르게 실패하고 공급사 재시작 같은 순간적 상황일 수 있다.
         // 다만 Netty 가 낸 시간 초과(연결·읽기)는 "느리다"는 신호라 일시적이지 않다.

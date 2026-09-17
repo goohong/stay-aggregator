@@ -16,7 +16,7 @@ import java.time.Duration
 import java.util.concurrent.TimeoutException
 
 /**
- * 어댑터가 실제 HTTP 응답을 받아 공통 형태로 바꾸는지, 공급사마다 다른 실패 표현을 같은 신호로 바꾸는지 확인한다.
+ * 어댑터가 실제 HTTP 응답을 받아 공통 형태로 바꾸는지, 공급사마다 다른 실패 표현을 같은 공급사 실패 예외로 바꾸는지 확인한다.
  *
  * 공급사는 JDK 에 들어 있는 작은 HTTP 서버로 흉내 낸다. Mock 모듈은 별도 프로세스라(ADR-0005)
  * 테스트에서 띄우지 않고, 여기서는 어댑터 하나만 본다.
@@ -66,7 +66,7 @@ class SupplierCatalogAdapterTest {
     fun `공급사 A 가 HTTP 실패를 주면 오류가 된다`() {
         respond("/a/v1/hotels", status = 503, body = """{"error":"SERVICE_UNAVAILABLE","message":"temporarily unavailable"}""")
 
-        // B 가 본문 결과 코드로 알린 실패와 같은 신호가 되어야 한다 (ADR-0027 의 첫 질문, ADR-0031)
+        // B 가 본문 결과 코드로 알린 실패와 같은 공급사 실패 예외가 되어야 한다 (ADR-0027 의 첫 질문, ADR-0031)
         assertThatThrownBy { adapterA().fetchCatalog().block() }
             .isInstanceOf(SupplierResponseException::class.java)
             .hasMessageContaining("503")
