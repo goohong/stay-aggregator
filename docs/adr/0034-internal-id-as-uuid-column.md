@@ -64,4 +64,11 @@ date: 2026-09-16
 
 ## Verification
 
-Flyway 스크립트에서 내부 식별자 컬럼이 `uuid` 타입인지. 매핑 저장 코드가 식별자를 `UUID` 값으로 넘기는지.
+내부 식별자 컬럼이 `uuid` 타입인지
+  → `app/src/main/resources/db/migration/V1__mapping.sql` 의 `internal_hotel_id uuid PRIMARY KEY`, `internal_room_type_id uuid PRIMARY KEY`
+
+매핑 저장 코드가 식별자를 `UUID` 값으로 넘기는지
+  → `app/src/main/kotlin/com/stayaggregator/mapping/MappingRepository.kt` 의 `UUID.randomUUID()` 와 `query(UUID::class.java)`
+
+읽어 온 식별자가 같은 값으로 유지되는지
+  → `CatalogSyncIntegrationTest.다시 동기화해도 내부 식별자가 그대로다`

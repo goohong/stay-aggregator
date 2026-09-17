@@ -53,7 +53,14 @@ SQL 을 그대로 쓰는 쪽이 `JdbcClient` 선택과 같은 결이다.
 
 ## Verification
 
-`app/build.gradle.kts` 에 Flyway 스타터가 있고, `app/src/main/resources/db/migration` 에 스크립트가 있는지. 앱을 띄웠을 때 매핑 테이블이 만들어지는지.
+Flyway 스타터와 PostgreSQL 전용 모듈이 함께 있는지
+  → `app/build.gradle.kts` 의 `spring-boot-starter-flyway` 와 `org.flywaydb:flyway-database-postgresql`
+
+스크립트가 정한 자리에 정한 이름으로 있는지
+  → `app/src/main/resources/db/migration/V1__mapping.sql`
+
+앱을 띄웠을 때 테이블이 만들어지는지
+  → `./gradlew :app:bootRun` 뒤 psql 로 두 테이블을 확인했다(2026-09-16). `CatalogSyncIntegrationTest` 도 컨테이너에서 같은 스크립트로 시작한다
 
 ## Discussion
 

@@ -70,5 +70,10 @@ DB 를 열 수 있으며, PostgreSQL·MySQL 호환 모드는 차이의 일부만
 
 ## Verification
 
-`CatalogSyncIntegrationTest` 가 실제 PostgreSQL 컨테이너에서 돌며 매핑이 남는지 확인한다.
+매핑이 서버형 관계형 DB 에 남는지
+  → `CatalogSyncIntegrationTest` 가 실제 PostgreSQL 컨테이너에서 돈다(`Containers` 설정)
+
+앱이 그 DB 를 쓰는지
+  → `compose.yml` 의 `postgres:18` 과 `app/build.gradle.kts` 의 `spring-boot-docker-compose`
+
 앱을 다시 띄운 뒤에도 남는지는 아직 확인하지 않았다.

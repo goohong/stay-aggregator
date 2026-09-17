@@ -70,5 +70,8 @@ date: 2026-09-15
 
 ## Verification
 
-`./gradlew :app:bootRun` 이 compose 의 PostgreSQL 을 띄우고 Flyway 가 `V1__mapping.sql` 을 적용한다.
-`CatalogSyncIntegrationTest` 도 PostgreSQL 컨테이너에서 돈다.
+앱이 PostgreSQL 을 띄우고 Flyway 가 스크립트를 적용하는지
+  → `./gradlew :app:bootRun` 이 `compose.yml` 의 `postgres:18` 을 띄우고 `V1__mapping.sql` 을 적용한다(2026-09-16 psql 로 확인)
+
+테스트도 같은 DB 에서 도는지
+  → `CatalogSyncIntegrationTest` 의 `PostgreSQLContainer("postgres:18")`

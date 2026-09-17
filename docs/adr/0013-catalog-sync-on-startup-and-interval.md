@@ -55,5 +55,12 @@ date: 2026-09-15
 
 ## Verification
 
-`CatalogSyncIntegrationTest.목록을 받으면 숙소와 객실 타입 매핑이 저장된다` 로 반영을 확인한다.
-기동 시와 주기 실행은 `CatalogSyncScheduler` 의 `@Scheduled` 한 선언이 맡는다. 주기 설정이 실제로 먹는지는 아직 확인하지 않았다.
+받아 온 목록이 매핑으로 반영되는지
+  → `CatalogSyncIntegrationTest.목록을 받으면 숙소와 객실 타입 매핑이 저장된다`
+
+기동 시 한 번과 주기 실행을 한 선언이 맡는지
+  → `app/src/main/kotlin/com/stayaggregator/catalog/CatalogSyncScheduler.kt` 의 `@Scheduled(initialDelayString, fixedDelayString)`
+
+기동 직후 실제로 도는지
+  → Mock 을 띄우고 `./gradlew :app:bootRun` 했을 때 기동 로그 뒤에 두 공급사의 동기화 완료 로그가 남는다(2026-09-17 관찰).
+    주기가 하루라 두 번째 실행은 관찰하지 않았다.

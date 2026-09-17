@@ -53,5 +53,14 @@ Java 21+ 와 Kotlin 중 하나를 골라야 한다. 빌드는 어느 쪽이든 G
 
 ## Verification
 
-`build.gradle.kts` 의 plugins 블록에 `kotlin("plugin.spring")`, `kotlin("plugin.jpa")`,
-`allOpen` 설정이 있고, 의존성에 `jackson-module-kotlin` 이 있는지.
+구현이 Kotlin 으로 되어 있는지
+  → `git ls-files '*.kt'` 가 23개, `git ls-files '*.java'` 가 0개다(2026-09-17). 빌드 스크립트도 모두 `.gradle.kts` 다
+
+Kotlin 버전이 한 곳에서 정해지는지
+  → `build.gradle.kts` 의 `kotlin("jvm") version "2.4.20" apply false`. 두 모듈은 버전 없이 플러그인만 적용한다
+
+Spring 이 Kotlin 클래스를 다룰 수 있게 해 주는 플러그인이 있는지
+  → `build.gradle.kts` 가 `kotlin("plugin.spring")` 의 버전만 선언하고(`apply false`),
+    `app/build.gradle.kts` 와 `mock-supplier/build.gradle.kts` 가 각각 적용한다
+
+처음 이 절에 적어 둔 `kotlin("plugin.jpa")` 와 `allOpen` 은 확인 대상이 아니다. 매핑 저장을 JPA 로 하지 않기로 했다([ADR-0032](0032-mapping-persistence-with-jdbcclient.md)).

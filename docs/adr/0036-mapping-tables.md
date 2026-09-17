@@ -80,5 +80,13 @@ date: 2026-09-16
 
 ## Verification
 
-Flyway 스크립트에 두 테이블이 있고, 유일성 제약이 (공급사, 공급사 숙소 코드)와 (내부 숙소 식별자, 객실 타입 코드)에 걸려 있는지.
-객실 타입 테이블이 숙소 테이블을 참조하는지.
+두 테이블과 유일성 제약 둘이 있는지
+  → `app/src/main/resources/db/migration/V1__mapping.sql` 의 `uk_hotel_mapping_supplier_code UNIQUE (supplier, supplier_hotel_code)` 와
+    `uk_room_type_mapping_hotel_code UNIQUE (internal_hotel_id, room_type_code)`
+
+객실 타입 테이블이 숙소 테이블을 참조하는지
+  → 같은 파일의 `internal_hotel_id uuid NOT NULL REFERENCES hotel_mapping (internal_hotel_id)`
+
+그 제약이 실제로 같은 코드를 하나로 모으는지
+  → `CatalogSyncIntegrationTest.다시 동기화해도 내부 식별자가 그대로다`,
+    `CatalogSyncIntegrationTest.숙소가 빠지면 그 숙소의 객실 타입도 표시되고 다시 나타나면 같은 식별자로 풀린다`

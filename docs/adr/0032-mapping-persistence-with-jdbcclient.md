@@ -57,7 +57,14 @@ DB 에 저장하는 것은 공급사 코드와 내부 식별자의 매핑뿐이�
 
 ## Verification
 
-`app/build.gradle.kts` 에 JPA 스타터가 없고 JDBC 스타터가 있는지. 매핑 저장 코드가 `JdbcClient` 를 쓰는지.
+JPA 스타터가 없고 JDBC 스타터가 있는지
+  → `app/build.gradle.kts` 에 `spring-boot-starter-jdbc` 만 있고 `spring-boot-starter-data-jpa` 는 없다
+
+매핑 저장 코드가 `JdbcClient` 를 쓰는지
+  → `app/src/main/kotlin/com/stayaggregator/mapping/MappingRepository.kt` 의 생성자
+
+저장이 실제 PostgreSQL 에서 도는지
+  → `CatalogSyncIntegrationTest` 의 열네 건
 
 ## Discussion
 

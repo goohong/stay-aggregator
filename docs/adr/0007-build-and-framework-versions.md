@@ -205,7 +205,14 @@ Jackson 2 용이라 Boot 4 가 설정하는 Jackson 3 에 붙지 않는다. 어�
 
 ## Verification
 
-`app/build.gradle.kts` 의 플러그인 버전이 `4.1.1`(Boot), `2.4.20`(Kotlin)이고,
-`gradle/wrapper/gradle-wrapper.properties` 의 `distributionUrl` 이 `9.7.1`이고,
-`settings.gradle.kts` 에 툴체인 다운로드 저장소 플러그인이 없고,
-`jvmToolchain(21)` 이 설정되어 있는지.
+정한 버전이 실제로 선언돼 있는지
+  → `build.gradle.kts` 의 `kotlin("jvm") version "2.4.20"` 과 `id("org.springframework.boot") version "4.1.1"`,
+    `gradle/wrapper/gradle-wrapper.properties` 의 `gradle-9.7.1-bin.zip`
+
+그 버전으로 빌드와 기동이 되는지
+  → `./gradlew :app:cleanTest :app:test` 와 `./gradlew :app:bootRun` (2026-09-17 실행)
+
+툴체인 다운로드 저장소 플러그인을 넣지 않았는지
+  → `settings.gradle.kts` 에 그 플러그인이 없다
+
+처음 이 절에 적어 둔 `jvmToolchain(21)` 은 확인 대상이 아니다. 툴체인은 25 로 올렸다([ADR-0022](0022-jvm-25.md)).

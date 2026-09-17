@@ -61,5 +61,9 @@ Mock 은 버리는 코드다. 오래 관리할 것도, 품질을 다듬을 것�
 
 ## Verification
 
-`settings.gradle.kts` 에 `app` 과 `mock-supplier` 가 있고,
-두 모듈의 빌드 파일 어디에도 서로를 가리키는 `project(":...")` 의존이 없는지.
+두 모듈이 있고 서로를 가리키는 의존이 없는지
+  → `settings.gradle.kts` 의 `include("app")`·`include("mock-supplier")`,
+    그리고 `grep -n 'project(":' app/build.gradle.kts mock-supplier/build.gradle.kts` 가 비어 있음
+
+앱과 Mock 이 HTTP 로만 만나는지
+  → `app/src/main/resources/application.yml` 의 `stay.suppliers.*.base-url` 이 Mock 의 주소를 가리킨다

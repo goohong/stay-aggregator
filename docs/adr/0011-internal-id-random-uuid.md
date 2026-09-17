@@ -62,5 +62,8 @@ date: 2026-09-15
 
 ## Verification
 
-`CatalogSyncIntegrationTest.다시 동기화해도 내부 식별자가 그대로다` 로 확인한다.
-같은 공급사 코드로 다시 동기화했을 때 저장된 식별자가 유지되고 이름만 갱신되는지 본다.
+같은 공급사 코드로 다시 동기화했을 때 저장된 식별자가 유지되고 이름만 갱신되는지
+  → `CatalogSyncIntegrationTest.다시 동기화해도 내부 식별자가 그대로다`
+
+식별자를 앱이 무작위로 만드는지
+  → `app/src/main/kotlin/com/stayaggregator/mapping/MappingRepository.kt` 의 `UUID.randomUUID()`
