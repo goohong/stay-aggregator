@@ -29,6 +29,7 @@ import reactor.core.publisher.Mono
 import java.time.Duration
 import java.time.LocalDate
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * 검색 한 건이 매핑 → 묶음 호출 → 판정 → 합치기로 흐르는지, 부분 실패가 응답에 드러나는지 확인한다.
@@ -179,6 +180,60 @@ class SearchServiceIntegrationTest {
         assertThat(result.roomTypes).isEmpty()
     }
 
+    // ── 재시도 (ADR-0051) ──
+
+    @Test
+    fun `일시적인 실패는 다시 부르고 성공하면 그 결과를 쓴다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val attempts = AtomicInteger()
+        val a = FakeAdapter("a") {
+            if (attempts.incrementAndGet() <= 2) Mono.error(SupplierResponseException("일시적", transient = true))
+            else Mono.just(availability(itemA("A-1", "DLX", breakfast = false)))
+        }
+
+        val result = service(a, maxRetries = 2).search(period, guests)
+
+        assertThat(a.requests).hasSize(3)
+        assertThat(result.suppliers.single().status).isEqualTo(SupplierStatus.SUCCEEDED)
+        assertThat(result.roomTypes).hasSize(1)
+    }
+
+    @Test
+    fun `일시적이지 않은 실패는 다시 부르지 않는다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("잘못된 요청", transient = false)) }
+
+        val result = service(a, maxRetries = 2).search(period, guests)
+
+        assertThat(a.requests).hasSize(1)
+        assertThat(result.suppliers.single().status).isEqualTo(SupplierStatus.FAILED)
+    }
+
+    @Test
+    fun `다시 불러도 계속 실패하면 정한 횟수에서 멈추고 원래 실패로 나간다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 가 503 을 알렸다", transient = true)) }
+
+        val result = service(a, maxRetries = 2).search(period, guests)
+
+        // 첫 호출 + 재시도 2회
+        assertThat(a.requests).hasSize(3)
+        val supplier = result.suppliers.single()
+        assertThat(supplier.status).isEqualTo(SupplierStatus.FAILED)
+        // 감싸지 않고 원래 사유가 그대로 나간다
+        assertThat(supplier.failureReason).isEqualTo("공급사 a 가 503 을 알렸다")
+    }
+
+    @Test
+    fun `재시도를 0 으로 두면 한 번만 부른다`() {
+        repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("일시적", transient = true)) }
+
+        service(a, maxRetries = 0).search(period, guests)
+
+        assertThat(a.requests).hasSize(1)
+    }
+
     @Test
     fun `검색 서비스는 재고 조회 인터페이스의 목록만 주입받는다`() {
         // 가짜가 AvailabilityAdapter 만 구현해도 서비스가 만들어진다. 목록 조회 기능을 채울 필요가 없다 (ADR-0031)
@@ -189,12 +244,12 @@ class SearchServiceIntegrationTest {
 
     // ── 도우미 ──
 
-    private fun service(vararg adapters: AvailabilityAdapter, budget: Duration = properties.search.budget) =
+    private fun service(vararg adapters: AvailabilityAdapter, budget: Duration = properties.search.budget, maxRetries: Int = 0) =
         SearchService(
             adapters.toList(),
             repository,
             normalizer,
-            StayProperties(properties.suppliers, StayProperties.Search(budget, properties.search.concurrencyPerSupplier)),
+            StayProperties(properties.suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries)),
         )
 
     private class FakeAdapter(
@@ -203,10 +258,16 @@ class SearchServiceIntegrationTest {
     ) : AvailabilityAdapter {
         val requests = CopyOnWriteArrayList<AvailabilityRequest>()
 
-        override fun fetchAvailability(request: AvailabilityRequest): Mono<FetchedAvailability> {
-            requests += request
-            return respond(request)
-        }
+        /**
+         * `defer` 로 감싸 **구독할 때마다** 다시 부른 것으로 센다.
+         * 재시도는 같은 `Mono` 를 다시 구독하는 것이라, 밖에서 한 번만 세면 재시도가 보이지 않는다.
+         * 실제 어댑터의 WebClient 체인도 다시 구독하면 실제로 다시 부른다.
+         */
+        override fun fetchAvailability(request: AvailabilityRequest): Mono<FetchedAvailability> =
+            Mono.defer {
+                requests += request
+                respond(request)
+            }
     }
 
     private fun hotel(code: String, name: String, vararg roomTypes: NormalizedRoomType) = NormalizedHotel(code, name, roomTypes.toList())

@@ -39,7 +39,20 @@ data class StayProperties(
         val budget: Duration,
         /** 공급사 하나에서 묶음 호출을 동시에 몇 개 띄우는가. WebClient 기본 풀 크기를 넘지 않게 잡는다 (ADR-0045) */
         val concurrencyPerSupplier: Int,
-    )
+        /**
+         * 일시적인 실패를 다시 부르는 최대 횟수. 첫 호출은 여기 들지 않는다. 2 면 최대 세 번 부른다 (ADR-0051).
+         * 0 이면 재시도하지 않는다.
+         */
+        val maxRetries: Int,
+        /** 첫 재시도 전에 기다리는 기준 시간. 여기서부터 두 배씩 늘고 Reactor 가 무작위를 섞는다 (ADR-0051) */
+        val retryMinBackoff: Duration,
+        /** 재시도 대기의 상한. 걸지 않으면 사실상 무한이다 (ADR-0051) */
+        val retryMaxBackoff: Duration,
+    ) {
+        init {
+            require(maxRetries >= 0) { "재시도 횟수가 음수다" }
+        }
+    }
 
     fun of(supplierId: String): Supplier =
         suppliers[supplierId]
