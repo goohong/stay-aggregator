@@ -78,6 +78,7 @@ Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정
 | `rate.totalAmount` | 세금을 포함한 **기간 전체 총액**입니다. 1박 얼마인지는 보여주는 쪽이 총액과 `nights` 로 계산합니다 ([ADR-0042](docs/adr/0042-rate-as-tax-included-total.md)) |
 
 필드마다의 타입과 뜻, 부분 실패와 오류 응답까지는 [docs/api.md](docs/api.md) 에 있습니다.
+앱을 띄운 뒤 `http://localhost:8080/swagger-ui.html` 에서 같은 계약을 보고 바로 호출해 볼 수도 있습니다. 명세는 코드에서 만듭니다 ([ADR-0063](docs/adr/0063-springdoc-openapi.md)).
 
 입력이 조건을 어기면 400 과 그 사유가 나갑니다. 사유 문장은 값을 담는 객체가 거부하며 낸 것을 그대로 씁니다.
 
@@ -185,7 +186,7 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 | 예약 대행 | **설계만** | 공급사 스펙에 예약 API 가 없어 요청·응답 형식을 지어내지 않았습니다. 결과를 모르는 예약은 같은 멱등 키로 공급사에 물어 확정하는 설계입니다 | [ADR-0064](docs/adr/0064-reservation-proxy-design-only.md) |
 | 요금·재고 캐시 | **구현 전** | 숙소 단위로 정규화한 결과를 Redis 에 두고 TTL 은 60초로 정했습니다 | [ADR-0065](docs/adr/0065-availability-cache-redis.md), ADR-0068 |
 | 동일 숙소(중복 상품 병합) | **구현 전** | 공통 키도 주소도 없어 숙소명으로 추정해 합치면 동명 숙소를 잘못 합칩니다. 사람이 확인한 짝만 같은 값으로 묶기로 정했습니다. 지금은 각각 내보내고 `supplier` 를 함께 싣습니다 | [ADR-0058](docs/adr/0058-same-hotel-confirmed-pairs-only.md) |
-| API 문서 자동화 | **구현 전** | springdoc-openapi 로 코드에서 만들기로 정했습니다. 그때까지 계약은 위 "검색 API" 절입니다 | [ADR-0063](docs/adr/0063-springdoc-openapi.md) |
+| API 문서 자동화 | **구현** | springdoc-openapi 로 코드에서 만듭니다. 앱을 띄우고 `/swagger-ui.html` 또는 `/v3/api-docs` | [ADR-0063](docs/adr/0063-springdoc-openapi.md) |
 
 ## 하지 않은 것
 

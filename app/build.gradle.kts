@@ -37,6 +37,9 @@ dependencies {
 
     // 공급사 호출 지표를 Micrometer 로 세고 /actuator/metrics 로 내보낸다 (ADR-0060)
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    // 검색 API 명세를 코드에서 만든다 (ADR-0063). Boot 4 는 springdoc 3.x 부터 지원한다
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1")
     // Kotlin 데이터 클래스로 JSON 을 받으려면 필요하다. Boot 4 는 Jackson 3 이라 tools.jackson 좌표를 쓴다 (ADR-0007).
     implementation("tools.jackson.module:jackson-module-kotlin")
 

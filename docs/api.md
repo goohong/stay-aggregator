@@ -274,10 +274,14 @@ chunk 호출이 병렬이라 돌아오는 순서가 매번 같지 않다 → `se
 내부 결과 타입(`SearchResult`, `SupplierResult`)이 바뀌어도 이 문서는 바뀌지 않는다. 그러라고 응답 DTO 를 따로 둔다
 → `search/SearchResponse.kt` 의 클래스 주석
 
-## 8. springdoc 을 넣기 전까지
+## 8. 생성된 명세와 이 문서의 분담
 
-API 문서를 springdoc-openapi 로 코드에서 만들기로 정했고 아직 넣지 않았다 ([ADR-0063](adr/0063-springdoc-openapi.md)).
-**그때까지 계약은 이 문서다.**
+앱을 띄우면 같은 계약을 코드에서 만든 명세로도 볼 수 있다 ([ADR-0063](adr/0063-springdoc-openapi.md)).
 
-넣으면 필드 단위 계약은 생성된 문서(`/v3/api-docs`)가 맡고, 이 문서에는 예시와 "읽는 법"이 남는다.
-ADR-0063 이 README 에 대해 정한 분담과 같은 기준이다.
+| | |
+|---|---|
+| `http://localhost:8080/swagger-ui.html` | 화면에서 보고 바로 호출해 본다 |
+| `http://localhost:8080/v3/api-docs` | OpenAPI 3.1 JSON |
+
+**필드 단위 계약은 생성된 명세가 정본이다.** 응답 DTO(`search/SearchResponse.kt`)에서 나오므로 코드와 어긋날 수 없다.
+이 문서에는 생성된 명세가 담지 못하는 것이 남는다. 값의 뜻(공급사 상태를 읽는 법), 예시, 계약이 바뀔 때 고칠 곳이다.

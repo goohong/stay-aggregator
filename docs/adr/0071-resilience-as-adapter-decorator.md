@@ -38,7 +38,7 @@ ADR-0057 은 라이브러리 선택만 다뤘고 **어디에 두는가**는 다�
 - 감싼 목록에 자기 타입 `ResilientAvailabilityAdapters` 를 준다. `List<AvailabilityAdapter>` 로 받으면 원본 빈이 섞이기 때문이다. 감싸는 곳은 `SupplierResilienceConfig` 한 곳이다
 - `SupplierCircuitBreakers` 를 `supplier` 로 옮긴다. 서킷 상태는 "그 공급사가 지금 죽었나"이지 검색만의 것이 아니다
 - `SearchService` 는 감싼 어댑터를 호출하고 실패한 chunk 를 결과로 바꾸는 일만 한다. 재시도·서킷·지표 코드가 없다
-- 목록 동기화는 감싸지 않는다. 재시도하지 않고([ADR-0019](0019-catalog-sync-partial-failure.md)) 서킷도 두지 않는다(ADR-0056). 지표는 지금처럼 `CatalogSyncService` 가 직접 센다
+- 목록 동기화는 감싸지 않는다. 재시도하지 않고([ADR-0019](0019-first-catalog-failure-no-special-handling.md)) 서킷도 두지 않는다(ADR-0056). 지표는 지금처럼 `CatalogSyncService` 가 직접 센다
 
 ## Consequences
 
