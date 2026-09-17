@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.util.concurrent.TimeoutException
 
 /**
@@ -23,7 +22,9 @@ import java.util.concurrent.TimeoutException
  * 묶음 일부가 실패하면 성공한 묶음은 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
  * 검색 전체 시간 한계는 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
  *
- * 기다리는 자리는 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021). 매핑 읽기는 블로킹 JDBC 라 별도 스케줄러에서 한다.
+ * 기다리는 자리는 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021).
+ * 매핑 읽기도 그 스레드에서 블로킹으로 한다. 별도 스케줄러를 두지 않는 것이 ADR-0021 이 가상 스레드를 고른 이유다.
+ * 공급사마다 읽기가 차례로 일어나지만 밀리초 단위이고, 공급사 HTTP 호출은 그 뒤에 각자 비동기로 나가 동시성을 잃지 않는다.
  * 어느 공급사인지는 어댑터만 알므로 어댑터와 그 결과를 여기서 함께 든다 (ADR-0049).
  */
 @Service
@@ -47,7 +48,6 @@ class SearchService(
 
     private fun searchSupplier(adapter: AvailabilityAdapter, period: StayPeriod, guests: GuestCount): Mono<SupplierResult> =
         Mono.fromCallable { repository.findActiveHotels(adapter.supplierId) }
-            .subscribeOn(Schedulers.boundedElastic())
             .flatMap { mapped -> fetchAll(adapter, mapped, period, guests) }
             .timeout(search.budget)
             .onErrorResume { e -> Mono.just(failed(adapter.supplierId, e)) }
