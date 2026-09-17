@@ -1,6 +1,10 @@
 spring:
   application:
     name: stay-aggregator
+  threads:
+    virtual:
+      # 요청 처리 스레드가 공급사 응답을 block 으로 기다리는 동안 OS 스레드를 붙잡지 않는다 (ADR-0021)
+      enabled: true
 
 stay:
   # 공급사마다 주소·인증 키를 한 묶음으로 두고 (ADR-0038), 타임아웃도 같은 자리에 둔다 (ADR-0039).

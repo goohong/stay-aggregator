@@ -24,6 +24,8 @@ extra["hikaricp.version"] = "7.1.0"
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
 
+    // 서버는 Spring MVC 다 (ADR-0020). 요청은 가상 스레드에서 처리하고 공급사 응답을 block 으로 기다린다 (ADR-0021).
+    implementation("org.springframework.boot:spring-boot-starter-web")
     // 공급사 호출은 WebClient 로 한다 (ADR-0020). 이 스타터는 리액티브 서버를 끌고 오지 않는다 (ADR-0007).
     implementation("org.springframework.boot:spring-boot-starter-webclient")
     // Kotlin 데이터 클래스로 JSON 을 받으려면 필요하다. Boot 4 는 Jackson 3 이라 tools.jackson 좌표를 쓴다 (ADR-0007).
