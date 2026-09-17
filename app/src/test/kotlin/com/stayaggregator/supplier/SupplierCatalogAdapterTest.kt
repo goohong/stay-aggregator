@@ -6,10 +6,12 @@ import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
+import java.net.ServerSocket
 import java.time.Duration
 import java.util.concurrent.TimeoutException
 
@@ -130,8 +132,15 @@ class SupplierCatalogAdapterTest {
         // 역직렬화에서 실패하는 것은 JSON 문법 오류와 타입 불일치뿐이고, 둘 다 공급사 실패로 본다 (ADR-0030, ADR-0027 의 첫 질문)
         respond("/a/v1/hotels", status = 200, body = """{"items":[{"hotelCode":""")
 
-        assertThatThrownBy { adapterA().fetchCatalog().block() }
-            .isInstanceOf(SupplierResponseException::class.java)
+        assertKeepsCauseKind(catchThrowable { adapterA().fetchCatalog().block() })
+    }
+
+    @Test
+    fun `연결하지 못하면 오류가 된다`() {
+        // 열었다 바로 닫아 아무도 듣지 않는 포트를 얻는다
+        val closedPort = ServerSocket(0).use { it.localPort }
+
+        assertKeepsCauseKind(catchThrowable { adapterA(atPort = closedPort).fetchCatalog().block() })
     }
 
     @Test
@@ -141,27 +150,41 @@ class SupplierCatalogAdapterTest {
             write(exchange, 200, "{}")
         }
 
-        assertThatThrownBy { adapterA(timeout = Duration.ofMillis(200)).fetchCatalog().block() }
-            .isInstanceOf(SupplierResponseException::class.java)
-            .hasRootCauseInstanceOf(TimeoutException::class.java)
+        val thrown = catchThrowable { adapterA(timeout = Duration.ofMillis(200)).fetchCatalog().block() }
+
+        assertKeepsCauseKind(thrown)
+        assertThat(thrown).hasRootCauseInstanceOf(TimeoutException::class.java)
     }
 
-    private fun adapterA(timeout: Duration = Duration.ofSeconds(1)) =
-        SupplierACatalogAdapter(properties("a", timeout))
+    private fun adapterA(timeout: Duration = Duration.ofSeconds(1), atPort: Int = port) =
+        SupplierACatalogAdapter(properties("a", timeout, atPort))
 
-    private fun adapterB(timeout: Duration = Duration.ofSeconds(1)) =
-        SupplierBCatalogAdapter(properties("b", timeout))
+    private fun adapterB(timeout: Duration = Duration.ofSeconds(1), atPort: Int = port) =
+        SupplierBCatalogAdapter(properties("b", timeout, atPort))
 
-    private fun properties(supplierId: String, timeout: Duration) =
+    private fun properties(supplierId: String, timeout: Duration, atPort: Int) =
         StayProperties(
             mapOf(
                 supplierId to StayProperties.Supplier(
-                    baseUrl = "http://localhost:$port",
+                    baseUrl = "http://localhost:$atPort",
                     apiKey = "test",
                     timeout = timeout,
                 ),
             ),
         )
+
+    /**
+     * 감싼 실패가 원인을 잃지 않고, 그 종류를 로그 문장에 남기는지 본다 (ADR-0027 의 첫 질문).
+     *
+     * 예외 클래스 이름을 테스트에 박지 않는다. 라이브러리가 바꿀 수 있는 값이고, 우리가 지키려는 것은
+     * "원인의 종류가 로그에 남는다" 는 성질이다. 그 성질이 있으면 뒤에 지표를 만들 때 `cause` 로 셀 수 있다 (Q18).
+     */
+    private fun assertKeepsCauseKind(thrown: Throwable?) {
+        assertThat(thrown).isInstanceOf(SupplierResponseException::class.java)
+        val cause = thrown!!.cause
+        assertThat(cause).isNotNull()
+        assertThat(thrown.message).contains(cause!!.javaClass.simpleName)
+    }
 
     private fun respond(path: String, status: Int, body: String) {
         server.createContext(path) { exchange -> write(exchange, status, body) }
