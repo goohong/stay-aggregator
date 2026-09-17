@@ -31,7 +31,8 @@
 | **어댑터** | `SupplierAAdapter` 등 | 한 공급사의 API 를 부르고 그 응답을 우리 형태로 바꾸는 클래스. 공급사마다 하나 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)).<br>판정은 하지 않는다. 공급사마다 다른 것만 흡수한다 |
 | **consumer** | `CatalogSyncService` 등 | 어댑터를 주입받아 쓰는 쪽. 지금은 목록 동기화 하나, 검색이 생기면 둘 |
 | **공급사 실패** | `SupplierResponseException` | 응답을 스펙대로 받지 못한 것. HTTP 상태, 본문의 결과 코드, 본문을 읽지 못한 것,<br>정한 시간 안에 오지 않은 것, 연결하지 못한 것이 모두 여기 든다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md)).<br>공급사가 "실패"라고 말한 것만이 아니다 |
-| **부분 실패** | (검색 응답) | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다 |
+| **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 묶음이 실패했거나, 시간 한계를 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
+| **실패한 묶음** | `SupplierResult.failedChunks` | 성공한 공급사 안에서 부르지 못한 묶음 수. 그 묶음의 숙소는 응답에 없다. 상태는 성공이다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 
 ## 우리 안에서 쓰는 형태
 
@@ -41,7 +42,7 @@
 |---|---|---|
 | **받은 값** | `Fetched…` | 어댑터가 공급사 응답에서 꺼내 놓은 값. **아직 판정하지 않았다.** 값이 없을 수 있어 전부 null 을 허용한다.<br>어느 공급사 것인지는 들어 있지 않다. 어댑터가 안다 ([ADR-0049](adr/0049-supplier-id-on-adapter-only.md)).<br>요금은 공급사가 준 모양 그대로다. 날짜별(`FetchedPricing.Daily`)이거나 총액(`FetchedPricing.Total`)이고, 하나의 총액으로 만드는 것은 판정 쪽이다 |
 | **정규화한 값** | `Normalized…` | 판정을 마치고 매핑에 넣을 값. 조건을 어긴 것은 여기까지 오지 않는다 |
-| **검색 응답 모델** | (검색 구현 단위에서) | 고객에게 나갈 형태 |
+| **검색 결과** | `SearchResult`, `SupplierResult` | 판정을 마치고 공급사별 상태·건수와 함께 합친 것. HTTP 응답은 이것을 그대로 내보낸다 |
 
 | 말 | 코드 이름 | 뜻과 헷갈리기 쉬운 것 |
 |---|---|---|

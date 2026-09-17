@@ -89,6 +89,14 @@ Mock 의 숙소 코드 수 검사
   → `AvailabilityRequestTest.숙소 코드가 50개를 넘으면 만들 수 없다`
   → `AvailabilityRequestTest.숙소 코드 50개까지는 만들어진다`
 
-숙소 코드가 50개를 넘으면 묶음으로 나눠 부르는지. Mock 이 50개 초과를 공급사처럼 거절하는지.
-동시 실행 수가 `flatMap` 인자로 드러나 있는지. 한 공급사가 시간 한계를 넘겨도 나머지 결과로 응답하는지.
-검색 서비스를 만들 때 확인하고 그 테스트 이름을 여기에 적는다.
+숙소 코드가 50개를 넘으면 묶음으로 나눠 부르는지
+  → `SearchServiceIntegrationTest.숙소가 50개를 넘으면 묶음으로 나눠 부른다`
+
+동시 실행 수가 `flatMap` 인자로 드러나 있는지
+  → `SearchService.fetchAll` 의 `flatMap(…, search.concurrencyPerSupplier)`
+
+한 공급사가 시간 한계를 넘겨도 나머지 결과로 응답하는지
+  → `SearchServiceIntegrationTest.시간 한계를 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다`
+
+Mock 이 50개 초과를 공급사처럼 거절하는지는 Mock 을 고칠 때 확인하고 여기에 적는다.
+동시 실행 수·시간 한계·재고 호출 타임아웃의 값은 측정 뒤에 정하고 그 근거를 여기에 적는다.
