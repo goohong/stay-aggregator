@@ -96,6 +96,26 @@ class SupplierCatalogAdapterTest {
     }
 
     @Test
+    fun `목록 필드가 없는 응답은 값을 거르지 않고 없는 대로 넘긴다`() {
+        // 판정은 정규화가 한다. 어댑터가 빈 목록으로 바꿔 버리면 그 신호가 사라진다 (ADR-0041)
+        respond("/a/v1/hotels", status = 200, body = "{}")
+
+        val fetched = adapterA().fetchCatalog().block()!!
+
+        assertThat(fetched.hotels).isNull()
+    }
+
+    @Test
+    fun `숙소 안의 객실 타입 목록도 없는 대로 넘긴다`() {
+        respond("/a/v1/hotels", status = 200, body = """{"items":[{"hotelCode":"A-1","hotelName":"강변 호텔"}]}""")
+
+        val fetched = adapterA().fetchCatalog().block()!!
+
+        assertThat(fetched.hotels).singleElement()
+            .satisfies({ hotel -> assertThat(hotel.roomTypes).isNull() })
+    }
+
+    @Test
     fun `본문을 읽을 수 없으면 오류가 된다`() {
         // 역직렬화에서 실패하는 것은 JSON 문법 오류와 타입 불일치뿐이고, 둘 다 공급사 실패로 본다 (ADR-0030, ADR-0027 의 첫 질문)
         respond("/a/v1/hotels", status = 200, body = """{"items":[{"hotelCode":""")

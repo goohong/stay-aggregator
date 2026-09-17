@@ -3,7 +3,9 @@ package com.stayaggregator.catalog
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
+import com.stayaggregator.supplier.SupplierResponseException
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 
 /**
@@ -78,6 +80,42 @@ class CatalogNormalizerTest {
             .satisfies({ hotel -> assertThat(hotel.roomTypes).extracting<String> { it.code }.containsExactly("STD") })
         assertThat(normalized.excluded).singleElement()
             .satisfies({ excluded -> assertThat(excluded.reason).contains("1 미만") })
+    }
+
+    @Test
+    fun `숙소 목록을 담는 필드가 없으면 공급사 실패가 된다`() {
+        // 빈 목록은 "없다"는 말이지만, 필드가 없는 것은 아무 말도 아니다 (ADR-0041)
+        assertThatThrownBy { normalizer.normalize(FetchedCatalog("a", null)) }
+            .isInstanceOf(SupplierResponseException::class.java)
+            .hasMessageContaining("숙소 목록이 없다")
+    }
+
+    @Test
+    fun `객실 타입 목록이 없는 숙소와 빈 숙소를 모두 뺀다`() {
+        val fetched = catalog(
+            FetchedHotel("A-1", "목록이 없는 숙소", null),
+            FetchedHotel("A-2", "목록이 빈 숙소", emptyList()),
+            hotel("A-3", "정상 숙소", roomType("DLX", "디럭스", 2)),
+        )
+
+        val normalized = normalizer.normalize(fetched)
+
+        assertThat(normalized.hotels).extracting<String> { it.code }.containsExactly("A-3")
+        assertThat(normalized.excluded).hasSize(2)
+            .allSatisfy { excluded -> assertThat(excluded.reason).contains("팔 수 있는 객실 타입이 없다") }
+    }
+
+    @Test
+    fun `객실 타입이 하나뿐이고 그것이 빠지면 숙소까지 빠진다`() {
+        val fetched = catalog(
+            hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", null)),
+        )
+
+        val normalized = normalizer.normalize(fetched)
+
+        assertThat(normalized.hotels).isEmpty()
+        assertThat(normalized.excluded).extracting<String> { it.reason }
+            .containsExactly("최대 수용 인원이 1 미만이다", "팔 수 있는 객실 타입이 없다")
     }
 
     @Test

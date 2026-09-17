@@ -40,11 +40,12 @@ class SupplierACatalogAdapter(properties: StayProperties) : CatalogAdapter {
     private fun SupplierAHotelsResponse.toFetchedCatalog() =
         FetchedCatalog(
             supplierId = SUPPLIER_ID,
-            hotels = items.orEmpty().map { hotel ->
+            // 없는 것을 빈 목록으로 바꾸지 않는다. 판정은 정규화가 한다 (ADR-0041)
+            hotels = items?.map { hotel ->
                 FetchedHotel(
                     code = hotel.hotelCode,
                     name = hotel.hotelName,
-                    roomTypes = hotel.roomTypes.orEmpty().map { roomType ->
+                    roomTypes = hotel.roomTypes?.map { roomType ->
                         FetchedRoomType(
                             code = roomType.roomTypeCode,
                             name = roomType.roomTypeName,

@@ -44,11 +44,12 @@ class SupplierBCatalogAdapter(properties: StayProperties) : CatalogAdapter {
         }
         return FetchedCatalog(
             supplierId = SUPPLIER_ID,
-            hotels = data?.items.orEmpty().map { property ->
+            // 없는 것을 빈 목록으로 바꾸지 않는다. 판정은 정규화가 한다 (ADR-0041)
+            hotels = data?.items?.map { property ->
                 FetchedHotel(
                     code = property.propertyId,
                     name = property.propertyName,
-                    roomTypes = property.rooms.orEmpty().map { room ->
+                    roomTypes = property.rooms?.map { room ->
                         FetchedRoomType(
                             code = room.roomId,
                             name = room.roomName,
