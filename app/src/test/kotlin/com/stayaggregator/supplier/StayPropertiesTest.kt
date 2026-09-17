@@ -65,6 +65,16 @@ class StayPropertiesTest {
     }
 
     @Test
+    fun `연결 타임아웃이 int 밀리초를 넘으면 만들 수 없다`() {
+        // Netty 의 CONNECT_TIMEOUT_MILLIS 는 int 다. 넘치면 어댑터가 WebClient 를 만들 때 ArithmeticException 으로 난다
+        val tooLong = Duration.ofMillis(Int.MAX_VALUE + 1L)
+
+        assertThatThrownBy { StayProperties.Supplier("http://localhost", "k", tooLong.multipliedBy(3), tooLong.multipliedBy(2), tooLong) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("연결 타임아웃이")
+    }
+
+    @Test
     fun `재시도 최대 백오프가 최소 백오프보다 짧으면 만들 수 없다`() {
         assertThatThrownBy { StayProperties.RetryPolicy(2, Duration.ofSeconds(1), Duration.ofMillis(100)) }
             .isInstanceOf(IllegalArgumentException::class.java)

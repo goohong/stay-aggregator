@@ -37,6 +37,8 @@ data class StayProperties(
     ) {
         init {
             require(connectTimeout.toMillis() >= 1) { "연결 타임아웃이 1ms 미만이다" }
+            // Netty 는 연결 타임아웃을 int 밀리초로 받는다. 넘치면 WebClient 를 만들 때가 아니라 여기서 드러낸다
+            require(connectTimeout.toMillis() <= Int.MAX_VALUE) { "연결 타임아웃이 ${Int.MAX_VALUE}ms 를 넘는다" }
             // 연결 타임아웃이 호출 타임아웃보다 길면 연결 타임아웃이 발동할 일이 없다
             require(connectTimeout < timeout && connectTimeout < availabilityTimeout) {
                 "연결 타임아웃($connectTimeout)은 목록·재고 호출 타임아웃($timeout, $availabilityTimeout)보다 짧아야 한다"
