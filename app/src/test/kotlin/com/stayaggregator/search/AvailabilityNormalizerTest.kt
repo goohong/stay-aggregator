@@ -12,7 +12,7 @@ import com.stayaggregator.supplier.FetchedDailyInventory
 import com.stayaggregator.supplier.FetchedDailyRate
 import com.stayaggregator.supplier.FetchedPricing
 import com.stayaggregator.domain.StayPeriod
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -285,7 +285,7 @@ class AvailabilityNormalizerTest {
     @Test
     fun `항목 목록이 없으면 공급사 실패다`() {
         assertThatThrownBy { normalizer.normalize(FetchedAvailability(null), mapped, threeNights, requestedCodes) }
-            .isInstanceOf(SupplierResponseException::class.java)
+            .isInstanceOf(SupplierFailure::class.java)
     }
 
     @Test

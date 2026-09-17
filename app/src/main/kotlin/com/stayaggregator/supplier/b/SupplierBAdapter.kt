@@ -10,7 +10,7 @@ import com.stayaggregator.supplier.FetchedPricing
 import com.stayaggregator.supplier.FetchedRoomType
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierAdapter
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import com.stayaggregator.supplier.asSupplierFailure
 import com.stayaggregator.supplier.supplierWebClient
 import org.springframework.stereotype.Component
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono
 /**
  * 공급사 B. 장애 상황에서도 HTTP 200 을 주고 본문의 결과 코드로만 실패를 알린다.
  *
- * 그 차이를 여기서 흡수해 A 의 HTTP 실패와 같은 공급사 실패 예외([SupplierResponseException])로 바꾼다.
+ * 그 차이를 여기서 흡수해 A 의 HTTP 실패와 같은 공급사 실패 예외([SupplierFailure])로 바꾼다.
  * 이것이 ADR-0027 의 첫 질문에 대한 답이고, 항목의 값이 유효한지는 여기서 보지 않는다 (ADR-0031).
  *
  * 요금은 기간 총액 하나로 온다. 세금이 포함됐는지는 포함 여부 값이 말하고 세금액은 없다. 그대로 넘긴다.
@@ -106,24 +106,16 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
      * 재시도 가능한지, 요청 한도 초과인지도 여기서 정한다. 결과 코드 체계가 B 것이라 공통 함수가 아니라 어댑터가 본다 (ADR-0051, ADR-0068).
      */
     private fun failIfNotSuccess(resultCode: String?, resultMessage: String?) {
-        if (resultCode != SUCCESS_CODE) {
-            throw SupplierResponseException(
-                "공급사 B 가 실패를 알렸다: resultCode=$resultCode, resultMessage=$resultMessage",
-                transient = isTransient(resultCode),
-                throttled = resultCode == RATE_LIMITED_CODE,
-            )
+        if (resultCode == SUCCESS_CODE) return
+        val message = "공급사 B 가 실패를 알렸다: resultCode=$resultCode, resultMessage=$resultMessage"
+        throw when {
+            resultCode == RATE_LIMITED_CODE -> SupplierFailure.Throttled(message)
+            // E5xx 는 공급사 쪽 문제라 순간적일 수 있다. E400·E401 과 스펙에 없는 코드는 같은 요청을 다시 보내도 같은 거절이다.
+            // 모르는 코드를 재시도하지 않는 쪽이 안전하다 (ADR-0051 의 표)
+            resultCode != null && resultCode.startsWith(SERVER_ERROR_PREFIX) -> SupplierFailure.Unavailable(message)
+            else -> SupplierFailure.Rejected(message)
         }
     }
-
-    /**
-     * B 의 결과 코드 중 재시도 가능한 것 (ADR-0051 의 표).
-     *
-     * `E5xx` 는 공급사 쪽 문제라 순간적일 수 있고, `E429` 는 기다렸다 재시도하라는 뜻이다.
-     * `E400`·`E401` 은 요청이나 인증이 잘못된 것이라 같은 요청을 다시 보내면 같은 거절이다.
-     * 스펙에 없는 코드가 오면 재시도 가능하지 않다고 본다. 모르는 실패를 재시도하지 않는 쪽이 안전하다.
-     */
-    private fun isTransient(resultCode: String?): Boolean =
-        resultCode != null && (resultCode.startsWith(SERVER_ERROR_PREFIX) || resultCode == RATE_LIMITED_CODE)
 
     companion object {
         const val SUPPLIER_ID = "b"

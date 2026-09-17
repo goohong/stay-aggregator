@@ -130,7 +130,7 @@ class SupplierAvailabilityAdapterTest {
         respond("/b/api/search", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
 
         assertThatThrownBy { adapterB().fetchAvailability(request).block() }
-            .isInstanceOf(SupplierResponseException::class.java)
+            .isInstanceOf(SupplierFailure::class.java)
             .hasMessageContaining("E503")
     }
 
@@ -154,21 +154,21 @@ class SupplierAvailabilityAdapterTest {
     fun `HTTP 429 는 요청 한도 초과로 표시되고 5xx 는 아니다`() {
         // 요청 한도 초과는 다른 기준으로 재시도한다 (ADR-0068)
         respond("/a/v1/availability", status = 429, body = """{"error":"RATE_LIMIT_EXCEEDED"}""")
-        assertThat((catchThrowable { adapterA().fetchAvailability(request).block() } as SupplierResponseException).throttled).isTrue()
+        assertThat(catchThrowable { adapterA().fetchAvailability(request).block() }).isInstanceOf(SupplierFailure.Throttled::class.java)
 
         server.removeContext("/a/v1/availability")
         respond("/a/v1/availability", status = 503, body = """{"error":"SERVICE_UNAVAILABLE"}""")
-        assertThat((catchThrowable { adapterA().fetchAvailability(request).block() } as SupplierResponseException).throttled).isFalse()
+        assertThat(catchThrowable { adapterA().fetchAvailability(request).block() }).isNotInstanceOf(SupplierFailure.Throttled::class.java)
     }
 
     @Test
     fun `공급사 B 의 E429 도 요청 한도 초과로 표시된다`() {
         respond("/b/api/search", status = 200, body = """{"resultCode":"E429","resultMessage":"RATE_LIMIT_EXCEEDED","data":null}""")
 
-        val thrown = catchThrowable { adapterB().fetchAvailability(request).block() } as SupplierResponseException
+        val thrown = catchThrowable { adapterB().fetchAvailability(request).block() } as SupplierFailure
 
         assertThat(thrown.transient).isTrue()
-        assertThat(thrown.throttled).isTrue()
+        assertThat(thrown).isInstanceOf(SupplierFailure.Throttled::class.java)
     }
 
     @Test
@@ -188,7 +188,7 @@ class SupplierAvailabilityAdapterTest {
 
         val thrown = catchThrowable { adapterA().fetchAvailability(request).block() }
 
-        assertThat((thrown as SupplierResponseException).timedOut).isTrue()
+        assertThat(thrown).isInstanceOf(SupplierFailure.Timeout::class.java)
     }
 
     @Test
@@ -244,8 +244,8 @@ class SupplierAvailabilityAdapterTest {
             "블랙홀 주소가 연결 타임아웃으로 끝나지 않는 환경이다: ${thrown?.cause?.cause}",
         )
         assertThat(elapsed).isLessThan(Duration.ofSeconds(3))
-        assertThat((thrown as SupplierResponseException).timedOut).isTrue()
-        assertThat(thrown.transient).isFalse()
+        assertThat(thrown).isInstanceOf(SupplierFailure.Timeout::class.java)
+        assertThat((thrown as SupplierFailure).transient).isFalse()
     }
 
     @Test
@@ -271,8 +271,8 @@ class SupplierAvailabilityAdapterTest {
     /** 던져진 공급사 실패 예외가 재시도 가능하다고 말하는지 */
     private fun transientOf(call: () -> Unit): Boolean {
         val thrown = catchThrowable { call() }
-        assertThat(thrown).isInstanceOf(SupplierResponseException::class.java)
-        return (thrown as SupplierResponseException).transient
+        assertThat(thrown).isInstanceOf(SupplierFailure::class.java)
+        return (thrown as SupplierFailure).transient
     }
 
     private fun adapterA() = SupplierAAdapter(properties("a"))

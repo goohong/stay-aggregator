@@ -49,8 +49,8 @@ class SupplierCallMetrics(private val registry: MeterRegistry) {
             when {
                 error == null -> Outcome.SUCCESS
                 error is CallNotPermittedException -> Outcome.CIRCUIT_OPEN
-                error is SupplierResponseException && error.timedOut -> Outcome.TIMEOUT
-                error is SupplierResponseException -> Outcome.SUPPLIER_FAILURE
+                error is SupplierFailure.Timeout -> Outcome.TIMEOUT
+                error is SupplierFailure -> Outcome.SUPPLIER_FAILURE
                 else -> Outcome.INTERNAL_ERROR
             }
     }

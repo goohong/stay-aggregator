@@ -12,7 +12,7 @@ date: 2026-09-16
 ## Context
 
 목록 동기화 구현 단위가 끝나 파일이 생겼다. 지금은 `catalog` 안에 성격이 다른 넷이 함께 있다.
-공급사와 만나는 인터페이스(`CatalogAdapter`), 공급사 응답의 공통 형태(`FetchedCatalog`), 공급사 실패 예외(`SupplierResponseException`),
+공급사와 만나는 인터페이스(`CatalogAdapter`), 공급사 응답의 공통 형태(`FetchedCatalog`), 공급사 실패 예외(`SupplierResponseException`, 지금은 `SupplierFailure`),
 매핑 테이블을 다루는 저장소(`MappingRepository`)다.
 
 다음 구현 단위는 검색이고, 검색도 같은 매핑 테이블을 읽어야 한다. 요구사항은 새 공급사를 추가할 때 무엇을 고치는지

@@ -28,7 +28,7 @@ class SupplierFailureTest {
         val mono = Mono.error<String>(IllegalStateException("연결하지 못했다")).asSupplierFailure("a")
 
         assertThatThrownBy { mono.block() }
-            .isInstanceOf(SupplierResponseException::class.java)
+            .isInstanceOf(SupplierFailure::class.java)
             .hasMessageContaining("공급사 a")
             // 예외에 따라 message 가 비어 있어, 로그에서 실패 종류를 가릴 방법이 클래스 이름뿐이다
             .hasMessageContaining("IllegalStateException")
@@ -58,9 +58,9 @@ class SupplierFailureTest {
         // WebClient 가 Netty 의 연결 타임아웃을 감싸 올리는 형태다. 실제 연결 없이 분류만 본다 (ADR-0051, ADR-0066)
         val cause = WebClientRequestException(ConnectTimeoutException("connection timed out"), HttpMethod.GET, URI.create("http://192.0.2.1"), HttpHeaders())
 
-        val thrown = runCatching { Mono.error<String>(cause).asSupplierFailure("a").block() }.exceptionOrNull() as SupplierResponseException
+        val thrown = runCatching { Mono.error<String>(cause).asSupplierFailure("a").block() }.exceptionOrNull() as SupplierFailure
 
-        assertThat(thrown.timedOut).isTrue()
+        assertThat(thrown).isInstanceOf(SupplierFailure.Timeout::class.java)
         assertThat(thrown.transient).isFalse()
     }
 }

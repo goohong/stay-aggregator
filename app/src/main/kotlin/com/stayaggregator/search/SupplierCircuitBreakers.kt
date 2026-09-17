@@ -1,7 +1,7 @@
 package com.stayaggregator.search
 
 import com.stayaggregator.supplier.StayProperties
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import io.github.resilience4j.circuitbreaker.CircuitBreaker
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry
@@ -54,6 +54,6 @@ class SupplierCircuitBreakers(
             // 자동 전환은 켜지 않는다. 켜면 서킷마다 시간을 재는 작업이 따로 돈다
             // 공급사 실패가 아닌 것은 **무시한다.** recordException 으로 거르면 거른 것이 성공으로 세어져 실패율이 희석된다.
             // 문서: "The Predicate must return false, if the exception should count as a success, unless the exception is explicitly ignored"
-            .ignoreException { it !is SupplierResponseException }
+            .ignoreException { it !is SupplierFailure }
             .build()
 }

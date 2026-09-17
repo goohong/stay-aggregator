@@ -5,7 +5,7 @@ import com.stayaggregator.quarantine.QuarantineEntry
 import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.supplier.CatalogAdapter
 import com.stayaggregator.supplier.SupplierCallMetrics
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
@@ -42,7 +42,7 @@ class CatalogSyncService(
             val started = System.nanoTime()
             val fetched = try {
                 adapter.fetchCatalog().block()
-                    ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
+                    ?: throw SupplierFailure.Unreadable("공급사 ${adapter.supplierId} 응답이 비어 있다")
             } catch (e: Exception) {
                 // 공급사 호출까지만 센다. 정규화·저장에서 난 오류는 공급사 지표에 넣지 않는다 (ADR-0060)
                 metrics.recordCatalog(adapter.supplierId, java.time.Duration.ofNanos(System.nanoTime() - started), e)
@@ -61,7 +61,7 @@ class CatalogSyncService(
                 normalized.excluded.size,
                 normalized.excluded.joinToString { "${it.hotelCode}/${it.roomTypeCode}: ${it.reason}" },
             )
-        } catch (e: SupplierResponseException) {
+        } catch (e: SupplierFailure) {
             // 응답을 스펙대로 받지 못한 실패다. 공급사가 알렸든 오지 않았든 원인이 메시지에 있어 스택은 남기지 않는다 (ADR-0019).
             log.warn("목록 동기화 실패 supplier={} 이유={}", adapter.supplierId, e.message)
         } catch (e: Exception) {

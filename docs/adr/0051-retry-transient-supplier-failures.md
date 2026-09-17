@@ -15,7 +15,7 @@ date: 2026-09-17
 재시도는 요구사항의 선택 항목이고, [ADR-0045](0045-search-concurrency-and-budget.md) 가
 "한도에 걸렸을 때의 처리는 재시도·서킷과 함께 검토한다"로 미뤄 두었다. 그 검토가 이 ADR 이다.
 
-지금은 모든 공급사 실패가 [SupplierResponseException](../../app/src/main/kotlin/com/stayaggregator/supplier/SupplierResponseException.kt) 하나로 온다.
+지금은 모든 공급사 실패가 `SupplierResponseException`(지금은 `SupplierFailure`, ADR-0070) 하나로 온다.
 안에 "재시도해도 되는가"가 없어서, 재시도하려면 그것부터 가려야 한다.
 
 확인한 사실
@@ -36,6 +36,7 @@ date: 2026-09-17
 - **(가) 공급사 실패 예외에 "재시도 가능한가"를 담는다** ← 채택 — 예외 타입이 하나로 남아 ADR-0027 의 "consumer 에게 같은 예외로 보인다"가 깨지지 않는다.
   대신 공급사 실패 예외가 커지고, 그 값을 채우는 곳이 둘로 나뉜다
 - **(나) 예외 타입을 나눈다** — 타입만 보고 가른다. 대신 consumer 가 두 타입을 알아야 하고 위 문장을 실제로 깬다
+  (2026-09-17 추가: 이 이유는 sealed 계층에는 성립하지 않는다. 루트 타입 하나를 잡으면 된다. [ADR-0070](0070-supplier-failure-sealed.md) 이 그렇게 바꿨다)
 - **(다) 재시도하지 않는다** — 지금 그대로다. 대신 ADR-0050 이 적은 "chunk 하나에 숙소 50개가 빠진다"가 남는다
 
 ## Decision
@@ -82,7 +83,7 @@ date: 2026-09-17
 - 라이브러리가 늘지 않는다
 
 **잃는 것**
-- **공급사 실패 예외가 커진다.** `SupplierResponseException` 이 성질 하나를 더 든다
+- **공급사 실패 예외가 커진다.** `SupplierResponseException` 이 성질 하나를 더 든다 (그 뒤 성질이 셋이 되어 [ADR-0070](0070-supplier-failure-sealed.md) 으로 sealed 하위 타입이 됐다)
 - **재시도가 공급사 부하를 늘린다.** 공급사가 과부하일 때 우리가 더 호출한다. 무작위 백오프가 그것을 흩뜨리지만 없애지는 못한다.
   Google SRE 가 말한 재시도 비율 상한(10%)은 두지 않는다. 지금 그 비율을 셀 곳이 없다
 - **검색 한 건이 길어질 수 있다.** 재시도하는 만큼 늘어난다. 검색 전체 타임아웃이 상한을 잡지만 그만큼 고객이 더 기다린다

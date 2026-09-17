@@ -13,7 +13,7 @@ import com.stayaggregator.supplier.FetchedDailyInventory
 import com.stayaggregator.supplier.FetchedDailyRate
 import com.stayaggregator.supplier.FetchedPricing
 import com.stayaggregator.domain.StayPeriod
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -45,7 +45,7 @@ class AvailabilityNormalizer {
         period: StayPeriod,
         requestedHotelCodes: Collection<String>,
     ): NormalizedAvailability {
-        val items = fetched.items ?: throw SupplierResponseException("응답에 항목 목록이 없다")
+        val items = fetched.items ?: throw SupplierFailure.Unreadable("응답에 항목 목록이 없다")
         val hotelsByCode = mapped.associateBy { it.supplierHotelCode }
         val requested = requestedHotelCodes.toSet()
         val nights = period.nightDates()

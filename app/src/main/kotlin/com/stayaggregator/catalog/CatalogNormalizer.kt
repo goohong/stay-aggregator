@@ -6,7 +6,7 @@ import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.springframework.stereotype.Component
 
 /**
@@ -27,7 +27,7 @@ class CatalogNormalizer {
 
     fun normalize(fetched: FetchedCatalog): NormalizedCatalog {
         val hotels = fetched.hotels
-            ?: throw SupplierResponseException("응답에 숙소 목록이 없다")
+            ?: throw SupplierFailure.Unreadable("응답에 숙소 목록이 없다")
 
         val excluded = mutableListOf<ExcludedItem>()
         val normalized = mutableListOf<NormalizedHotel>()

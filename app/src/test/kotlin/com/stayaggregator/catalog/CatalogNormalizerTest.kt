@@ -4,7 +4,7 @@ import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
@@ -87,7 +87,7 @@ class CatalogNormalizerTest {
     fun `숙소 목록을 담는 필드가 없으면 공급사 실패가 된다`() {
         // 빈 목록은 "없다"는 말이지만, 필드가 없는 것은 아무 말도 아니다 (ADR-0041)
         assertThatThrownBy { normalizer.normalize(FetchedCatalog(null)) }
-            .isInstanceOf(SupplierResponseException::class.java)
+            .isInstanceOf(SupplierFailure::class.java)
             .hasMessageContaining("숙소 목록이 없다")
     }
 

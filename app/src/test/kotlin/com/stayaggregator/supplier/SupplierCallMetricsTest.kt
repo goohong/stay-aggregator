@@ -14,8 +14,8 @@ class SupplierCallMetricsTest {
     @Test
     fun `실패 종류마다 결과 태그가 다르다`() {
         assertThat(SupplierCallMetrics.outcomeOf(null)).isEqualTo(Outcome.SUCCESS)
-        assertThat(SupplierCallMetrics.outcomeOf(SupplierResponseException("느림", timedOut = true))).isEqualTo(Outcome.TIMEOUT)
-        assertThat(SupplierCallMetrics.outcomeOf(SupplierResponseException("503"))).isEqualTo(Outcome.SUPPLIER_FAILURE)
+        assertThat(SupplierCallMetrics.outcomeOf(SupplierFailure.Timeout("느림"))).isEqualTo(Outcome.TIMEOUT)
+        assertThat(SupplierCallMetrics.outcomeOf(SupplierFailure.Unreadable("503"))).isEqualTo(Outcome.SUPPLIER_FAILURE)
         assertThat(SupplierCallMetrics.outcomeOf(CallNotPermittedException.createCallNotPermittedException(CircuitBreaker.ofDefaults("a"))))
             .isEqualTo(Outcome.CIRCUIT_OPEN)
     }

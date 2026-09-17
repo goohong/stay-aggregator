@@ -16,7 +16,7 @@ import com.stayaggregator.supplier.FetchedPricing
 import com.stayaggregator.domain.GuestCount
 import com.stayaggregator.domain.StayPeriod
 import com.stayaggregator.supplier.StayProperties
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -98,7 +98,7 @@ class SearchServiceIntegrationTest {
     fun `한 공급사가 실패해도 나머지 결과로 응답하고 실패한 공급사가 사유와 함께 드러난다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
-        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 응답을 쓸 수 없다: 503")) }
+        val a = FakeAdapter("a") { Mono.error(SupplierFailure.Unreadable("공급사 a 응답을 쓸 수 없다: 503")) }
         val b = FakeAdapter("b") { Mono.just(availability(itemB("B-1", "R-1", total = 200_000, breakfast = false))) }
 
         val result = service(a, b).search(period, guests)
@@ -128,7 +128,7 @@ class SearchServiceIntegrationTest {
     fun `chunk 하나가 실패해도 다른 chunk 의 항목은 나가고 실패한 chunk 수가 실린다`() {
         repository.applyCatalog("a", (1..51).map { hotel("A-$it", "숙소 $it", roomType("STD", "스탠다드", 2)) })
         val a = FakeAdapter("a") { request ->
-            if (request.hotelCodes.size == 1) Mono.error(SupplierResponseException("한 chunk 만 실패"))
+            if (request.hotelCodes.size == 1) Mono.error(SupplierFailure.Unreadable("한 chunk 만 실패"))
             else Mono.just(availability(*request.hotelCodes.map { itemA(it, "STD", breakfast = false) }.toTypedArray()))
         }
 
@@ -193,7 +193,7 @@ class SearchServiceIntegrationTest {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val attempts = AtomicInteger()
         val a = FakeAdapter("a") {
-            if (attempts.incrementAndGet() <= 2) Mono.error(SupplierResponseException("일시적", transient = true))
+            if (attempts.incrementAndGet() <= 2) Mono.error(SupplierFailure.Unavailable("일시적"))
             else Mono.just(availability(itemA("A-1", "DLX", breakfast = false)))
         }
 
@@ -207,7 +207,7 @@ class SearchServiceIntegrationTest {
     @Test
     fun `일시적이지 않은 실패는 재시도하지 않는다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
-        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("잘못된 요청", transient = false)) }
+        val a = FakeAdapter("a") { Mono.error(SupplierFailure.Rejected("잘못된 요청")) }
 
         val result = service(a, maxRetries = 2).search(period, guests)
 
@@ -218,7 +218,7 @@ class SearchServiceIntegrationTest {
     @Test
     fun `재시도해도 계속 실패하면 정한 횟수에서 멈추고 원래 실패로 나간다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
-        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 가 503 을 알렸다", transient = true)) }
+        val a = FakeAdapter("a") { Mono.error(SupplierFailure.Unavailable("공급사 a 가 503 을 알렸다")) }
 
         val result = service(a, maxRetries = 2).search(period, guests)
 
@@ -237,7 +237,7 @@ class SearchServiceIntegrationTest {
         val calledAt = CopyOnWriteArrayList<Long>()
         val a = FakeAdapter("a") {
             calledAt += System.nanoTime()
-            Mono.error(SupplierResponseException("공급사 a 429", transient = true, throttled = true))
+            Mono.error(SupplierFailure.Throttled("공급사 a 429"))
         }
         val throttled = StayProperties.RetryPolicy(1, Duration.ofSeconds(1), Duration.ofMillis(1_500))
 
@@ -254,8 +254,8 @@ class SearchServiceIntegrationTest {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val attempts = AtomicInteger()
         val a = FakeAdapter("a") {
-            if (attempts.incrementAndGet() == 1) Mono.error(SupplierResponseException("공급사 a 503", transient = true))
-            else Mono.error(SupplierResponseException("공급사 a 429", transient = true, throttled = true))
+            if (attempts.incrementAndGet() == 1) Mono.error(SupplierFailure.Unavailable("공급사 a 503"))
+            else Mono.error(SupplierFailure.Throttled("공급사 a 429"))
         }
 
         service(a, maxRetries = 2).search(period, guests)
@@ -266,7 +266,7 @@ class SearchServiceIntegrationTest {
     @Test
     fun `재시도를 0 으로 두면 한 번만 호출한다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
-        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("일시적", transient = true)) }
+        val a = FakeAdapter("a") { Mono.error(SupplierFailure.Unavailable("일시적")) }
 
         service(a, maxRetries = 0).search(period, guests)
 
@@ -295,7 +295,7 @@ class SearchServiceIntegrationTest {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
         val a = FakeAdapter("a") { Mono.just(availability(itemA("A-1", "DLX", breakfast = false))) }
-        val b = FakeAdapter("b") { Mono.error(SupplierResponseException("공급사 b 503", transient = false)) }
+        val b = FakeAdapter("b") { Mono.error(SupplierFailure.Rejected("공급사 b 503")) }
         val registry = io.micrometer.core.instrument.simple.SimpleMeterRegistry()
 
         service(a, b, meterRegistry = registry).search(period, guests)
@@ -312,7 +312,7 @@ class SearchServiceIntegrationTest {
     fun `공급사가 계속 실패하면 서킷이 열리고 그 뒤 검색은 그 공급사를 호출하지 않는다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
-        val a = FakeAdapter("a") { Mono.error(SupplierResponseException("공급사 a 503", transient = true)) }
+        val a = FakeAdapter("a") { Mono.error(SupplierFailure.Unavailable("공급사 a 503")) }
         val b = FakeAdapter("b") { Mono.just(availability(itemB("B-1", "R-1", total = 200_000, breakfast = false))) }
         val breakers = breakers()
         val service = service(a, b, breakers = breakers)
@@ -337,7 +337,7 @@ class SearchServiceIntegrationTest {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val attempts = AtomicInteger()
         val a = FakeAdapter("a") {
-            if (attempts.incrementAndGet() % 2 == 1) Mono.error(SupplierResponseException("일시적", transient = true))
+            if (attempts.incrementAndGet() % 2 == 1) Mono.error(SupplierFailure.Unavailable("일시적"))
             else Mono.just(availability(itemA("A-1", "DLX", breakfast = false)))
         }
         val breakers = breakers()

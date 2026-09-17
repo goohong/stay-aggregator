@@ -8,7 +8,7 @@ import com.stayaggregator.supplier.CatalogAdapter
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel
 import com.stayaggregator.supplier.FetchedRoomType
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.BeforeEach
@@ -115,7 +115,7 @@ class CatalogSyncIntegrationTest {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val before = hotelId("A-1")
 
-        syncWith(FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답"))))
+        syncWith(FakeCatalogAdapter("a", Mono.error(SupplierFailure.Unreadable("읽을 수 없는 응답"))))
 
         // 표시했다가 missing_since 를 비우는 순서라, 읽지 못한 동기화가 표시만 남기고 끝나면 목록에 있는 숙소에 missing_since 가 남는다 (ADR-0037)
         assertThat(missingSince("A-1")).isNull()
@@ -190,7 +190,7 @@ class CatalogSyncIntegrationTest {
 
     @Test
     fun `공급사 하나가 실패해도 다른 공급사는 반영된다`() {
-        val failing = FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답")))
+        val failing = FakeCatalogAdapter("a", Mono.error(SupplierFailure.Unreadable("읽을 수 없는 응답")))
         val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
 
         CatalogSyncService(listOf(failing, working), normalizer, repository, quarantine, metrics).syncAll()

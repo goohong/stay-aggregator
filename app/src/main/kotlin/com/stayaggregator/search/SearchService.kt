@@ -11,7 +11,7 @@ import com.stayaggregator.domain.GuestCount
 import com.stayaggregator.domain.StayPeriod
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierCallMetrics
-import com.stayaggregator.supplier.SupplierResponseException
+import com.stayaggregator.supplier.SupplierFailure
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator
 import org.slf4j.LoggerFactory
@@ -125,10 +125,10 @@ class SearchService(
             var limit = Long.MAX_VALUE
             signals.concatMap { signal ->
                 val failure = signal.failure()
-                if (failure !is SupplierResponseException || !failure.transient) {
+                if (failure !is SupplierFailure || !failure.transient) {
                     return@concatMap Mono.error<Long>(failure)
                 }
-                val spec = if (failure.throttled) throttled else general
+                val spec = if (failure is SupplierFailure.Throttled) throttled else general
                 limit = minOf(limit, spec.maxAttempts)
                 if (signal.totalRetries() >= limit) Mono.error(failure) else spec.generateCompanion(Flux.just(signal.copy()))
             }
@@ -186,7 +186,7 @@ class SearchService(
             is TimeoutException -> "검색 전체 타임아웃 ${search.timeout} 안에 끝나지 않았다"
             else -> e.message ?: e.javaClass.simpleName
         }
-        if (e is SupplierResponseException || e is TimeoutException) {
+        if (e is SupplierFailure || e is TimeoutException) {
             log.warn("검색 공급사 실패 supplier={} 이유={}", supplierId, reason)
         } else {
             // 공급사가 알린 실패가 아니면 내부 오류일 수 있어 어디서 났는지까지 남긴다
@@ -199,7 +199,7 @@ class SearchService(
         if (e is CallNotPermittedException) {
             // 서킷이 연 것은 상태 변경 때 한 번 남겼다. chunk 마다 경고를 찍지 않는다
             log.debug("검색 chunk 건너뜀 supplier={} 숙소={}개 서킷 열림", supplierId, request.hotelCodes.size)
-        } else if (e is SupplierResponseException) {
+        } else if (e is SupplierFailure) {
             log.warn("검색 chunk 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message)
         } else {
             log.warn("검색 chunk 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message, e)

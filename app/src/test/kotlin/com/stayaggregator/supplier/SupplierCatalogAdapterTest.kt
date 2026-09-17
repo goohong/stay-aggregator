@@ -68,7 +68,7 @@ class SupplierCatalogAdapterTest {
 
         // B 가 본문 결과 코드로 알린 실패와 같은 공급사 실패 예외가 되어야 한다 (ADR-0027 의 첫 질문, ADR-0031)
         assertThatThrownBy { adapterA().fetchCatalog().block() }
-            .isInstanceOf(SupplierResponseException::class.java)
+            .isInstanceOf(SupplierFailure::class.java)
             .hasMessageContaining("503")
     }
 
@@ -77,7 +77,7 @@ class SupplierCatalogAdapterTest {
         respond("/b/api/properties", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
 
         assertThatThrownBy { adapterB().fetchCatalog().block() }
-            .isInstanceOf(SupplierResponseException::class.java)
+            .isInstanceOf(SupplierFailure::class.java)
             .hasMessageContaining("E503")
     }
 
@@ -191,7 +191,7 @@ class SupplierCatalogAdapterTest {
      * "원인의 종류가 로그에 남는다" 는 성질이다. 그 성질이 있으면 뒤에 지표를 만들 때 `cause` 로 셀 수 있다 (Q18).
      */
     private fun assertKeepsCauseKind(thrown: Throwable?) {
-        assertThat(thrown).isInstanceOf(SupplierResponseException::class.java)
+        assertThat(thrown).isInstanceOf(SupplierFailure::class.java)
         val cause = thrown!!.cause
         assertThat(cause).isNotNull()
         assertThat(thrown.message).contains(cause!!.javaClass.simpleName)
