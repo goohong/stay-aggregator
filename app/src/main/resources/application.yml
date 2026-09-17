@@ -11,10 +11,18 @@ stay:
       base-url: http://localhost:9090
       api-key: mock
       timeout: PT30S
+      # 재고·요금 호출 하나의 한계. 아직 측정 전 임시값이다. Mock 지연 모드로 재서 정하고 ADR 에 근거를 적는다 (ADR-0045)
+      availability-timeout: PT5S
     b:
       base-url: http://localhost:9090
       api-key: mock
       timeout: PT30S
+      availability-timeout: PT5S
+
+  search:
+    # 검색 한 건 전체의 한계와 공급사당 동시 호출 수. 둘 다 측정 전 임시값이다 (ADR-0045)
+    budget: PT8S
+    concurrency-per-supplier: 4
 
   # 목록 동기화는 기동 직후 한 번 돌고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).
   # 기본값은 CatalogSyncScheduler 에 있다. 바꾸려면 stay.catalog.sync.initial-delay 와 interval 을 여기에 적는다.

@@ -146,13 +146,15 @@ class SupplierAvailabilityAdapterTest {
 
     private fun properties(supplierId: String) =
         StayProperties(
-            mapOf(
+            suppliers = mapOf(
                 supplierId to StayProperties.Supplier(
                     baseUrl = "http://localhost:$port",
                     apiKey = "test",
                     timeout = Duration.ofSeconds(1),
+                    availabilityTimeout = Duration.ofSeconds(1),
                 ),
             ),
+            search = StayProperties.Search(budget = Duration.ofSeconds(2), concurrencyPerSupplier = 4),
         )
 
     private fun respond(path: String, status: Int, body: String) {

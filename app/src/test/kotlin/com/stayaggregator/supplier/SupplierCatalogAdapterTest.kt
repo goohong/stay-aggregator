@@ -166,13 +166,15 @@ class SupplierCatalogAdapterTest {
 
     private fun properties(supplierId: String, timeout: Duration, atPort: Int) =
         StayProperties(
-            mapOf(
+            suppliers = mapOf(
                 supplierId to StayProperties.Supplier(
                     baseUrl = "http://localhost:$atPort",
                     apiKey = "test",
                     timeout = timeout,
+                    availabilityTimeout = timeout,
                 ),
             ),
+            search = StayProperties.Search(budget = Duration.ofSeconds(2), concurrencyPerSupplier = 4),
         )
 
     /**

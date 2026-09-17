@@ -59,7 +59,7 @@ class SupplierAAdapter(properties: StayProperties) : SupplierAdapter {
             }
             .retrieve()
             .bodyToMono(SupplierAAvailabilityResponse::class.java)
-            .timeout(config.timeout)
+            .timeout(config.availabilityTimeout)
             .asSupplierFailure(SUPPLIER_ID)
             .map { response -> response.toFetchedAvailability() }
 

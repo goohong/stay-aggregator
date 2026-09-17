@@ -6,7 +6,12 @@ stay:
       base-url: http://localhost:9090
       api-key: test
       timeout: PT1S
+      availability-timeout: PT1S
     b:
       base-url: http://localhost:9090
       api-key: test
       timeout: PT1S
+      availability-timeout: PT1S
+  search:
+    budget: PT2S
+    concurrency-per-supplier: 4
