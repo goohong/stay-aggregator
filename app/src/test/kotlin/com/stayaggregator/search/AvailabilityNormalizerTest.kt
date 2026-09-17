@@ -132,8 +132,35 @@ class AvailabilityNormalizerTest {
         val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedHotelCodes = listOf("A-7"))
 
         assertThat(result.available).isEmpty()
-        assertThat(result.excluded).singleElement().satisfies({ ex -> assertThat(ex.kind).isEqualTo(ExclusionKind.IGNORED) })
+        // 우리가 묻지 않은 숙소라 뺀 것이 아니라 쓰지 않은 것이다. 사실만 경고로 남긴다 (ADR-0027)
+        assertThat(result.excluded).isEmpty()
+        assertThat(result.warnings).singleElement().satisfies({ w -> assertThat(w.reason).contains("요청하지 않은 숙소 코드") })
         assertThat(result.outOfSpecCount).isZero()
+    }
+
+    @Test
+    fun `같은 숙소 객실 타입이 같은 값으로 두 번 오면 경고로 남긴다`() {
+        val item = itemA(rates = fullRates(), inventory = fullInventory())
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item, item)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.available).hasSize(1)
+        assertThat(result.warnings).singleElement().satisfies({ w -> assertThat(w.reason).contains("같은 값으로 2번") })
+    }
+
+    @Test
+    fun `요청하지 않은 날짜의 재고와 요금이 오면 계산에서 버리고 경고로 남긴다`() {
+        val item = itemA(
+            rates = fullRates() + rate(oct7.plusDays(1), 110_000, 11_000),
+            inventory = fullInventory() + inv(oct7.plusDays(1), 9),
+        )
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.available).hasSize(1)
+        assertThat(result.warnings).extracting<String> { it.reason }
+            .anySatisfy { assertThat(it).contains("요청하지 않은 날짜의 재고") }
+            .anySatisfy { assertThat(it).contains("요청하지 않은 날짜의 요금") }
     }
 
     @Test
@@ -315,10 +342,10 @@ class AvailabilityNormalizerTest {
     }
 
     private fun itemA(rates: List<FetchedDailyRate>, inventory: List<FetchedDailyInventory>) =
-        FetchedAvailabilityItem("A-1", "DLX", breakfastIncluded = false, currency = "KRW", pricing = FetchedPricing.Daily(rates), dailyInventory = inventory)
+        FetchedAvailabilityItem("A-1", "DLX", hotelName = null, roomTypeName = null, breakfastIncluded = false, currency = "KRW", pricing = FetchedPricing.Daily(rates), dailyInventory = inventory)
 
     private fun itemB(totalPrice: Long, taxIncluded: Boolean, breakfast: Boolean, inventory: List<FetchedDailyInventory>) =
-        FetchedAvailabilityItem("A-1", "DLX", breakfastIncluded = breakfast, currency = "KRW", pricing = FetchedPricing.Total(totalPrice, taxIncluded), dailyInventory = inventory)
+        FetchedAvailabilityItem("A-1", "DLX", hotelName = null, roomTypeName = null, breakfastIncluded = breakfast, currency = "KRW", pricing = FetchedPricing.Total(totalPrice, taxIncluded), dailyInventory = inventory)
 
     private fun rate(date: LocalDate, nightly: Long, tax: Long) = FetchedDailyRate(date, nightly, tax)
     private fun inv(date: LocalDate, rooms: Int) = FetchedDailyInventory(date, rooms)

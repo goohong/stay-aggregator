@@ -77,4 +77,4 @@
 | [0070](0070-supplier-failure-sealed.md) | 공급사 실패 예외를 boolean 성질 대신 sealed 하위 타입으로 나누기로 결정 | accepted |
 | [0071](0071-resilience-as-adapter-decorator.md) | 재시도·서킷·지표를 검색 서비스가 아니라 어댑터를 감싸는 Decorator 에 두기로 결정 | accepted |
 | [0072](0072-adapter-http-helper-and-archunit.md) | 어댑터의 HTTP 호출 조각을 한 클래스로 고정하고 어댑터 규칙을 기동 검사와 ArchUnit 테스트로 지키기로 결정 | accepted |
-| [0073](0073-small-design-fixes.md) | 검색 결과를 sealed 로, 정규화가 잡는 예외를 값 객체의 거부로 좁히고, 매핑 읽기를 인터페이스 뒤에, 격리 쓰기를 상한 있는 큐로 두기로 결정 | accepted |
+| [0073](0073-small-design-fixes.md) | 검색 결과 sealed·정규화 거부 범위·매핑 읽기 인터페이스·격리 쓰기 큐 상한·판정 순서와 경고 기록을 정리하기로 결정 | accepted |

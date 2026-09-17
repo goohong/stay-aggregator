@@ -6,6 +6,9 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Duration
 
+/** 설정이 없을 때의 목록 갱신 주기. 애노테이션 둘이 같은 값을 쓰도록 한 곳에 둔다 */
+private const val SYNC_INTERVAL_DEFAULT = "PT24H"
+
 /**
  * 기동 시 한 번, 그 뒤로는 설정한 주기마다 목록 동기화를 돌린다 (ADR-0013, ADR-0016).
  *
@@ -23,7 +26,7 @@ import java.time.Duration
 @ConditionalOnProperty(name = ["stay.catalog.sync.enabled"], matchIfMissing = true)
 class CatalogSyncScheduler(
     private val catalogSyncService: CatalogSyncService,
-    @Value("\${stay.catalog.sync.interval:PT24H}") interval: Duration,
+    @Value("\${stay.catalog.sync.interval:${SYNC_INTERVAL_DEFAULT}}") interval: Duration,
 ) {
     init {
         require(interval >= MIN_INTERVAL) { "목록 갱신 주기($interval)가 최소 간격($MIN_INTERVAL)보다 짧다" }
@@ -31,7 +34,7 @@ class CatalogSyncScheduler(
 
     @Scheduled(
         initialDelayString = "\${stay.catalog.sync.initial-delay:PT0S}",
-        fixedDelayString = "\${stay.catalog.sync.interval:PT24H}",
+        fixedDelayString = "\${stay.catalog.sync.interval:${SYNC_INTERVAL_DEFAULT}}",
     )
     fun sync() {
         catalogSyncService.syncAll()

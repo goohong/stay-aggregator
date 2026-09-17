@@ -56,6 +56,7 @@
 | **제외 항목** | `ExcludedItem`, `ExcludedRoomType` | 값을 정할 수 없어 결과에서 뺀 숙소나 객실 타입. **사유를 함께 남긴다**.<br>재고·요금 쪽은 **매핑에 없어 뺀 것**(`UNMAPPED`)과 **스펙과 달라 뺀 것**(`OUT_OF_SPEC`)을 나눈다. 응답에 세어 싣는 것은 뒤쪽뿐이다 ([ADR-0046](adr/0046-supplier-status-in-search-response.md)) |
 | **제외 사유** | `….reason` | 왜 뺐는지. 값을 담는 객체가 거부하며 낸 문장이 그대로 들어간다 |
 | **검색 결과 항목** | `AvailableRoomType` | 정규화를 마친, 한 공급사의 숙소 하나의 객실 타입 하나. 내부 식별자·이름·최대 수용 인원·예약 가능 객실 수·요금을 가진다 |
+| **경고(격리 기록)** | `NormalizationWarning`, `RecordKind.WARNING` | 항목을 빼지는 않지만 알아 둘 것. 요청하지 않은 숙소·날짜가 옴, 같은 항목이 같은 값으로 두 번 옴, 목록과 재고의 이름이 다름 ([ADR-0062](adr/0062-name-mismatch-warning.md), [ADR-0073](adr/0073-small-design-fixes.md)).<br>응답 건수에 넣지 않는다 |
 | **격리** | `quarantine_record`, `QuarantineRecorder` | **요구사항의 선택 항목 이름**이다. 변환하지 못한 응답의 **원본을 버리지 않고 따로 보관**하는 것을 말한다.<br>우리는 **같은 문제를 한 행으로 그룹화해** 횟수·처음과 마지막 시각·마지막 사유·마지막 원본을 남긴다 ([ADR-0055](adr/0055-quarantine-grouped-in-db.md)). 원본은 공급사 원문이 아니라 우리가 읽어 들인 항목이다.<br>**우리가 항목을 빼는 일 자체를 "격리"라고 부르지 않는다.** 뺀 것을 남기는 기록이 격리다 |
 
 ## 매핑과 DB

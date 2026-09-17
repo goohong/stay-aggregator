@@ -53,14 +53,35 @@ class AvailabilityNormalizer {
 
         val available = mutableListOf<AvailableRoomType>()
         val excluded = mutableListOf<ExcludedRoomType>()
-        val warnings = mutableListOf<NameMismatch>()
+        val warnings = mutableListOf<NormalizationWarning>()
 
-        // 같은 숙소·객실 타입이 두 번 오면 날짜 중복과 같은 규칙이다. 같은 값이면 하나만 쓰고, 다르면 어느 쪽인지 정할 수 없어 뺀다 (ADR-0027)
-        val distinctItems = items.groupBy { it.hotelCode to it.roomTypeCode }.flatMap { (key, same) ->
+        // 1) 항목 하나만 봐서 아는 것을 먼저 가른다. 코드가 없으면 같은 항목인지도 알 수 없고, 요청하지 않은 숙소는 매핑을 볼 것도 없다
+        val candidates = items.filter { item ->
+            when {
+                item.hotelCode.isNullOrBlank() || item.roomTypeCode.isNullOrBlank() -> {
+                    val value = if (item.hotelCode.isNullOrBlank()) ExcludedValue.HOTEL_CODE else ExcludedValue.ROOM_TYPE_CODE
+                    excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, value, "숙소 코드나 객실 타입 코드가 없다", item)
+                    false
+                }
+                item.hotelCode !in requested -> {
+                    // 우리가 묻지 않은 숙소다. 항목은 쓰지 않지만 공급사가 요청 밖의 것을 준다는 사실은 남긴다 (ADR-0027)
+                    warnings += NormalizationWarning(item.hotelCode, item.roomTypeCode, ExcludedValue.HOTEL_CODE, "요청하지 않은 숙소 코드가 왔다", item)
+                    false
+                }
+                else -> true
+            }
+        }
+
+        // 2) 같은 숙소·객실 타입이 두 번 오면 날짜 중복과 같은 규칙이다. 같은 값이면 하나만 쓰고 경고로 남기고, 다르면 어느 쪽인지 정할 수 없어 뺀다 (ADR-0027).
+        //    "같은 값"은 응답에 쓰는 값(요금·재고·조식·통화)으로 본다. 이름은 응답에 쓰지 않아 비교하지 않는다 (ADR-0062)
+        val distinctItems = candidates.groupBy { it.hotelCode to it.roomTypeCode }.flatMap { (key, same) ->
             val (hotelCode, roomTypeCode) = key
             when {
-                hotelCode.isNullOrBlank() || roomTypeCode.isNullOrBlank() -> same
-                same.distinct().size == 1 -> listOf(same.first())
+                same.size == 1 -> same
+                same.distinctBy { it.outputFields() }.size == 1 -> {
+                    warnings += NormalizationWarning(hotelCode, roomTypeCode, ExcludedValue.ROOM_TYPE_CODE, "같은 객실 타입이 같은 값으로 ${same.size}번 왔다", same.first())
+                    listOf(same.first())
+                }
                 else -> {
                     excluded += ExcludedRoomType(hotelCode, roomTypeCode, ExclusionKind.OUT_OF_SPEC, ExcludedValue.ROOM_TYPE_CODE, "같은 객실 타입이 다른 값으로 두 번 왔다", same.first())
                     emptyList()
@@ -69,15 +90,6 @@ class AvailabilityNormalizer {
         }
 
         distinctItems.forEach { item ->
-            if (item.hotelCode.isNullOrBlank() || item.roomTypeCode.isNullOrBlank()) {
-                val value = if (item.hotelCode.isNullOrBlank()) ExcludedValue.HOTEL_CODE else ExcludedValue.ROOM_TYPE_CODE
-                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, value, "숙소 코드나 객실 타입 코드가 없다", item)
-                return@forEach
-            }
-            if (item.hotelCode !in requested) {
-                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.IGNORED, ExcludedValue.HOTEL_CODE, "요청하지 않은 숙소 코드가 왔다", item)
-                return@forEach
-            }
             val hotel = hotelsByCode[item.hotelCode]
             val roomType = hotel?.roomTypes?.firstOrNull { it.roomTypeCode == item.roomTypeCode }
             if (hotel == null || roomType == null) {
@@ -86,6 +98,7 @@ class AvailabilityNormalizer {
             }
             try {
                 // 단계마다 문제가 된 값을 붙인다. 어느 단계에서 거부됐는지가 곧 무엇이 문제인지다 (ADR-0054)
+                warnings += droppedDates(item, nights)
                 val rooms = step(ExcludedValue.INVENTORY) { availableRooms(item.dailyInventory, nights) }
                 val rate = rate(item, nights)
                 warnings += nameMismatches(item, hotel, roomType)
@@ -113,16 +126,31 @@ class AvailabilityNormalizer {
      * 앞뒤 공백만 무시한다. 대소문자나 "Room" 같은 표기를 정규화해 같다고 보는 것은 추정이라 하지 않는다.
      * 응답에 이름이 없으면 비교할 것이 없어 넘어간다. 이름은 응답에 쓰지 않으므로 없어도 항목을 빼지 않는다.
      */
-    private fun nameMismatches(item: FetchedAvailabilityItem, hotel: MappedHotel, roomType: MappedRoomType): List<NameMismatch> =
+    private fun nameMismatches(item: FetchedAvailabilityItem, hotel: MappedHotel, roomType: MappedRoomType): List<NormalizationWarning> =
         listOfNotNull(
             mismatch(item, ExcludedValue.HOTEL_NAME, received = item.hotelName, cataloged = hotel.name),
             mismatch(item, ExcludedValue.ROOM_TYPE_NAME, received = item.roomTypeName, cataloged = roomType.name),
         )
 
-    private fun mismatch(item: FetchedAvailabilityItem, value: ExcludedValue, received: String?, cataloged: String): NameMismatch? =
+    private fun mismatch(item: FetchedAvailabilityItem, value: ExcludedValue, received: String?, cataloged: String): NormalizationWarning? =
         received?.trim()?.takeIf { it != cataloged.trim() }?.let {
-            NameMismatch(item.hotelCode, item.roomTypeCode, value, "목록 이름 '$cataloged' 와 재고 응답 이름 '$it' 이 다르다", item)
+            NormalizationWarning(item.hotelCode, item.roomTypeCode, value, "목록 이름 '$cataloged' 와 재고 응답 이름 '$it' 이 다르다", item)
         }
+
+    /**
+     * 요청하지 않은 날짜의 재고·요금은 버린다. 계산에는 쓰지 않지만 공급사가 요청 밖 날짜를 준다는 사실은 경고로 남긴다 (ADR-0027).
+     */
+    private fun droppedDates(item: FetchedAvailabilityItem, nights: List<LocalDate>): List<NormalizationWarning> {
+        val inventoryDates = item.dailyInventory.orEmpty().mapNotNull { it.date }.filter { it !in nights }.distinct()
+        val rateDates = (item.pricing as? FetchedPricing.Daily)?.rates.orEmpty().mapNotNull { it.date }.filter { it !in nights }.distinct()
+        return listOfNotNull(
+            inventoryDates.takeIf { it.isNotEmpty() }?.let { NormalizationWarning(item.hotelCode, item.roomTypeCode, ExcludedValue.INVENTORY, "요청하지 않은 날짜의 재고가 왔다: $it", item) },
+            rateDates.takeIf { it.isNotEmpty() }?.let { NormalizationWarning(item.hotelCode, item.roomTypeCode, ExcludedValue.RATE, "요청하지 않은 날짜의 요금이 왔다: $it", item) },
+        )
+    }
+
+    /** 응답에 쓰이는 값. 같은 항목이 두 번 왔을 때 "같은 값"인지를 이것으로 본다 */
+    private fun FetchedAvailabilityItem.outputFields() = listOf(breakfastIncluded, currency, pricing, dailyInventory)
 
     /**
      * 날짜별 잔여 수를 요청한 날짜와 대조해 최솟값을 낸다 (ADR-0023, ADR-0027 의 재고 표).
@@ -215,7 +243,7 @@ data class NormalizedAvailability(
     val available: List<AvailableRoomType>,
     val excluded: List<ExcludedRoomType>,
     /** 항목은 내보냈지만 알아 둘 것. 응답 건수에 넣지 않는다 (ADR-0062) */
-    val warnings: List<NameMismatch> = emptyList(),
+    val warnings: List<NormalizationWarning> = emptyList(),
 ) {
     /** 응답에 싣는 건수는 스펙과 달라 뺀 것만이다. 매핑에 없어 뺀 것은 세지 않는다 (ADR-0046) */
     val outOfSpecCount: Int
@@ -236,8 +264,11 @@ data class ExcludedRoomType(
     val source: FetchedAvailabilityItem,
 )
 
-/** 목록과 재고 응답의 이름이 다르다. 항목은 빼지 않는다 (ADR-0062) */
-data class NameMismatch(
+/**
+ * 항목은 내보냈거나 쓰지 않았지만 알아 둘 것. 격리 기록에 경고로 남긴다 (ADR-0027, ADR-0062).
+ * 목록과 재고 응답의 이름이 다름, 요청하지 않은 숙소·날짜가 옴, 같은 항목이 같은 값으로 두 번 옴이 여기 든다.
+ */
+data class NormalizationWarning(
     val hotelCode: String?,
     val roomTypeCode: String?,
     val value: ExcludedValue,

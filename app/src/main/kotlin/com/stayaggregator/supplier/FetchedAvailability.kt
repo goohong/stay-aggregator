@@ -22,9 +22,9 @@ data class FetchedAvailabilityItem(
     val hotelCode: String?,
     val roomTypeCode: String?,
     /** 응답에는 쓰지 않는다(ADR-0012). 목록 이름과 달라졌는지 비교하는 데만 쓴다 (ADR-0062) */
-    val hotelName: String? = null,
+    val hotelName: String?,
     /** 위와 같다 */
-    val roomTypeName: String? = null,
+    val roomTypeName: String?,
     val breakfastIncluded: Boolean?,
     val currency: String?,
     val pricing: FetchedPricing?,
