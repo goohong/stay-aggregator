@@ -134,7 +134,7 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 **숙소 목록은 드물게 바뀌므로 저장합니다.**
 
 - 앱을 띄울 때 한 번 받고, 그 뒤로는 앞선 실행이 끝난 시점부터 24시간마다 다시 받습니다 ([ADR-0013](docs/adr/0013-catalog-sync-on-startup-and-interval.md), [ADR-0016](docs/adr/0016-catalog-sync-interval-default-daily.md)). 주기는 설정으로 바꾸되 1시간보다 짧으면 앱이 기동에 실패합니다 ([ADR-0061](docs/adr/0061-catalog-sync-min-interval.md))
-- 저장하는 것은 공급사 코드와 내부 식별자의 **매핑**뿐입니다 ([ADR-0017](docs/adr/0017-mapping-in-server-rdb.md)). 내부 식별자는 무작위 UUID 이고 같은 상품은 다시 받아도 같은 값입니다 ([ADR-0011](docs/adr/0011-internal-id-random-uuid.md))
+- 저장하는 것은 공급사 코드와 내부 식별자의 **매핑**뿐입니다. 요금·재고의 원본은 공급사에 있고, 조회하려면 숙소 코드를 우리가 알고 있어야 합니다 ([ADR-0017](docs/adr/0017-mapping-in-server-rdb.md))
 - 이번 목록에 없는 숙소는 지우지 않고 `missing_since` 에 그 시각을 적어 검색 대상에서 뺍니다. 다시 나타나면 같은 내부 식별자로 값을 비웁니다 ([ADR-0037](docs/adr/0037-missing-catalog-entries-kept-and-marked.md))
 - 응답의 숙소명·객실 타입명은 이 저장값을 씁니다 ([ADR-0012](docs/adr/0012-static-info-from-catalog.md)). 검색 때 받은 이름이 저장값과 다르면 항목은 그대로 내보내고 경고로만 남겨, 교정은 다음 동기화에 맡깁니다 ([ADR-0014](docs/adr/0014-detect-drift-in-search-correct-in-sync.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md))
 
@@ -154,7 +154,7 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 | 재시도 | **일시적인 실패만** 재시도합니다. 지수 백오프에 무작위를 섞습니다. 요청 한도 초과(429)는 1초 이상 기다려 한 번만 재시도합니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md), [ADR-0068](docs/adr/0068-search-values-from-relations.md) |
 | 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 chunk 가 많으면 한동안 그 공급사를 호출하지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
 | 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·내부 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
-| 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 그룹화해 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 목록과 재고 응답의 이름이 다른 것은 항목을 빼지 않고 경고로 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
+| 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 그룹화해 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 이름 불일치 경고도 같은 곳에 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
 
 재시도·타임아웃·동시 실행 수 제한은 **이미 쓰는 Reactor 의 연산자**로, 서킷은 **resilience4j** 로 했습니다.
 resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자를 호출하는 것을 확인해, 옮겨도 동작이 같아 옮기지 않았습니다.
@@ -170,15 +170,26 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 깨지면 장치가 조용히 멈추는 관계는 설정 객체가 기동할 때 검사합니다.
 값을 바꿔야 할 때 무엇을 재고 어떻게 다시 계산하는지는 [docs/tuning.md](docs/tuning.md) 에 있습니다.
 
+## 선택 항목의 구현 범위
+
+요구사항이 선택으로 둔 항목마다 어디까지 했는지입니다. "설계만"은 결정과 설계를 문서로 남기고 코드는 두지 않은 것, "구현 전"은 결정은 끝났고 코드가 아직 없는 것입니다.
+
+| 항목 | 범위 | 왜 | |
+|---|---|---|---|
+| 재시도 | **구현** | 일시적인 실패만, 검색에서만 재시도합니다. 값은 관계식에서 정했습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md), [ADR-0068](docs/adr/0068-search-values-from-relations.md) |
+| 서킷 브레이커 | **구현** | 공급사마다 하나, 재시도 바깥에서 chunk 의 최종 결과를 셉니다. 서킷은 Reactor 에 없어 resilience4j 를 썼습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md), [ADR-0057](docs/adr/0057-resilience4j-reactor-for-circuit-breaker.md) |
+| 격리 | **구현** | 뺀 항목을 같은 문제끼리 그룹화해 DB 에 남깁니다. 이름 불일치 경고도 같은 기록에 둡니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
+| 통화 | **설계만** | 받은 통화를 그대로 싣고 환산하지 않습니다. 이미 그렇게 도는 이유와, 환산이 필요해질 때의 방법을 적었습니다 | [ADR-0053](docs/adr/0053-mixed-currency-exposure.md) |
+| 예약 대행 | **설계만** | 공급사 스펙에 예약 API 가 없어 요청·응답 형식을 지어내지 않았습니다. 결과를 모르는 예약은 같은 멱등 키로 공급사에 물어 확정하는 설계입니다 | [ADR-0064](docs/adr/0064-reservation-proxy-design-only.md) |
+| 요금·재고 캐시 | **구현 전** | 숙소 단위로 정규화한 결과를 Redis 에 두고 TTL 은 60초로 정했습니다 | [ADR-0065](docs/adr/0065-availability-cache-redis.md), ADR-0068 |
+| 동일 숙소(중복 상품 병합) | **구현 전** | 공통 키도 주소도 없어 숙소명으로 추정해 합치면 동명 숙소를 잘못 합칩니다. 사람이 확인한 짝만 같은 값으로 묶기로 정했습니다. 지금은 각각 내보내고 `supplier` 를 함께 싣습니다 | [ADR-0058](docs/adr/0058-same-hotel-confirmed-pairs-only.md) |
+| API 문서 자동화 | **구현 전** | springdoc-openapi 로 코드에서 만들기로 정했습니다. 그때까지 계약은 위 "검색 API" 절입니다 | [ADR-0063](docs/adr/0063-springdoc-openapi.md) |
+
 ## 하지 않은 것
 
 - **공급사 HTTP 원문 그대로의 보관.** 격리 기록의 원본은 우리가 읽어 들인 항목 하나입니다. 원문은 숙소 50개가 한 덩어리라 항목 하나를 떼기 어렵습니다 ([ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md))
 - **경보와 대시보드.** 지표는 세어 내보내지만, 무엇에 경보를 걸지는 설계로만 남겼습니다 ([ADR-0060](docs/adr/0060-supplier-call-metrics.md))
-- **예약 대행.** 공급사 스펙에 예약 API 가 없어 설계만 남겼습니다 ([ADR-0064](docs/adr/0064-reservation-proxy-design-only.md))
 - **체크인일이 지난 날짜인지 검사.** 숙소의 시간대를 우리가 모릅니다. 서버 기준으로 막으면 현지로는 아직 어제인 숙소의 합법인 요청을 막게 됩니다 ([ADR-0052](docs/adr/0052-no-past-date-check.md))
-- **숙소명으로 같은 숙소를 추정해 합치기.** 공통 키도 주소도 없어 동명 숙소를 잘못 합칠 수 있습니다.
-  사람이 확인한 짝만 같은 값으로 묶기로 정했고 아직 구현하지 않았습니다. 지금은 각각 내보내고 `supplier` 를 함께 싣습니다 ([ADR-0058](docs/adr/0058-same-hotel-confirmed-pairs-only.md))
-- **요금·재고 캐시.** 숙소 단위로 정규화한 결과를 Redis 에 두는 설계는 정했고 아직 구현하지 않았습니다 ([ADR-0065](docs/adr/0065-availability-cache-redis.md))
 
 ## 주요 결정
 
@@ -188,9 +199,7 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 |---|---|---|
 | 서버는 Spring MVC, 공급사 호출만 WebClient | 오래 기다리는 부분이 공급사 호출뿐이라 그 부분만 논블로킹으로 둔다 | [ADR-0020](docs/adr/0020-mvc-server-with-webclient.md) |
 | 검색 요청은 가상 스레드에서 기다린다 | 공급사 응답을 기다리는 동안 요청이 OS 스레드를 붙잡지 않게 한다 | [ADR-0021](docs/adr/0021-block-on-virtual-threads.md) |
-| DB 에는 매핑만 저장한다 | 요금·재고의 원본은 공급사에 있고, 조회하려면 숙소 코드를 우리가 알고 있어야 한다 | [ADR-0017](docs/adr/0017-mapping-in-server-rdb.md) |
 | 내부 식별자는 무작위 UUID | 순서와 개수가 드러나지 않고, 발급 방식을 바꿔도 기존 값에 영향이 없다 | [ADR-0011](docs/adr/0011-internal-id-random-uuid.md) |
-| 목록에서 빠진 숙소도 행을 남기고 표시만 한다 | 지웠다가 다시 나타나면 내부 식별자가 바뀐다 | [ADR-0037](docs/adr/0037-missing-catalog-entries-kept-and-marked.md) |
 | 연박 예약 가능 수는 날짜별 잔여 수의 최솟값 | 기간 전체를 팔려면 매일 밤 방이 한 실씩 있어야 한다 | [ADR-0023](docs/adr/0023-multi-night-availability-minimum.md) |
 | 예약 불가 상품도 0 으로 노출한다 | 매진을 보여 줄지는 화면이 정할 일이라 서버가 정보를 버리지 않는다 | [ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md) |
 | 스펙과 다른 공급사 응답은 세 질문으로 분류한다 | 응답을 읽을 수 있나 / 계산에 쓰이나 / 값을 하나로 정할 수 있나 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
