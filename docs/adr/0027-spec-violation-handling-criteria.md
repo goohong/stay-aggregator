@@ -106,7 +106,10 @@ ADR-0024·0025 는 이런 경우를 값을 보정해(빠진 날·음수는 0, �
     `SupplierFailureTest.감싸기 아래에서 난 오류는 그대로 간다`,
     `SupplierFailureTest.원인 예외는 보존된다`
 
+첫 질문 중 목록을 담는 필드가 있는지는 공급사마다 다르지 않아 정규화가 본다 (ADR-0041)
+  → `CatalogNormalizerTest.숙소 목록을 담는 필드가 없으면 공급사 실패가 된다`
+
 두 번째·세 번째 질문(항목 하나하나의 값을 쓸 수 있는가)
-  → `CatalogNormalizerTest` 의 여섯 건
+  → `CatalogNormalizerTest` 의 나머지 건과 `NormalizedHotelTest` (값 판정은 그 값을 담는 객체가 한다, ADR-0041)
 
 재고 쪽은 검색을 구현할 때 확인한다. 위 표의 다섯 경우가 각각 표의 결과로 처리되고 공급사 실패로 집계되지 않는지 보고, 그 테스트 이름을 여기에 적는다.
