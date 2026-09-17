@@ -1,5 +1,7 @@
 package com.stayaggregator.mapping
 
+import com.stayaggregator.domain.NormalizedHotel
+import com.stayaggregator.domain.NormalizedRoomType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional

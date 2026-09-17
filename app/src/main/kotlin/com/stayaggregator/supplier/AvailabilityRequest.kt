@@ -1,5 +1,7 @@
 package com.stayaggregator.supplier
 
+import com.stayaggregator.domain.StayPeriod
+import com.stayaggregator.domain.GuestCount
 /**
  * 재고·요금 조회 한 번에 넘기는 것. 숙소 코드 목록(chunk), 숙박 구간, 인원이다 (ADR-0047).
  *

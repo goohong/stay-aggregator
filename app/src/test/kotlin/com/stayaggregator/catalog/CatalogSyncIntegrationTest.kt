@@ -2,8 +2,8 @@ package com.stayaggregator.catalog
 
 import com.stayaggregator.mapping.AppliedCatalog
 import com.stayaggregator.mapping.MappingRepository
-import com.stayaggregator.mapping.NormalizedHotel
-import com.stayaggregator.mapping.NormalizedRoomType
+import com.stayaggregator.domain.NormalizedHotel
+import com.stayaggregator.domain.NormalizedRoomType
 import com.stayaggregator.supplier.CatalogAdapter
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel

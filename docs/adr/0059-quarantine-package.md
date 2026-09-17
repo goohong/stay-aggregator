@@ -24,7 +24,7 @@ date: 2026-09-17
 ## Decision
 
 - 격리 기록의 테이블 접근, 기록하는 일, 문제가 된 값의 종류를 **`quarantine` 패키지**에 둔다
-- 의존 방향: **`catalog` 와 `search` 는 `supplier`·`mapping`·`quarantine` 을 보고, 서로는 보지 않으며, `supplier`·`mapping`·`quarantine` 은 아무것도 보지 않는다**
+- 의존 방향: **`catalog` 와 `search` 는 `supplier`·`mapping`·`quarantine` 을 보고, 서로는 보지 않으며, `supplier`·`mapping`·`quarantine` 은 아무것도 보지 않는다** (이후 [ADR-0069](0069-domain-package.md) 가 `domain` 을 더해 셋은 `domain` 만 본다)
 
 **이유**
 

@@ -67,5 +67,5 @@ date: 2026-09-17
 ## Verification
 
 지난 날짜로 검색해도 400 이 아니라 정상 응답(빈 결과)이 나가는지
-  → `StayPeriod` 의 `init` 에 날짜 비교가 두 날짜의 앞뒤뿐이다 (`app/src/main/kotlin/com/stayaggregator/supplier/StayPeriod.kt`)
+  → `StayPeriod` 의 `init` 에 날짜 비교가 두 날짜의 앞뒤뿐이다 (`app/src/main/kotlin/com/stayaggregator/domain/StayPeriod.kt`)
   → `SearchControllerTest` 에 지난 날짜를 막는 테스트가 없다. 막지 않는 것이 결정이다

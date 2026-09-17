@@ -1,8 +1,11 @@
 package com.stayaggregator.search
 
+import com.stayaggregator.domain.Money
+import com.stayaggregator.domain.Rate
+import com.stayaggregator.domain.RateConditions
 import com.stayaggregator.mapping.MappingRepository
-import com.stayaggregator.mapping.NormalizedHotel
-import com.stayaggregator.mapping.NormalizedRoomType
+import com.stayaggregator.domain.NormalizedHotel
+import com.stayaggregator.domain.NormalizedRoomType
 import com.stayaggregator.supplier.AvailabilityAdapter
 import com.stayaggregator.supplier.AvailabilityRequest
 import com.stayaggregator.supplier.FetchedAvailability
@@ -10,8 +13,8 @@ import com.stayaggregator.supplier.FetchedAvailabilityItem
 import com.stayaggregator.supplier.FetchedDailyInventory
 import com.stayaggregator.supplier.FetchedDailyRate
 import com.stayaggregator.supplier.FetchedPricing
-import com.stayaggregator.supplier.GuestCount
-import com.stayaggregator.supplier.StayPeriod
+import com.stayaggregator.domain.GuestCount
+import com.stayaggregator.domain.StayPeriod
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierResponseException
 import org.assertj.core.api.Assertions.assertThat

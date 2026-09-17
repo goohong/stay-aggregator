@@ -7,8 +7,8 @@ import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.quarantine.RecordKind
 import com.stayaggregator.supplier.AvailabilityAdapter
 import com.stayaggregator.supplier.AvailabilityRequest
-import com.stayaggregator.supplier.GuestCount
-import com.stayaggregator.supplier.StayPeriod
+import com.stayaggregator.domain.GuestCount
+import com.stayaggregator.domain.StayPeriod
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierCallMetrics
 import com.stayaggregator.supplier.SupplierResponseException

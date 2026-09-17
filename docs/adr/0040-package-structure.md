@@ -42,6 +42,8 @@ date: 2026-09-16
 
 **`catalog` 와 `search` 는 `supplier` 와 `mapping` 을 보고, 서로는 보지 않으며, `supplier` 와 `mapping` 은 아무것도 보지 않는다.**
 
+(이후 [ADR-0059](0059-quarantine-package.md) 가 `quarantine` 을, [ADR-0069](0069-domain-package.md) 가 `domain` 을 더했다. 현재 방향은 ADR-0069 에 있다)
+
 | 패키지 | 무엇이 있나 |
 |---|---|
 | `supplier` | 공급사와 만나는 것 전부. 어댑터 인터페이스, 공급사 응답의 공통 형태, 공급사 실패 예외, 공급사 설정, 공급사별 하위 패키지(`a`, `b`) |

@@ -1,5 +1,8 @@
 package com.stayaggregator.search
 
+import com.stayaggregator.domain.Money
+import com.stayaggregator.domain.Rate
+import com.stayaggregator.domain.RateConditions
 import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.mapping.MappedHotel
 import com.stayaggregator.mapping.MappedRoomType
@@ -8,7 +11,7 @@ import com.stayaggregator.supplier.FetchedAvailabilityItem
 import com.stayaggregator.supplier.FetchedDailyInventory
 import com.stayaggregator.supplier.FetchedDailyRate
 import com.stayaggregator.supplier.FetchedPricing
-import com.stayaggregator.supplier.StayPeriod
+import com.stayaggregator.domain.StayPeriod
 import com.stayaggregator.supplier.SupplierResponseException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy

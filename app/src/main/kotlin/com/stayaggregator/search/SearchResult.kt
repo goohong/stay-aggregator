@@ -1,5 +1,6 @@
 package com.stayaggregator.search
 
+import com.stayaggregator.domain.AvailableRoomType
 /**
  * 검색 한 건의 결과. 공급사마다 상태와 건수를 싣고 항목을 합친다 (ADR-0046, ADR-0050).
  *

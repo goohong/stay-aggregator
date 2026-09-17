@@ -1,5 +1,7 @@
 package com.stayaggregator.supplier
 
+import com.stayaggregator.domain.StayPeriod
+import com.stayaggregator.domain.GuestCount
 import com.stayaggregator.supplier.a.SupplierAAdapter
 import com.stayaggregator.supplier.b.SupplierBAdapter
 import com.sun.net.httpserver.HttpExchange

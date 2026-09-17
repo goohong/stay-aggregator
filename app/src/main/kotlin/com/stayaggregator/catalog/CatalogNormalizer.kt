@@ -1,7 +1,7 @@
 package com.stayaggregator.catalog
 
-import com.stayaggregator.mapping.NormalizedHotel
-import com.stayaggregator.mapping.NormalizedRoomType
+import com.stayaggregator.domain.NormalizedHotel
+import com.stayaggregator.domain.NormalizedRoomType
 import com.stayaggregator.quarantine.ExcludedValue
 import com.stayaggregator.supplier.FetchedCatalog
 import com.stayaggregator.supplier.FetchedHotel

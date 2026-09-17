@@ -1,4 +1,4 @@
-package com.stayaggregator.mapping
+package com.stayaggregator.domain
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy

@@ -1,4 +1,4 @@
-package com.stayaggregator.search
+package com.stayaggregator.domain
 
 import java.util.UUID
 

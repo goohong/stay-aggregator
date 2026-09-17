@@ -1,4 +1,4 @@
-package com.stayaggregator.search
+package com.stayaggregator.domain
 
 /**
  * 요금. 금액과 판매 조건을 함께 가진 **팔리는 단위**다. 금액 자체가 아니다 (ADR-0044).

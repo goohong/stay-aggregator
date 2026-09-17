@@ -1,4 +1,4 @@
-package com.stayaggregator.mapping
+package com.stayaggregator.domain
 
 /**
  * 목록 동기화가 정규화를 마치고 매핑에 반영해 달라고 넘기는 형태.

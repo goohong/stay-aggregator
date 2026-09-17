@@ -1,4 +1,4 @@
-package com.stayaggregator.supplier
+package com.stayaggregator.domain
 
 /**
  * 검색 인원. 성인과 아동의 **수**다. 나이는 받지 않는다 (ADR-0048).

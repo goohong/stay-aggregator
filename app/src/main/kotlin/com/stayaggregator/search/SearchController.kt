@@ -1,7 +1,7 @@
 package com.stayaggregator.search
 
-import com.stayaggregator.supplier.GuestCount
-import com.stayaggregator.supplier.StayPeriod
+import com.stayaggregator.domain.GuestCount
+import com.stayaggregator.domain.StayPeriod
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController

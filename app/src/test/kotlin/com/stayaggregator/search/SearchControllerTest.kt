@@ -1,7 +1,11 @@
 package com.stayaggregator.search
 
-import com.stayaggregator.supplier.GuestCount
-import com.stayaggregator.supplier.StayPeriod
+import com.stayaggregator.domain.Money
+import com.stayaggregator.domain.Rate
+import com.stayaggregator.domain.RateConditions
+import com.stayaggregator.domain.AvailableRoomType
+import com.stayaggregator.domain.GuestCount
+import com.stayaggregator.domain.StayPeriod
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired

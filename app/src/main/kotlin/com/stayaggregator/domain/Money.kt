@@ -1,4 +1,4 @@
-package com.stayaggregator.search
+package com.stayaggregator.domain
 
 /**
  * 금액. 액수와 통화를 함께 담는다 (ADR-0042). 통화 없는 액수는 존재하지 않는다.

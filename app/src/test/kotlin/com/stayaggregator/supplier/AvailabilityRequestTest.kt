@@ -1,5 +1,7 @@
 package com.stayaggregator.supplier
 
+import com.stayaggregator.domain.StayPeriod
+import com.stayaggregator.domain.GuestCount
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
