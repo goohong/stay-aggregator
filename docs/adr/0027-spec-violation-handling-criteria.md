@@ -140,4 +140,19 @@ ADR-0024·0025 는 이런 경우를 값을 보정해(빠진 날·음수는 0, �
 두 번째·세 번째 질문(항목 하나하나의 값을 쓸 수 있는가)
   → `CatalogNormalizerTest` 의 나머지 건과 `NormalizedHotelTest` (값 판정은 그 값을 담는 객체가 한다, ADR-0041)
 
-재고 쪽은 검색을 구현할 때 확인한다. 위 표의 다섯 경우가 각각 표의 결과로 처리되고 공급사 실패로 집계되지 않는지 보고, 그 테스트 이름을 여기에 적는다.
+재고 표의 다섯 경우가 각각 표의 결과로 처리되는지 (항목 제외이지 공급사 실패가 아니다)
+  → `AvailabilityNormalizerTest.요청하지 않은 날짜가 섞이면 그 날짜만 버린다`
+  → `AvailabilityNormalizerTest.요청 숙박일 하나가 빠지면 그 객실 타입을 뺀다`
+  → `AvailabilityNormalizerTest.같은 날짜가 다른 값으로 두 번 오면 그 객실 타입을 뺀다`
+  → `AvailabilityNormalizerTest.같은 날짜가 같은 값으로 두 번 오면 그 값으로 계산한다`
+  → `AvailabilityNormalizerTest.잔여 수가 음수면 그 객실 타입을 뺀다`
+
+요금 표의 경우들
+  → `AvailabilityNormalizerTest.금액이 음수면 그 객실 타입을 뺀다`
+  → `AvailabilityNormalizerTest.금액이 0 이면 그대로 계산한다`
+  → `AvailabilityNormalizerTest.통화가 없으면 그 객실 타입을 뺀다`
+  → `AvailabilityNormalizerTest.날짜별 요금에서 숙박일 하나가 빠지면 그 객실 타입을 뺀다`
+  → `AvailabilityNormalizerTest.총액에 세금이 포함되지 않았으면 그 객실 타입을 뺀다`
+
+재고·요금 응답에서 항목 목록이 없으면 첫 질문의 "아니요"가 되는지
+  → `AvailabilityNormalizerTest.항목 목록이 없으면 공급사 실패다`
