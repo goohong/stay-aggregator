@@ -70,16 +70,19 @@ class SearchService(
             .map<ChunkOutcome> { fetched -> ChunkOutcome.Succeeded(normalizer.normalize(fetched, mapped, request.period)) }
             .onErrorResume { e ->
                 logChunkFailure(adapter.supplierId, request, e)
-                Mono.just(ChunkOutcome.Failed)
+                Mono.just(ChunkOutcome.Failed(reason = e.message ?: e.javaClass.simpleName))
             }
 
     private fun combine(supplierId: String, outcomes: List<ChunkOutcome>, chunkCount: Int): SupplierResult {
         val succeeded = outcomes.filterIsInstance<ChunkOutcome.Succeeded>()
-        val failedChunks = chunkCount - succeeded.size
-        // 하나도 성공하지 못했으면 이 공급사의 응답을 만들 수 없다. 그것이 실패다 (ADR-0050)
+        val failed = outcomes.filterIsInstance<ChunkOutcome.Failed>()
+        // 하나도 성공하지 못했으면 이 공급사의 응답을 만들 수 없다. 그것이 실패다 (ADR-0050).
+        // 왜 실패했는지를 응답에 싣는다 (ADR-0046). 묶음이 여럿이면 원인이 대개 같으므로 마지막 것 하나만 붙인다
         if (succeeded.isEmpty()) {
-            return SupplierResult.failed(supplierId, "모든 묶음 호출이 실패했다 ($chunkCount 개)", failedChunks)
+            val reason = if (chunkCount == 1) failed.last().reason else "모든 묶음 호출($chunkCount 개)이 실패했다. 마지막 원인: ${failed.last().reason}"
+            return SupplierResult.failed(supplierId, reason, failedChunks = failed.size)
         }
+        val failedChunks = failed.size
         val normalized = succeeded.map { it.result }
         val excluded = normalized.flatMap { it.excluded }
         if (excluded.isNotEmpty()) {
@@ -117,6 +120,6 @@ class SearchService(
 
     private sealed interface ChunkOutcome {
         data class Succeeded(val result: NormalizedAvailability) : ChunkOutcome
-        data object Failed : ChunkOutcome
+        data class Failed(val reason: String) : ChunkOutcome
     }
 }

@@ -96,4 +96,7 @@ ADR-0015 는 "검색 응답에도 일부 객실 타입이 빠졌다고 표시한
 스펙과 달라 뺀 건수가 실리고 매핑에 없어 뺀 것은 세지 않는지
   → `SearchServiceIntegrationTest.스펙과 달라 뺀 건수는 실리고 매핑에 없어 뺀 것은 세지 않는다`
 
-HTTP 응답에 그대로 나가는지는 엔드포인트를 만들 때 확인하고 여기에 적는다.
+HTTP 응답에 그대로 나가는지
+  → `SearchControllerTest.응답에 요구된 최소 정보와 공급사별 상태가 실린다`
+  → 2026-09-17 Mock 으로 확인. B 를 장애 모드로 두면 `suppliers[1]` 이 `FAILED` 에 사유 `resultCode=E503…`,
+    A 를 무응답 모드로 두면 5초 뒤 `suppliers[0]` 이 `FAILED` 에 사유 `TimeoutException…`. 두 경우 모두 다른 공급사 항목은 그대로 나간다

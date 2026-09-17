@@ -92,5 +92,11 @@ HikariCP 는 JDBC 를 추가할 때 7.1.0 이상으로 둔다([ADR-0006](0006-ad
 
 ## Verification
 
-`app/src/main/resources/application.yml` 에 `spring.threads.virtual.enabled: true` 가 있고,
-검색 컨트롤러가 `Mono` 가 아닌 응답 타입을 돌려주는지. JDBC 를 추가한 뒤에는 `app/build.gradle.kts` 의 HikariCP 가 7.1.0 이상인지.
+`spring.threads.virtual.enabled: true` 가 있는지
+  → `app/src/main/resources/application.yml`
+
+검색 컨트롤러가 `Mono` 가 아닌 응답 타입을 돌려주는지
+  → `SearchController.search` 의 반환 타입이 `SearchResponse`
+
+HikariCP 가 7.1.0 이상인지
+  → `app/build.gradle.kts` 의 `extra["hikaricp.version"] = "7.1.0"`

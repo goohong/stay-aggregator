@@ -98,7 +98,7 @@ class SearchServiceIntegrationTest {
 
         val resultA = result.suppliers.single { it.supplierId == "a" }
         assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
-        assertThat(resultA.failureReason).contains("모든 묶음 호출이 실패했다")
+        assertThat(resultA.failureReason).contains("503")
         assertThat(resultA.roomTypes).isEmpty()
         assertThat(result.suppliers.single { it.supplierId == "b" }.status).isEqualTo(SupplierStatus.SUCCEEDED)
         assertThat(result.roomTypes).extracting<String> { it.roomTypeName }.containsExactly("온돌")
