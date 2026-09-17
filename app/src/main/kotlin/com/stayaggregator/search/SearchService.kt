@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException
  * 묶음 일부가 실패하면 성공한 묶음은 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
  * 묶음 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 다시 부른다 (ADR-0051). 목록 동기화는 다시 부르지 않는다 (ADR-0019).
  * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 묶음의 최종 결과를 세고, 열려 있으면 그 공급사를 부르지 않는다 (ADR-0056, ADR-0057).
- * 검색 전체 시간 한계는 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
+ * 검색 전체 타임아웃은 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
  *
  * 기다리는 자리는 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021).
  * 매핑 읽기도 그 스레드에서 블로킹으로 한다. 별도 스케줄러를 두지 않는 것이 ADR-0021 이 가상 스레드를 고른 이유다.
@@ -61,7 +61,7 @@ class SearchService(
     private fun searchSupplier(adapter: AvailabilityAdapter, period: StayPeriod, guests: GuestCount): Mono<SupplierResult> =
         Mono.fromCallable { repository.findActiveHotels(adapter.supplierId) }
             .flatMap { mapped -> fetchAll(adapter, mapped, period, guests) }
-            .timeout(search.budget)
+            .timeout(search.timeout)
             .onErrorResume { e -> Mono.just(failed(adapter.supplierId, e)) }
 
     /** 매핑의 숙소 코드를 50개씩 나눠 부르고, 묶음마다 판정한 결과를 모은다 */
@@ -88,10 +88,10 @@ class SearchService(
             adapter.fetchAvailability(request)
                 .retryWhen(retryTransient(adapter.supplierId, request))
                 // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
-                // 검색 시간 한계로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
+                // 검색 전체 타임아웃으로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
                 .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
                 // 서킷과 같은 단위(재시도까지 거친 최종 결과)로 센다. 판정 전에 두어 판정 오류는 공급사 지표에 넣지 않는다 (ADR-0060).
-                // 검색 시간 한계로 취소된 묶음은 끝나지 않아 세지 않는다
+                // 검색 전체 타임아웃으로 취소된 묶음은 끝나지 않아 세지 않는다
                 .doOnSuccess { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), null) }
                 .doOnError { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), it) }
         }
@@ -159,7 +159,7 @@ class SearchService(
 
     private fun failed(supplierId: String, e: Throwable): SupplierResult {
         val reason = when (e) {
-            is TimeoutException -> "검색 시간 한계 ${search.budget} 안에 끝나지 않았다"
+            is TimeoutException -> "검색 전체 타임아웃 ${search.timeout} 안에 끝나지 않았다"
             else -> e.message ?: e.javaClass.simpleName
         }
         if (e is SupplierResponseException || e is TimeoutException) {

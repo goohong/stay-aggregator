@@ -176,7 +176,7 @@ class SupplierCatalogAdapterTest {
                 ),
             ),
             search = StayProperties.Search(
-                budget = Duration.ofSeconds(2),
+                timeout = Duration.ofSeconds(2),
                 concurrencyPerSupplier = 4,
                 maxRetries = 0,
                 retryMinBackoff = Duration.ofMillis(10),

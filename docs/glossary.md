@@ -35,7 +35,7 @@
 | **동일 숙소 후보** | (동기화가 계산) | 정규화한 숙소명이 같은 다른 공급사 숙소 쌍. **추정이라 응답에 내지 않는다.** 사람이 확인하면 동일 숙소가 된다 |
 | **서킷** | `SupplierCircuitBreakers` | 공급사마다 하나. 재시도까지 거친 묶음의 최종 결과를 세어, 실패가 많으면 **열어서** 한동안 그 공급사를 부르지 않는다 ([ADR-0056](adr/0056-circuit-breaker-per-supplier-outside-retry.md)).<br>검색에만 있고 목록 동기화에는 없다. 공급사 실패만 센다 |
 | **일시적인 실패** | `SupplierResponseException.transient` | **다시 불러 볼 여지가 있는** 실패. 5xx·429·연결 실패가 여기 든다 ([ADR-0051](adr/0051-retry-transient-supplier-failures.md)).<br>타임아웃은 아니다. 느리다는 신호라 다시 불러도 느리다.<br>**"다시 부른다"는 뜻이 아니다.** 실제로 부를지는 부르는 쪽이 정한다. 검색은 부르고 목록 동기화는 부르지 않는다 |
-| **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 묶음이 실패했거나, 시간 한계를 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
+| **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 묶음이 실패했거나, 검색 전체 타임아웃을 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 | **실패한 묶음** | `SupplierResult.failedChunks` | 성공한 공급사 안에서 부르지 못한 묶음 수. 그 묶음의 숙소는 응답에 없다. 상태는 성공이다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 
 ## 우리 안에서 쓰는 형태

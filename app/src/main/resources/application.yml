@@ -34,8 +34,8 @@ stay:
       connect-timeout: PT3.1S
 
   search:
-    # 검색 한 건 전체의 한계와 공급사당 동시 호출 수. 둘 다 측정 전 임시값이다 (ADR-0045)
-    budget: PT8S
+    # 검색 전체 타임아웃과 공급사당 동시 호출 수. 둘 다 측정 전 임시값이다 (ADR-0045)
+    timeout: PT8S
     concurrency-per-supplier: 4
     # 일시적인 실패만 다시 부른다 (ADR-0051). 시도 세 번(= 재시도 2회)은 Google SRE 를 따랐고
     # 대기 시간 둘은 아직 임시값이다.

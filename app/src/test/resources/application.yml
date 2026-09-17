@@ -15,7 +15,7 @@ stay:
       availability-timeout: PT1S
       connect-timeout: PT0.5S
   search:
-    budget: PT2S
+    timeout: PT2S
     concurrency-per-supplier: 4
     # 테스트는 기다림을 짧게 둔다
     max-retries: 2

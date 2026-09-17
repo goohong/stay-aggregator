@@ -40,7 +40,7 @@ class SearchControllerTest {
             SearchResult(
                 listOf(
                     SupplierResult.succeeded("a", listOf(room), outOfSpecCount = 1, failedChunks = 0),
-                    SupplierResult.failed("b", "검색 시간 한계 PT2S 안에 끝나지 않았다"),
+                    SupplierResult.failed("b", "검색 전체 타임아웃 PT2S 안에 끝나지 않았다"),
                 ),
             ),
         )
@@ -56,7 +56,7 @@ class SearchControllerTest {
                 jsonPath("$.suppliers[0].outOfSpecCount") { value(1) }
                 jsonPath("$.suppliers[1].supplier") { value("b") }
                 jsonPath("$.suppliers[1].status") { value("FAILED") }
-                jsonPath("$.suppliers[1].failureReason") { value("검색 시간 한계 PT2S 안에 끝나지 않았다") }
+                jsonPath("$.suppliers[1].failureReason") { value("검색 전체 타임아웃 PT2S 안에 끝나지 않았다") }
                 jsonPath("$.roomTypes[0].hotelId") { value(hotelId.toString()) }
                 jsonPath("$.roomTypes[0].hotelName") { value("강변 호텔") }
                 jsonPath("$.roomTypes[0].roomTypeId") { value(roomTypeId.toString()) }

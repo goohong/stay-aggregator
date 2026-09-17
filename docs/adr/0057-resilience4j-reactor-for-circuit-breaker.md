@@ -23,7 +23,7 @@ date: 2026-09-17
 | `resilience4j-spring-boot4` 는 Maven Central 에 없다. 최신 릴리스가 2.3.0 이다 | Maven Central 검색 |
 | `resilience4j-reactor:2.3.0` 은 reactor-core 3.8.7 에서 컴파일되고 서킷이 열리는 것까지 실행된다 | 실행 |
 | reactor 모듈의 서킷 연산자는 구독·성공·실패·**취소**마다 서킷에 알리고, 두 번 알리지 않도록 막는다 | javap |
-| 우리 검색은 시간 한계를 넘기면 진행 중인 호출을 **취소한다** | `SearchService.searchSupplier` 의 `.timeout(search.budget)` |
+| 우리 검색은 검색 전체 타임아웃을 넘기면 진행 중인 호출을 **취소한다** | `SearchService.searchSupplier` 의 `.timeout(search.timeout)` |
 
 ## Options
 

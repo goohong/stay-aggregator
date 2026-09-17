@@ -10,11 +10,11 @@ import java.time.Duration
 class StayPropertiesTest {
 
     @Test
-    fun `호출 하나의 타임아웃이 검색 시간 한계보다 길면 만들 수 없다`() {
-        // 한계로 취소된 묶음은 서킷이 세지 않아, 이 관계가 깨지면 무응답 공급사에 서킷이 열리지 않는다 (ADR-0056)
-        assertThatThrownBy { properties(availabilityTimeout = Duration.ofSeconds(8), budget = Duration.ofSeconds(8)) }
+    fun `호출 타임아웃이 검색 전체 타임아웃보다 길면 만들 수 없다`() {
+        // 검색 전체 타임아웃으로 취소된 묶음은 서킷이 세지 않아, 이 관계가 깨지면 무응답 공급사에 서킷이 열리지 않는다 (ADR-0056)
+        assertThatThrownBy { properties(availabilityTimeout = Duration.ofSeconds(8), timeout = Duration.ofSeconds(8)) }
             .isInstanceOf(IllegalArgumentException::class.java)
-            .hasMessageContaining("검색 시간 한계")
+            .hasMessageContaining("검색 전체 타임아웃")
     }
 
     @Test
@@ -32,15 +32,15 @@ class StayPropertiesTest {
             .hasMessage("재시도 최대 대기가 기준 대기보다 짧다")
     }
 
-    private fun properties(availabilityTimeout: Duration, budget: Duration) =
+    private fun properties(availabilityTimeout: Duration, timeout: Duration) =
         StayProperties(
             suppliers = mapOf("a" to StayProperties.Supplier("http://localhost", "k", Duration.ofSeconds(30), availabilityTimeout, Duration.ofMillis(500))),
-            search = search(budget = budget),
+            search = search(timeout = timeout),
         )
 
-    private fun search(budget: Duration = Duration.ofSeconds(8), min: Duration = Duration.ofMillis(100), max: Duration = Duration.ofSeconds(1)) =
+    private fun search(timeout: Duration = Duration.ofSeconds(8), min: Duration = Duration.ofMillis(100), max: Duration = Duration.ofSeconds(1)) =
         StayProperties.Search(
-            budget = budget,
+            timeout = timeout,
             concurrencyPerSupplier = 4,
             maxRetries = 2,
             retryMinBackoff = min,

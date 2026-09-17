@@ -196,7 +196,7 @@ class SupplierAvailabilityAdapterTest {
             base.suppliers.mapValues { (_, s) ->
                 s.copy(baseUrl = "http://192.0.2.1", availabilityTimeout = Duration.ofSeconds(5), connectTimeout = Duration.ofMillis(300))
             },
-            base.search.copy(budget = Duration.ofSeconds(8)),
+            base.search.copy(timeout = Duration.ofSeconds(8)),
         ))
 
         val started = System.nanoTime()
@@ -251,7 +251,7 @@ class SupplierAvailabilityAdapterTest {
                 ),
             ),
             search = StayProperties.Search(
-                budget = Duration.ofSeconds(2),
+                timeout = Duration.ofSeconds(2),
                 concurrencyPerSupplier = 4,
                 maxRetries = 0,
                 retryMinBackoff = Duration.ofMillis(10),

@@ -71,7 +71,7 @@ Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정
 
 | 필드 | 뜻 |
 |---|---|
-| `status` | `FAILED` 는 **그 공급사 결과를 아예 만들지 못했다**는 뜻입니다. 매핑을 못 읽었거나, 모든 호출이 실패했거나, 시간 한계를 넘겼습니다 ([ADR-0050](docs/adr/0050-partial-chunk-failure.md)) |
+| `status` | `FAILED` 는 **그 공급사 결과를 아예 만들지 못했다**는 뜻입니다. 매핑을 못 읽었거나, 모든 호출이 실패했거나, 검색 전체 타임아웃을 넘겼습니다 ([ADR-0050](docs/adr/0050-partial-chunk-failure.md)) |
 | `outOfSpecCount` | 응답이 규약과 달라 결과에서 뺀 객실 타입 수입니다. 0 이 아니면 그 공급사 결과가 줄어든 것입니다 ([ADR-0046](docs/adr/0046-supplier-status-in-search-response.md)) |
 | `failedChunks` | 성공했지만 부르지 못한 호출 묶음 수입니다. 0 이 아니면 그 공급사의 일부 숙소는 이 응답에 없습니다 |
 | `availableRooms` | 요청 기간 전체에 예약할 수 있는 객실 수입니다. **0 이어도 빼지 않고 내보냅니다** ([ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md)) |

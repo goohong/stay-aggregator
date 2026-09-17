@@ -138,17 +138,17 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `시간 한계를 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다`() {
+    fun `검색 전체 타임아웃을 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
         val slow = FakeAdapter("a") { Mono.just(availability(itemA("A-1", "DLX", breakfast = false))).delayElement(Duration.ofSeconds(10)) }
         val b = FakeAdapter("b") { Mono.just(availability(itemB("B-1", "R-1", total = 200_000, breakfast = false))) }
 
-        val result = service(slow, b, budget = Duration.ofMillis(300)).search(period, guests)
+        val result = service(slow, b, timeout = Duration.ofMillis(300)).search(period, guests)
 
         val resultA = result.suppliers.single { it.supplierId == "a" }
         assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
-        assertThat(resultA.failureReason).contains("시간 한계")
+        assertThat(resultA.failureReason).contains("검색 전체 타임아웃")
         assertThat(result.roomTypes).extracting<String> { it.roomTypeName }.containsExactly("온돌")
     }
 
@@ -345,14 +345,14 @@ class SearchServiceIntegrationTest {
      */
     private fun service(
         vararg adapters: AvailabilityAdapter,
-        budget: Duration = properties.search.budget,
+        timeout: Duration = properties.search.timeout,
         maxRetries: Int = 0,
         breakers: SupplierCircuitBreakers? = null,
         meterRegistry: io.micrometer.core.instrument.MeterRegistry = io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
     ): SearchService {
-        // 호출 하나의 타임아웃은 검색 시간 한계보다 짧아야 한다(StayProperties 가 지킴). 한계를 줄인 테스트는 함께 줄인다. 가짜 어댑터는 이 값을 쓰지 않는다
-        val suppliers = properties.suppliers.mapValues { (_, s) -> if (s.availabilityTimeout < budget) s else s.copy(availabilityTimeout = budget.dividedBy(2), connectTimeout = minOf(s.connectTimeout, budget.dividedBy(4))) }
-        val props = StayProperties(suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries))
+        // 호출 타임아웃은 검색 전체 타임아웃보다 짧아야 한다(StayProperties 가 지킴). 검색 전체 타임아웃을 줄인 테스트는 함께 줄인다. 가짜 어댑터는 이 값을 쓰지 않는다
+        val suppliers = properties.suppliers.mapValues { (_, s) -> if (s.availabilityTimeout < timeout) s else s.copy(availabilityTimeout = timeout.dividedBy(2), connectTimeout = minOf(s.connectTimeout, timeout.dividedBy(4))) }
+        val props = StayProperties(suppliers, properties.search.copy(timeout = timeout, maxRetries = maxRetries))
         return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, com.stayaggregator.supplier.SupplierCallMetrics(meterRegistry), props)
     }
 
