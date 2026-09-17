@@ -16,7 +16,7 @@ import reactor.core.publisher.Mono
  */
 interface CatalogAdapter {
 
-    /** 공급사를 가리키는 값. 설정 묶음의 키이자 매핑 테이블에 저장하는 값이다 */
+    /** 공급사를 가리키는 값. 설정 블록의 키이자 매핑 테이블에 저장하는 값이다 */
     val supplierId: String
 
     fun fetchCatalog(): Mono<FetchedCatalog>

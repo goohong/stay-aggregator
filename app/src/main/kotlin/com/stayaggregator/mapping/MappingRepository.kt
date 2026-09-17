@@ -82,7 +82,7 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
                 )
             }
 
-    /** 조인 결과 한 줄. 숙소별로 묶기 전의 모양이라 밖으로 나가지 않는다 */
+    /** 조인 결과 한 줄. 숙소별로 그룹화하기 전의 형태라 밖으로 나가지 않는다 */
     private data class MappedRow(
         val hotelId: UUID,
         val hotelCode: String,

@@ -11,7 +11,7 @@ class StayPropertiesTest {
 
     @Test
     fun `호출 타임아웃이 검색 전체 타임아웃보다 길면 만들 수 없다`() {
-        // 검색 전체 타임아웃으로 취소된 묶음은 서킷이 세지 않아, 이 관계가 깨지면 무응답 공급사에 서킷이 열리지 않는다 (ADR-0056)
+        // 검색 전체 타임아웃으로 취소된 chunk 는 서킷이 세지 않아, 이 관계가 깨지면 무응답 공급사에 서킷이 열리지 않는다 (ADR-0056)
         assertThatThrownBy { properties(availabilityTimeout = Duration.ofSeconds(8), timeout = Duration.ofSeconds(8)) }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessageContaining("검색 전체 타임아웃")

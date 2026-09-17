@@ -49,7 +49,7 @@ date: 2026-09-17
 
 - 재시도·타임아웃은 직접 만든 것이 아니다. Reactor 가 구현한 연산자를 쓴 것이고, resilience4j 도 안에서 같은 연산자를 부른다. 옮겨도 새 동작은 생기지 않는다
 - 서킷은 Reactor 에 없어 라이브러리를 더한다. 코어만 쓰면 취소 처리를 직접 짜야 하는데 그 취소가 우리 코드에서 실제로 일어난다. 틀리기 쉬운 곳을 라이브러리에 맡긴다
-- 동시 실행 수 제한을 resilience4j 로 옮기면 한도를 넘은 묶음이 기다리지 않고 실패한다. [ADR-0050](0050-partial-chunk-failure.md) 의 묶음 실패에 한도 초과가 섞인다
+- 동시 실행 수 제한을 resilience4j 로 옮기면 한도를 넘은 chunk 가 기다리지 않고 실패한다. [ADR-0050](0050-partial-chunk-failure.md) 의 chunk 실패에 한도 초과가 섞인다
 - resilience4j 가 주는 설정 파일 연동과 지표 엔드포인트는 Boot 4 모듈이 없어 어차피 쓸 수 없다
 
 ## Consequences

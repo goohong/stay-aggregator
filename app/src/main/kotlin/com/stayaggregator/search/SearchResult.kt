@@ -15,8 +15,8 @@ data class SearchResult(
 /**
  * 한 공급사의 결과.
  *
- * 상태는 둘뿐이다. **실패는 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 읽지 못했거나, 모든 묶음이 실패했거나, 검색 전체 타임아웃을 넘겼다.
- * 묶음 일부가 실패한 것은 성공이고 [failedChunks] 에 센다 (ADR-0050).
+ * 상태는 둘뿐이다. **실패는 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 읽지 못했거나, 모든 chunk 가 실패했거나, 검색 전체 타임아웃을 넘겼다.
+ * chunk 일부가 실패한 것은 성공이고 [failedChunks] 에 센다 (ADR-0050).
  * [outOfSpecCount] 는 스펙과 달라 뺀 것만이다. 매핑에 없어 뺀 것은 세지 않는다 (ADR-0046).
  */
 data class SupplierResult(
@@ -25,7 +25,7 @@ data class SupplierResult(
     val roomTypes: List<AvailableRoomType>,
     /** 스펙과 달라 응답에서 뺀 객실 타입 수 */
     val outOfSpecCount: Int,
-    /** 부르지 못한 묶음 수. 그 묶음의 숙소는 이 응답에 없다 */
+    /** 부르지 못한 chunk 수. 그 chunk 의 숙소는 이 응답에 없다 */
     val failedChunks: Int,
     /** 실패했을 때 왜 실패했는지. 성공이면 null */
     val failureReason: String?,

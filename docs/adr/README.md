@@ -54,13 +54,13 @@
 | [0047](0047-request-types-in-supplier-package.md) | 재고·요금 조회의 요청 형태를 supplier 패키지에 두기로 결정 | accepted |
 | [0048](0048-guest-count-invariants.md) | 검색 인원의 불변식은 각각 0 이상, 합이 1 이상까지만 두기로 결정 | accepted |
 | [0049](0049-supplier-id-on-adapter-only.md) | 공급사 식별자는 어댑터만 갖고 응답 공통 형태에는 싣지 않기로 결정 | accepted |
-| [0050](0050-partial-chunk-failure.md) | 한 공급사의 묶음 호출이 일부만 실패하면 성공한 묶음은 내보내고 실패한 묶음 수를 싣기로 결정 | accepted |
+| [0050](0050-partial-chunk-failure.md) | 한 공급사의 chunk 호출이 일부만 실패하면 성공한 chunk 는 내보내고 실패한 chunk 수를 싣기로 결정 | accepted |
 | [0051](0051-retry-transient-supplier-failures.md) | 일시적인 공급사 실패만 재시도하고 재시도 여부는 consumer 가 정하기로 결정 | accepted |
 | [0052](0052-no-past-date-check.md) | 체크인일이 지난 날짜인지는 검사하지 않기로 결정 | accepted |
 | [0053](0053-mixed-currency-exposure.md) | 통화가 다른 상품을 한 응답에 함께 내보내되 환산하지 않기로 결정 | accepted |
 | [0054](0054-exclusion-kind-by-value-only.md) | 제외한 항목은 문제가 된 값 하나로만 종류를 나누기로 결정 | accepted |
-| [0055](0055-quarantine-grouped-in-db.md) | 제외한 항목을 같은 문제끼리 묶어 DB 에 남기기로 결정 | accepted |
-| [0056](0056-circuit-breaker-per-supplier-outside-retry.md) | 서킷 브레이커를 공급사마다 두고 재시도 바깥에서 묶음의 최종 결과를 세기로 결정 | accepted |
+| [0055](0055-quarantine-grouped-in-db.md) | 제외한 항목을 같은 문제끼리 그룹화해 DB 에 남기기로 결정 | accepted |
+| [0056](0056-circuit-breaker-per-supplier-outside-retry.md) | 서킷 브레이커를 공급사마다 두고 재시도 바깥에서 chunk 의 최종 결과를 세기로 결정 | accepted |
 | [0057](0057-resilience4j-reactor-for-circuit-breaker.md) | 서킷 브레이커는 resilience4j-reactor 를 쓰고 재시도·타임아웃은 Reactor 연산자로 두기로 결정 | accepted |
 | [0058](0058-same-hotel-confirmed-pairs-only.md) | 동일 숙소는 사람이 확인한 짝만 응답에서 같은 값으로 묶기로 결정 | accepted |
 | [0059](0059-quarantine-package.md) | 격리 기록을 새 패키지 quarantine 에 두기로 결정 | accepted |

@@ -81,7 +81,7 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
-    fun `공급사 A 에 숙소 코드 묶음과 날짜와 인원을 스펙 이름으로 보낸다`() {
+    fun `공급사 A 에 숙소 코드 목록과 날짜와 인원을 스펙 이름으로 보낸다`() {
         respond("/a/v1/availability", status = 200, body = """{"items":[]}""")
 
         adapterA().fetchAvailability(request).block()

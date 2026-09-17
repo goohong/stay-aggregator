@@ -14,7 +14,7 @@ import org.testcontainers.postgresql.PostgreSQLContainer
 import java.time.Instant
 
 /**
- * 격리 기록이 같은 문제를 한 행으로 묶어 세는지, 오래된 행을 지우는지 확인한다 (ADR-0054, ADR-0055).
+ * 격리 기록이 같은 문제를 한 행으로 그룹화해 세는지, 오래된 행을 지우는지 확인한다 (ADR-0054, ADR-0055).
  */
 @SpringBootTest(properties = ["stay.catalog.sync.enabled=false"])
 @Import(QuarantineIntegrationTest.Containers::class)
@@ -49,7 +49,7 @@ class QuarantineIntegrationTest {
 
         assertThat(rowCount()).isEqualTo(1)
         assertThat(column("occurrences")).isEqualTo(2L)
-        // 날짜가 다른 같은 문제가 한 행으로 묶인다. 모양은 마지막 사유 문장에 남는다
+        // 날짜가 다른 같은 문제가 한 행으로 그룹화된다. 날짜는 마지막 사유 문장에 남는다
         assertThat(column("last_reason")).isEqualTo("숙박일 2026-10-07 의 재고가 없다")
         assertThat(column("last_source").toString()).contains("7")
         assertThat(column("first_seen")).isEqualTo(firstSeen)
@@ -72,7 +72,7 @@ class QuarantineIntegrationTest {
     }
 
     @Test
-    fun `코드가 비어 있는 문제끼리도 한 행으로 묶인다`() {
+    fun `코드가 비어 있는 문제끼리도 한 행으로 그룹화된다`() {
         repository.record(entry(hotelCode = null, value = ExcludedValue.HOTEL_CODE), null)
         repository.record(entry(hotelCode = null, value = ExcludedValue.HOTEL_CODE), null)
 

@@ -68,7 +68,7 @@ grep -rn "import com.stayaggregator.catalog" app/src/main/kotlin/com/stayaggrega
 ## Consequences
 
 **얻는 것**
-- 새 공급사를 붙일 때 고칠 곳이 `supplier/<공급사>/` 디렉터리 하나와 설정 한 묶음으로 보인다. ADR-0031 이 말로 적은 것과 같다
+- 새 공급사를 붙일 때 고칠 곳이 `supplier/<공급사>/` 디렉터리 하나와 설정 블록 하나로 보인다. ADR-0031 이 말로 적은 것과 같다
 - 검색이 목록 동기화 코드를 보지 않는다는 것이 import 로 확인된다
 - 매핑 테이블의 SQL 이 한 패키지에만 있다
 

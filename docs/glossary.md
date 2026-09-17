@@ -26,17 +26,17 @@
 |---|---|---|
 | **숙소 목록 API** | `CatalogAdapter.fetchCatalog` | 공급사가 취급하는 숙소와 객실 타입을 조건 없이 전부 주는 API. 드물게 바뀐다. 요금·재고는 여기 없다 |
 | **재고·요금 API** | `AvailabilityAdapter.fetchAvailability` | 숙소 코드 목록과 날짜·인원을 주면 그 조건의 재고와 요금을 주는 API. 매번 바뀐다.<br>한 번에 숙소 코드 50개까지 받고 **넘으면 공급사가 오류로 거절한다** ([ADR-0045](adr/0045-search-concurrency-and-budget.md)) |
-| **호출 묶음** | `AvailabilityRequest` | 위 상한에 맞춰 숙소 코드를 50개 이하로 나눈 한 덩어리에 숙박 구간·인원을 붙인 것. 검색 한 건이 여러 묶음을 부른다.<br>50개를 넘는 묶음은 만들어지지 않는다 ([ADR-0047](adr/0047-request-types-in-supplier-package.md)) |
+| **chunk** | `AvailabilityRequest` | 위 상한에 맞춰 숙소 코드를 50개 이하로 나눈 한 덩어리에 숙박 구간·인원을 붙인 것. 검색 한 건이 chunk 여러 개를 호출한다.<br>50개를 넘는 chunk 는 만들어지지 않는다 ([ADR-0047](adr/0047-request-types-in-supplier-package.md)) |
 | **공급사 경계** | `SupplierAdapter` | 한 공급사가 구현해야 하는 두 경계(`CatalogAdapter`·`AvailabilityAdapter`)를 묶은 것. consumer 는 이것을 보지 않는다.<br>한 경계를 빠뜨리면 컴파일에서 드러나게 하는 것이 유일한 역할이다 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)) |
 | **어댑터** | `SupplierAAdapter` 등 | 한 공급사의 API 를 부르고 그 응답을 우리 형태로 바꾸는 클래스. 공급사마다 하나 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)).<br>검증은 하지 않는다. 공급사마다 다른 것만 흡수한다 |
 | **consumer** | `CatalogSyncService` 등 | 어댑터를 주입받아 쓰는 쪽. 목록 동기화와 검색 둘 |
 | **공급사 실패** | `SupplierResponseException` | 응답을 스펙대로 받지 못한 것. HTTP 상태, 본문의 결과 코드, 본문을 읽지 못한 것,<br>정한 시간 안에 오지 않은 것, 연결하지 못한 것이 모두 여기 든다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md)).<br>공급사가 "실패"라고 말한 것만이 아니다 |
 | **동일 숙소** | `same_hotel_id`, `sameHotelId` | **사람이 확인한** 같은 숙소의 모음. 확인된 짝끼리 같은 값을 갖고, 짝이 없는 숙소도 자기 값을 갖는다 ([ADR-0058](adr/0058-same-hotel-confirmed-pairs-only.md)).<br>이번 응답 안에서 모으는 데 쓰는 값이다. 짝이 바뀌면 값이 바뀌니 저장해 다시 찾는 키로 쓰지 않는다. 숙소를 가리키는 값은 내부 숙소 식별자다 |
 | **동일 숙소 후보** | (동기화가 계산) | 정규화한 숙소명이 같은 다른 공급사 숙소 쌍. **추정이라 응답에 내지 않는다.** 사람이 확인하면 동일 숙소가 된다 |
-| **서킷** | `SupplierCircuitBreakers` | 공급사마다 하나. 재시도까지 거친 묶음의 최종 결과를 세어, 실패가 많으면 **열어서** 한동안 그 공급사를 부르지 않는다 ([ADR-0056](adr/0056-circuit-breaker-per-supplier-outside-retry.md)).<br>검색에만 있고 목록 동기화에는 없다. 공급사 실패만 센다 |
+| **서킷** | `SupplierCircuitBreakers` | 공급사마다 하나. 재시도까지 거친 chunk 의 최종 결과를 세어, 실패가 많으면 **열어서** 한동안 그 공급사를 부르지 않는다 ([ADR-0056](adr/0056-circuit-breaker-per-supplier-outside-retry.md)).<br>검색에만 있고 목록 동기화에는 없다. 공급사 실패만 센다 |
 | **일시적인 실패** | `SupplierResponseException.transient` | **다시 불러 볼 여지가 있는** 실패. 5xx·429·연결 실패가 여기 든다 ([ADR-0051](adr/0051-retry-transient-supplier-failures.md)).<br>타임아웃은 아니다. 느리다는 신호라 다시 불러도 느리다.<br>**"다시 부른다"는 뜻이 아니다.** 실제로 부를지는 부르는 쪽이 정한다. 검색은 부르고 목록 동기화는 부르지 않는다 |
-| **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 묶음이 실패했거나, 검색 전체 타임아웃을 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
-| **실패한 묶음** | `SupplierResult.failedChunks` | 성공한 공급사 안에서 부르지 못한 묶음 수. 그 묶음의 숙소는 응답에 없다. 상태는 성공이다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
+| **부분 실패** | `SupplierResult.status = FAILED` | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다.<br>**실패는 그 공급사 응답을 아예 만들 수 없었다는 뜻**이다. 매핑을 못 읽었거나, 모든 chunk 가 실패했거나, 검색 전체 타임아웃을 넘겼다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
+| **실패한 chunk** | `SupplierResult.failedChunks` | 성공한 공급사 안에서 호출하지 못한 chunk 수. 그 chunk 의 숙소는 응답에 없다. 상태는 성공이다 ([ADR-0050](adr/0050-partial-chunk-failure.md)) |
 
 ## 우리 안에서 쓰는 형태
 
@@ -55,7 +55,7 @@
 | **제외 항목** | `ExcludedItem`, `ExcludedRoomType` | 값을 정할 수 없어 결과에서 뺀 숙소나 객실 타입. **사유를 함께 남긴다**.<br>재고·요금 쪽은 **매핑에 없어 뺀 것**(`UNMAPPED`)과 **스펙과 달라 뺀 것**(`OUT_OF_SPEC`)을 나눈다. 응답에 세어 싣는 것은 뒤쪽뿐이다 ([ADR-0046](adr/0046-supplier-status-in-search-response.md)) |
 | **제외 사유** | `….reason` | 왜 뺐는지. 값을 담는 객체가 거부하며 낸 문장이 그대로 들어간다 |
 | **검색 결과 항목** | `AvailableRoomType` | 정규화를 마친, 한 공급사의 숙소 하나의 객실 타입 하나. 내부 식별자·이름·최대 수용 인원·예약 가능 객실 수·요금을 가진다 |
-| **격리** | `quarantine_record`, `QuarantineRecorder` | **요구사항의 선택 항목 이름**이다. 변환하지 못한 응답의 **원본을 버리지 않고 따로 보관**하는 것을 말한다.<br>우리는 **같은 문제를 한 행으로 묶어** 횟수·처음과 마지막 시각·마지막 사유·마지막 원본을 남긴다 ([ADR-0055](adr/0055-quarantine-grouped-in-db.md)). 원본은 공급사 원문이 아니라 우리가 읽어 들인 항목이다.<br>**우리가 항목을 빼는 일 자체를 "격리"라고 부르지 않는다.** 뺀 것을 남기는 기록이 격리다 |
+| **격리** | `quarantine_record`, `QuarantineRecorder` | **요구사항의 선택 항목 이름**이다. 변환하지 못한 응답의 **원본을 버리지 않고 따로 보관**하는 것을 말한다.<br>우리는 **같은 문제를 한 행으로 그룹화해** 횟수·처음과 마지막 시각·마지막 사유·마지막 원본을 남긴다 ([ADR-0055](adr/0055-quarantine-grouped-in-db.md)). 원본은 공급사 원문이 아니라 우리가 읽어 들인 항목이다.<br>**우리가 항목을 빼는 일 자체를 "격리"라고 부르지 않는다.** 뺀 것을 남기는 기록이 격리다 |
 
 ## 매핑과 DB
 

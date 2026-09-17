@@ -32,8 +32,8 @@ import java.time.LocalDate
 class AvailabilityNormalizer {
 
     /**
-     * @param requestedHotelCodes 이번 호출 묶음에 넣은 숙소 코드. 응답이 여기 없는 숙소를 주면 이번 출력에 쓰이지 않으므로 버린다 (ADR-0027 두 번째 질문).
-     *   이것을 보지 않으면 다른 묶음의 숙소가 섞여 왔을 때 두 묶음에서 같은 항목이 두 번 나간다
+     * @param requestedHotelCodes 이번 chunk 에 넣은 숙소 코드. 응답이 여기 없는 숙소를 주면 이번 출력에 쓰이지 않으므로 버린다 (ADR-0027 두 번째 질문).
+     *   이것을 보지 않으면 다른 chunk 의 숙소가 섞여 왔을 때 두 chunk 에서 같은 항목이 두 번 나간다
      */
     fun normalize(
         fetched: FetchedAvailability,
@@ -221,7 +221,7 @@ data class ExcludedRoomType(
     val hotelCode: String?,
     val roomTypeCode: String?,
     val kind: ExclusionKind,
-    /** 문제가 된 값. 같은 문제로 묶는 기준이다 (ADR-0054) */
+    /** 문제가 된 값. 같은 문제로 그룹화하는 기준이다 (ADR-0054) */
     val value: ExcludedValue,
     val reason: String,
     /** 우리가 읽어 들인 그 항목. 격리 기록에 JSON 으로 남긴다 (ADR-0055) */

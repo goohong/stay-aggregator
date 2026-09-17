@@ -73,7 +73,7 @@ Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정
 |---|---|
 | `status` | `FAILED` 는 **그 공급사 결과를 아예 만들지 못했다**는 뜻입니다. 매핑을 못 읽었거나, 모든 호출이 실패했거나, 검색 전체 타임아웃을 넘겼습니다 ([ADR-0050](docs/adr/0050-partial-chunk-failure.md)) |
 | `outOfSpecCount` | 응답이 규약과 달라 결과에서 뺀 객실 타입 수입니다. 0 이 아니면 그 공급사 결과가 줄어든 것입니다 ([ADR-0046](docs/adr/0046-supplier-status-in-search-response.md)) |
-| `failedChunks` | 성공했지만 부르지 못한 호출 묶음 수입니다. 0 이 아니면 그 공급사의 일부 숙소는 이 응답에 없습니다 |
+| `failedChunks` | 성공했지만 호출하지 못한 chunk 수입니다. 0 이 아니면 그 공급사의 일부 숙소는 이 응답에 없습니다 |
 | `availableRooms` | 요청 기간 전체에 예약할 수 있는 객실 수입니다. **0 이어도 빼지 않고 내보냅니다** ([ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md)) |
 | `rate.totalAmount` | 세금을 포함한 **기간 전체 총액**입니다. 1박 얼마인지는 보여주는 쪽이 총액과 `nights` 로 계산합니다 ([ADR-0042](docs/adr/0042-rate-as-tax-included-total.md)) |
 
@@ -131,15 +131,15 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 
 | | 어떻게 | |
 |---|---|---|
-| 병렬 호출 | 공급사들을 동시에 부르고, 한 공급사 안에서도 호출 묶음을 동시에 부릅니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
-| 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 부르고, 동시에 부르는 묶음 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
+| 병렬 호출 | 공급사들을 동시에 부르고, 한 공급사 안에서도 chunk 를 동시에 호출합니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
+| 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 부르고, 동시에 호출하는 chunk 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
 | 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 연결 수립에는 따로 짧은 타임아웃을 걸어, 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않습니다([ADR-0066](docs/adr/0066-connect-timeout-in-shared-webclient.md)). 호출 하나의 타임아웃은 검색 전체 한계보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 배경 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
 | 실패 분류 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 신호로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 재시도 | **일시적인 실패만** 다시 부릅니다. 지수 백오프에 무작위를 섞습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md) |
-| 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 묶음이 많으면 한동안 그 공급사를 부르지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
+| 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 chunk 가 많으면 한동안 그 공급사를 부르지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
 | 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·우리 쪽 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
-| 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 묶어 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 목록과 재고 응답의 이름이 다른 것은 항목을 빼지 않고 경고로 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
+| 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 그룹화해 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 목록과 재고 응답의 이름이 다른 것은 항목을 빼지 않고 경고로 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
 
 재시도·타임아웃·동시 실행 수 제한은 **이미 쓰는 Reactor 의 연산자**로, 서킷은 **resilience4j** 로 했습니다.
 resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자를 부르는 것을 확인해, 옮겨도 동작이 같아 옮기지 않았습니다.
@@ -150,8 +150,8 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 **실제로 다시 부를지는 부르는 쪽이 정합니다** — 고객이 기다리는 검색은 다시 부르고, 배경에서 도는 목록 동기화는 부르지 않습니다.
 
 **타임아웃 값과 동시 실행 수는 아직 임시값입니다.** 재 보니 값이 아니라 관계식이 나왔습니다 —
-`검색 시간 ≈ ceil(묶음 수 ÷ 동시 실행 수) × 호출 하나의 지연`.
-묶음 수는 숙소 수로 정해지므로, 숙소 규모와 실제 공급사의 지연 분포를 모르고는 숫자를 정할 수 없습니다.
+`검색 시간 ≈ ceil(chunk 수 ÷ 동시 실행 수) × 호출 하나의 지연`.
+chunk 수는 숙소 수로 정해지므로, 숙소 규모와 실제 공급사의 지연 분포를 모르고는 숫자를 정할 수 없습니다.
 그 사실을 숨기지 않고 [측정 기록](docs/research/search-latency.md)과 ADR-0045 에 적어 두었습니다.
 
 ## 하지 않은 것

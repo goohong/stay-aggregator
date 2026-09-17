@@ -17,7 +17,7 @@ import java.time.Duration
 @Component
 class SupplierCallMetrics(private val registry: MeterRegistry) {
 
-    /** 검색의 묶음 호출 하나. 재시도까지 거친 최종 결과다 */
+    /** 검색의 chunk 호출 하나. 재시도까지 거친 최종 결과다 */
     fun recordAvailability(supplierId: String, elapsed: Duration, error: Throwable?) =
         timer(AVAILABILITY, supplierId, outcomeOf(error)).record(elapsed)
 

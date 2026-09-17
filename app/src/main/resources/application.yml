@@ -14,7 +14,7 @@ management:
         include: health,metrics
 
 stay:
-  # 공급사마다 주소·인증 키를 한 묶음으로 두고 (ADR-0038), 타임아웃도 같은 자리에 둔다 (ADR-0039).
+  # 공급사마다 주소·인증 키를 설정 블록 하나에 두고 (ADR-0038), 타임아웃도 같은 자리에 둔다 (ADR-0039).
   # 저장소에는 Mock 을 가리키는 값만 둔다. 실제 값은 환경 변수로 덮어쓴다.
   # 예: STAY_SUPPLIERS_A_BASEURL, STAY_SUPPLIERS_A_APIKEY
   suppliers:

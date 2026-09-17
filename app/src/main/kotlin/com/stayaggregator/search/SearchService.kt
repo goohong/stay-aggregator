@@ -22,13 +22,13 @@ import reactor.util.retry.Retry
 import java.util.concurrent.TimeoutException
 
 /**
- * 검색 한 건. 공급사마다 매핑을 읽고, 묶음으로 나눠 재고·요금을 물은 뒤, 정규화해서 합친다.
+ * 검색 한 건. 공급사마다 매핑을 읽고, chunk 로 나눠 재고·요금을 물은 뒤, 정규화해서 합친다.
  *
  * 공급사들은 동시에 부르고, 공급사 하나가 실패해도 나머지 결과로 응답한다 (ADR-0046).
- * 한 공급사 안에서는 묶음을 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 부르고,
- * 묶음 일부가 실패하면 성공한 묶음은 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
- * 묶음 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 다시 부른다 (ADR-0051). 목록 동기화는 다시 부르지 않는다 (ADR-0019).
- * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 묶음의 최종 결과를 세고, 열려 있으면 그 공급사를 부르지 않는다 (ADR-0056, ADR-0057).
+ * 한 공급사 안에서는 chunk 를 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 부르고,
+ * chunk 일부가 실패하면 성공한 chunk 는 내보내고 실패한 수를 센다 (ADR-0045, ADR-0050).
+ * chunk 호출이 **일시적인 실패**로 끝나면 정한 횟수만큼 다시 부른다 (ADR-0051). 목록 동기화는 다시 부르지 않는다 (ADR-0019).
+ * 재시도 바깥에 공급사마다 서킷을 둔다. 재시도까지 거친 chunk 의 최종 결과를 세고, 열려 있으면 그 공급사를 부르지 않는다 (ADR-0056, ADR-0057).
  * 검색 전체 타임아웃은 공급사마다 건다. 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다.
  *
  * 기다리는 자리는 여기다. 가상 스레드 위에서 `block` 한다 (ADR-0021).
@@ -64,7 +64,7 @@ class SearchService(
             .timeout(search.timeout)
             .onErrorResume { e -> Mono.just(failed(adapter.supplierId, e)) }
 
-    /** 매핑의 숙소 코드를 50개씩 나눠 부르고, 묶음마다 정규화한 결과를 모은다 */
+    /** 매핑의 숙소 코드를 50개씩 나눠 부르고, chunk 마다 정규화한 결과를 모은다 */
     private fun fetchAll(adapter: AvailabilityAdapter, mapped: List<MappedHotel>, period: StayPeriod, guests: GuestCount): Mono<SupplierResult> {
         if (mapped.isEmpty()) {
             return Mono.just(SupplierResult.succeeded(adapter.supplierId, emptyList(), outOfSpecCount = 0, failedChunks = 0))
@@ -77,7 +77,7 @@ class SearchService(
     }
 
     /**
-     * 묶음 하나. 실패해도 오류를 올리지 않고 실패했다는 결과로 바꾼다. 다른 묶음이 이어져야 하기 때문이다 (ADR-0050).
+     * chunk 하나. 실패해도 오류를 올리지 않고 실패했다는 결과로 바꾼다. 다른 chunk 가 이어져야 하기 때문이다 (ADR-0050).
      *
      * 다시 부르는 것은 **공급사 호출까지만**이다. 응답을 우리 형태로 바꾸다 난 오류를 다시 불러도 같은 결과이고,
      * 그것은 애초에 일시적인 실패로 표시되지도 않는다 (ADR-0051).
@@ -87,11 +87,11 @@ class SearchService(
             val started = System.nanoTime()
             adapter.fetchAvailability(request)
                 .retryWhen(retryTransient(adapter.supplierId, request))
-                // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
+                // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 chunk 만 센다 (ADR-0056).
                 // 검색 전체 타임아웃으로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
                 .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
                 // 서킷과 같은 단위(재시도까지 거친 최종 결과)로 센다. 정규화 전에 두어 정규화 오류는 공급사 지표에 넣지 않는다 (ADR-0060).
-                // 검색 전체 타임아웃으로 취소된 묶음은 끝나지 않아 세지 않는다
+                // 검색 전체 타임아웃으로 취소된 chunk 는 끝나지 않아 세지 않는다
                 .doOnSuccess { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), null) }
                 .doOnError { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), it) }
         }
@@ -119,7 +119,7 @@ class SearchService(
             .filter { it is SupplierResponseException && it.transient }
             .doBeforeRetry { signal ->
                 log.info(
-                    "검색 묶음 재시도 supplier={} 숙소={}개 {}번째 이유={}",
+                    "검색 chunk 재시도 supplier={} 숙소={}개 {}번째 이유={}",
                     supplierId,
                     request.hotelCodes.size,
                     signal.totalRetries() + 1,
@@ -132,9 +132,9 @@ class SearchService(
         val succeeded = outcomes.filterIsInstance<ChunkOutcome.Succeeded>()
         val failed = outcomes.filterIsInstance<ChunkOutcome.Failed>()
         // 하나도 성공하지 못했으면 이 공급사의 응답을 만들 수 없다. 그것이 실패다 (ADR-0050).
-        // 왜 실패했는지를 응답에 싣는다 (ADR-0046). 묶음이 여럿이면 원인이 대개 같으므로 마지막 것 하나만 붙인다
+        // 왜 실패했는지를 응답에 싣는다 (ADR-0046). chunk 가 여럿이면 원인이 대개 같으므로 마지막 것 하나만 붙인다
         if (succeeded.isEmpty()) {
-            val reason = if (chunkCount == 1) failed.last().reason else "모든 묶음($chunkCount 개)을 쓰지 못했다. 마지막 원인: ${failed.last().reason}"
+            val reason = if (chunkCount == 1) failed.last().reason else "모든 chunk($chunkCount 개)를 쓰지 못했다. 마지막 원인: ${failed.last().reason}"
             return SupplierResult.failed(supplierId, reason, failedChunks = failed.size)
         }
         val failedChunks = failed.size
@@ -173,12 +173,12 @@ class SearchService(
 
     private fun logChunkFailure(supplierId: String, request: AvailabilityRequest, e: Throwable) {
         if (e is CallNotPermittedException) {
-            // 서킷이 연 것은 상태 변경 때 한 번 남겼다. 묶음마다 경고를 찍지 않는다
-            log.debug("검색 묶음 건너뜀 supplier={} 숙소={}개 서킷 열림", supplierId, request.hotelCodes.size)
+            // 서킷이 연 것은 상태 변경 때 한 번 남겼다. chunk 마다 경고를 찍지 않는다
+            log.debug("검색 chunk 건너뜀 supplier={} 숙소={}개 서킷 열림", supplierId, request.hotelCodes.size)
         } else if (e is SupplierResponseException) {
-            log.warn("검색 묶음 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message)
+            log.warn("검색 chunk 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message)
         } else {
-            log.warn("검색 묶음 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message, e)
+            log.warn("검색 chunk 실패 supplier={} 숙소={}개 이유={}", supplierId, request.hotelCodes.size, e.message, e)
         }
     }
 

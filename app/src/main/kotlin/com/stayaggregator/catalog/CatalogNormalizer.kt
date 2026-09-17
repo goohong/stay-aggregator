@@ -136,12 +136,12 @@ data class NormalizedCatalog(
 )
 
 /**
- * 값을 정할 수 없어 뺀 항목. 결과값과 로그로 남기고, 같은 문제끼리 묶어 격리 기록에도 남긴다 (ADR-0039, ADR-0055).
+ * 값을 정할 수 없어 뺀 항목. 결과값과 로그로 남기고, 같은 문제끼리 그룹화해 격리 기록에도 남긴다 (ADR-0039, ADR-0055).
  */
 data class ExcludedItem(
     val hotelCode: String?,
     val roomTypeCode: String?,
-    /** 문제가 된 값. 같은 문제로 묶는 기준이다 (ADR-0054) */
+    /** 문제가 된 값. 같은 문제로 그룹화하는 기준이다 (ADR-0054) */
     val value: ExcludedValue,
     val reason: String,
     /** 우리가 읽어 들인 그 항목. 격리 기록에 JSON 으로 남긴다 */

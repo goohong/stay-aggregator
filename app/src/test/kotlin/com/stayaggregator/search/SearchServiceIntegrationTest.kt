@@ -32,7 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * 검색 한 건이 매핑 → 묶음 호출 → 정규화 → 합치기로 흐르는지, 부분 실패가 응답에 드러나는지 확인한다.
+ * 검색 한 건이 매핑 → chunk 호출 → 정규화 → 합치기로 흐르는지, 부분 실패가 응답에 드러나는지 확인한다.
  *
  * 매핑은 실제 PostgreSQL 에 넣고 (ADR-0035), 공급사는 가짜 어댑터로 대신한다. 공급사 HTTP 는 어댑터 테스트가 본다.
  */
@@ -109,7 +109,7 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `숙소가 50개를 넘으면 묶음으로 나눠 부른다`() {
+    fun `숙소가 50개를 넘으면 chunk 로 나눠 호출한다`() {
         repository.applyCatalog("a", (1..51).map { hotel("A-$it", "숙소 $it", roomType("STD", "스탠다드", 2)) })
         val a = FakeAdapter("a") { request -> Mono.just(availability(*request.hotelCodes.map { itemA(it, "STD", breakfast = false) }.toTypedArray())) }
 
@@ -122,10 +122,10 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `묶음 하나가 실패해도 다른 묶음의 항목은 나가고 실패한 묶음 수가 실린다`() {
+    fun `chunk 하나가 실패해도 다른 chunk 의 항목은 나가고 실패한 chunk 수가 실린다`() {
         repository.applyCatalog("a", (1..51).map { hotel("A-$it", "숙소 $it", roomType("STD", "스탠다드", 2)) })
         val a = FakeAdapter("a") { request ->
-            if (request.hotelCodes.size == 1) Mono.error(SupplierResponseException("한 묶음만 실패"))
+            if (request.hotelCodes.size == 1) Mono.error(SupplierResponseException("한 chunk 만 실패"))
             else Mono.just(availability(*request.hotelCodes.map { itemA(it, "STD", breakfast = false) }.toTypedArray()))
         }
 
@@ -255,7 +255,7 @@ class SearchServiceIntegrationTest {
     // ── 지표 (ADR-0060) ──
 
     @Test
-    fun `묶음 호출마다 공급사와 결과로 나눠 센다`() {
+    fun `chunk 호출마다 공급사와 결과로 나눠 센다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         repository.applyCatalog("b", listOf(hotel("B-1", "한옥", roomType("R-1", "온돌", 2))))
         val a = FakeAdapter("a") { Mono.just(availability(itemA("A-1", "DLX", breakfast = false))) }
@@ -270,7 +270,7 @@ class SearchServiceIntegrationTest {
         assertThat(count("b", "supplier_failure")).isEqualTo(1)
     }
 
-    // ── 서킷 브레이커 (ADR-0056) ── 테스트 설정은 최근 4묶음 중 50% 실패면 연다
+    // ── 서킷 브레이커 (ADR-0056) ── 테스트 설정은 최근 chunk 4개 중 50% 실패면 연다
 
     @Test
     fun `공급사가 계속 실패하면 서킷이 열리고 그 뒤 검색은 그 공급사를 부르지 않는다`() {
@@ -297,7 +297,7 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `재시도 끝에 성공한 묶음은 서킷이 실패로 세지 않는다`() {
+    fun `재시도 끝에 성공한 chunk 는 서킷이 실패로 세지 않는다`() {
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val attempts = AtomicInteger()
         val a = FakeAdapter("a") {

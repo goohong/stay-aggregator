@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import java.time.Duration
 
 /**
- * 공급사마다 주소와 인증 키, 타임아웃을 설정 파일의 한 묶음으로 둔다 (ADR-0038, ADR-0039).
+ * 공급사마다 주소와 인증 키, 타임아웃을 설정 파일의 설정 블록 하나에 둔다 (ADR-0038, ADR-0039).
  * 검색 전체 타임아웃과 동시 실행 수는 공급사와 무관하게 하나다 (ADR-0045).
  *
  * 저장소에는 Mock 을 가리키는 값만 두고 실제 값은 환경 변수로 덮어쓴다.
@@ -50,7 +50,7 @@ data class StayProperties(
          * 이 안에 끝내지 못한 공급사는 실패로 내보내고 나머지 결과로 응답한다 (ADR-0045).
          */
         val timeout: Duration,
-        /** 공급사 하나에서 묶음 호출을 동시에 몇 개 띄우는가. WebClient 기본 풀 크기를 넘지 않게 잡는다 (ADR-0045) */
+        /** 공급사 하나에서 chunk 호출을 동시에 몇 개 띄우는가. WebClient 기본 풀 크기를 넘지 않게 잡는다 (ADR-0045) */
         val concurrencyPerSupplier: Int,
         /**
          * 일시적인 실패를 다시 부르는 최대 횟수. 첫 호출은 여기 들지 않는다. 2 면 최대 세 번 부른다 (ADR-0051).
@@ -73,31 +73,31 @@ data class StayProperties(
 
     /**
      * 서킷을 여닫는 기준. 값은 아직 임시값이고 선택 항목을 마친 뒤 근거를 붙여 정한다 (ADR-0056).
-     * 세는 단위는 호출 한 번이 아니라 **재시도까지 거친 묶음 하나의 최종 결과**다.
+     * 세는 단위는 호출 한 번이 아니라 **재시도까지 거친 chunk 하나의 최종 결과**다.
      */
     data class CircuitBreaker(
-        /** 최근 묶음 중 실패한 비율이 이 퍼센트 이상이면 연다 */
+        /** 최근 chunk 중 실패한 비율이 이 퍼센트 이상이면 연다 */
         val failureRateThreshold: Float,
-        /** 실패율을 계산할 최근 묶음 수 */
+        /** 실패율을 계산할 최근 chunk 수 */
         val slidingWindowSize: Int,
-        /** 이만큼 묶음이 쌓이기 전에는 실패율을 계산하지 않는다. 몇 번 실패로 바로 열리지 않게 한다 */
+        /** 이만큼 chunk 가 쌓이기 전에는 실패율을 계산하지 않는다. 몇 번 실패로 바로 열리지 않게 한다 */
         val minimumNumberOfCalls: Int,
         /** 연 뒤 이 시간 동안은 부르지 않는다 */
         val waitDurationInOpenState: Duration,
-        /** 이 시간이 지난 뒤 시험 삼아 부르는 묶음 수 */
+        /** 이 시간이 지난 뒤 시험 삼아 부르는 chunk 수 */
         val permittedNumberOfCallsInHalfOpenState: Int,
     ) {
         init {
             require(failureRateThreshold > 0 && failureRateThreshold <= 100) { "실패율 기준은 0 초과 100 이하여야 한다" }
-            require(slidingWindowSize >= 1) { "실패율을 계산할 묶음 수가 1 미만이다" }
-            require(minimumNumberOfCalls >= 1) { "최소 묶음 수가 1 미만이다" }
-            require(permittedNumberOfCallsInHalfOpenState >= 1) { "시험 삼아 부를 묶음 수가 1 미만이다" }
+            require(slidingWindowSize >= 1) { "실패율을 계산할 chunk 수가 1 미만이다" }
+            require(minimumNumberOfCalls >= 1) { "최소 chunk 수가 1 미만이다" }
+            require(permittedNumberOfCallsInHalfOpenState >= 1) { "시험 삼아 부를 chunk 수가 1 미만이다" }
             require(waitDurationInOpenState.toMillis() >= 1) { "서킷을 열어 두는 시간이 1ms 미만이다" }
         }
     }
 
     init {
-        // 검색 전체 타임아웃으로 취소된 묶음은 서킷이 실패로 세지 않는다. 호출 타임아웃이 그보다 짧아야
+        // 검색 전체 타임아웃으로 취소된 chunk 는 서킷이 실패로 세지 않는다. 호출 타임아웃이 그보다 짧아야
         // 무응답 공급사가 타임아웃 실패로 세어져 서킷이 열린다 (ADR-0056)
         suppliers.forEach { (id, supplier) ->
             require(supplier.availabilityTimeout < search.timeout) {

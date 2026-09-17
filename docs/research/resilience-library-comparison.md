@@ -40,7 +40,7 @@ checked: 2026-09-17
 
 두 번 알리지 않도록 `AtomicBoolean` 두 개(`successSignaled`, `eventWasEmitted`)를 필드로 든다.
 
-**취소 처리가 우리 코드와 걸린다.** 검색 시간 한계(`.timeout(search.budget)`)를 넘기면 진행 중인 호출을 취소한다.
+**취소 처리가 우리 코드와 걸린다.** 검색 전체 타임아웃(`.timeout(search.timeout)`)을 넘기면 진행 중인 호출을 취소한다.
 코어 모듈만 쓰면 취소 때 허가를 돌려주는 일을 직접 짜야 한다. 돌려주지 않았을 때 어떻게 되는지는 **실행해서 확인하지 않았다.**
 
 ## 3. 호환성 (실행으로 확인)
@@ -69,7 +69,7 @@ checked: 2026-09-17
 
 ## 5. Reactor 쪽이 다른 점
 
-- **넘친 호출을 기다리게 한다.** `flatMap(mapper, n)` 은 n 개를 넘는 묶음을 기다렸다 부른다. resilience4j 의 Reactor bulkhead 연산자는 `tryAcquirePermission` 만 부르고 실패하면 `BulkheadFullException` 을 낸다(javap). 그대로 바꾸면 묶음이 실패로 바뀐다
+- **넘친 호출을 기다리게 한다.** `flatMap(mapper, n)` 은 n 개를 넘는 chunk 를 기다렸다 부른다. resilience4j 의 Reactor bulkhead 연산자는 `tryAcquirePermission` 만 부르고 실패하면 `BulkheadFullException` 을 낸다(javap). 그대로 바꾸면 chunk 가 실패로 바뀐다
 - **다 써도 실패하면 원래 실패를 올린다.** 지금 코드는 `onRetryExhaustedThrow { signal.failure() }` 로 원래 예외를 올린다 ([ADR-0027](../adr/0027-spec-violation-handling-criteria.md) 의 "한 가지 실패"). resilience4j 가 어떻게 올리는지는 확인 못 함
 
 ## 확인하지 못한 것

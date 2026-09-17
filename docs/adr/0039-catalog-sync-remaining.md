@@ -25,9 +25,9 @@ date: 2026-09-16
 
 ### 목록 조회 타임아웃을 어디에 둘지 (9/16)
 
-공급사별 설정 묶음 안에 둔다([ADR-0038](0038-catalog-sync-execution.md) 이 정한 그 묶음이다). 코드에 기본값을 두지 않고, 설정에 값이 없으면 앱이 뜨지 않게 한다.
+공급사별 설정 블록 안에 둔다([ADR-0038](0038-catalog-sync-execution.md) 이 정한 그 설정 블록이다). 코드에 기본값을 두지 않고, 설정에 값이 없으면 앱이 뜨지 않게 한다.
 
-- **이유** — 공급사마다 응답 속도가 다르면 느린 쪽 때문에 빠른 쪽의 실패 감지가 늦어진다. 어댑터가 이미 자기 설정 묶음을 받으므로 타임아웃도 같은 자리에 있다
+- **이유** — 공급사마다 응답 속도가 다르면 느린 쪽 때문에 빠른 쪽의 실패 감지가 늦어진다. 어댑터가 이미 자기 설정 블록을 받으므로 타임아웃도 같은 자리에 있다
 - 공급사가 늘어 같은 값이 반복되면 "공통 기본값 + 공급사별 덮어쓰기"로 옮긴다. 연동 클라이언트들이 쓰는 형태다
   ([Spring Cloud OpenFeign](https://docs.spring.io/spring-cloud-openfeign/reference/spring-cloud-openfeign.html) 의 `default` 이름, [Resilience4j](https://resilience4j.readme.io/docs/getting-started-3) 의 공유 설정)
 
