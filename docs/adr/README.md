@@ -47,3 +47,4 @@
 | [0040](0040-package-structure.md) | 패키지를 기능별로 나누고 의존 방향을 한 줄로 정하기로 결정 | accepted |
 | [0041](0041-validate-in-constructors.md) | 공급사 응답 값의 검증을 담는 객체의 생성자에 두기로 결정 | accepted |
 | [0042](0042-rate-as-tax-included-total.md) | 요금은 세금 포함 기간 전체 총액 하나로 담기로 결정 | accepted |
+| [0043](0043-stay-period-value-object.md) | 숙박 구간을 체크인·체크아웃 두 날짜의 값 객체로 표현하기로 결정 | accepted |
