@@ -77,6 +77,8 @@ Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정
 | `availableRooms` | 요청 기간 전체에 예약할 수 있는 객실 수입니다. **0 이어도 빼지 않고 내보냅니다** ([ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md)) |
 | `rate.totalAmount` | 세금을 포함한 **기간 전체 총액**입니다. 1박 얼마인지는 보여주는 쪽이 총액과 `nights` 로 계산합니다 ([ADR-0042](docs/adr/0042-rate-as-tax-included-total.md)) |
 
+필드마다의 타입과 뜻, 부분 실패와 오류 응답까지는 [docs/api.md](docs/api.md) 에 있습니다.
+
 입력이 조건을 어기면 400 과 그 사유가 나갑니다. 사유 문장은 값을 담는 객체가 거부하며 낸 것을 그대로 씁니다.
 
 ```bash
@@ -210,6 +212,7 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 | 위치 | 내용 |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | 지금 코드의 구조. 패키지와 의존 방향, 두 흐름이 지나는 클래스, 실패가 갈리는 지점 |
+| [docs/api.md](docs/api.md) | 검색 API 의 계약. 요청·응답 필드와 오류 응답 |
 | [docs/adr/](docs/adr/) | 결정과 그 근거. 선택지와 버린 이유까지 |
 | [docs/features/](docs/features/) | 기능이 무엇을 하는가, 아직 정하지 못한 질문 |
 | [docs/research/](docs/research/) | 결정에 쓴 조사 기록. 출처와 조회일 |
