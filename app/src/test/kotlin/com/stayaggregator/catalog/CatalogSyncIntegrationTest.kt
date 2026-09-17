@@ -117,6 +117,17 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
+    fun `목록 필드가 없는 응답은 기존 표시를 건드리지 않는다`() {
+        sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
+
+        // 정규화가 공급사 실패로 던지고, 동기화는 그 공급사만 건너뛴다 (ADR-0041)
+        syncWith(FakeCatalogAdapter("a", Mono.just(FetchedCatalog("a", null))))
+
+        assertThat(hotelCodes()).containsExactly("A-1")
+        assertThat(missingSince("A-1")).isNull()
+    }
+
+    @Test
     fun `숙소는 남고 객실 타입만 빠지면 그 객실 타입에만 사라진 시각이 찍힌다`() {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2), roomType("STD", "스탠다드", 2))))
 

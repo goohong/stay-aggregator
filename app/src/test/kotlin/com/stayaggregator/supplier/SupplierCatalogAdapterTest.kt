@@ -106,6 +106,16 @@ class SupplierCatalogAdapterTest {
     }
 
     @Test
+    fun `공급사 B 도 목록 필드가 없으면 없는 대로 넘긴다`() {
+        // 결과 코드는 성공인데 껍데기 안쪽이 없는 응답이다. B 가 빈 목록이 되는 경우가 이것이다 (ADR-0041)
+        respond("/b/api/properties", status = 200, body = """{"resultCode":"0000","resultMessage":"OK"}""")
+
+        val fetched = adapterB().fetchCatalog().block()!!
+
+        assertThat(fetched.hotels).isNull()
+    }
+
+    @Test
     fun `숙소 안의 객실 타입 목록도 없는 대로 넘긴다`() {
         respond("/a/v1/hotels", status = 200, body = """{"items":[{"hotelCode":"A-1","hotelName":"강변 호텔"}]}""")
 
