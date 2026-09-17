@@ -53,3 +53,4 @@
 | [0046](0046-supplier-status-in-search-response.md) | 검색 응답에 공급사 상태와 스펙 때문에 뺀 건수를 싣기로 결정 | accepted |
 | [0047](0047-request-types-in-supplier-package.md) | 재고·요금 조회의 요청 형태를 supplier 패키지에 두기로 결정 | accepted |
 | [0048](0048-guest-count-invariants.md) | 검색 인원의 불변식은 각각 0 이상, 합이 1 이상까지만 두기로 결정 | accepted |
+| [0049](0049-supplier-id-on-adapter-only.md) | 공급사 식별자는 어댑터만 갖고 응답 공통 형태에는 싣지 않기로 결정 | accepted |
