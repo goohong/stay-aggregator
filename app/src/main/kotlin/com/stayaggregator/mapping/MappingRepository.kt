@@ -38,6 +38,58 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
         )
     }
 
+    /**
+     * 한 공급사의 검색 대상 매핑을 전부 읽는다. 숙소와 객실 타입 모두 `missing_since` 가 비어 있는 것만이다 (ADR-0037).
+     *
+     * 검색 한 건이 호출 전에 한 번 읽어 두고, 응답이 오면 메모리에서 찾는다. 응답 항목마다 다시 묻지 않는다.
+     * 객실 타입이 하나도 남지 않은 숙소는 돌려주지 않는다. 물어봐도 내놓을 것이 없다.
+     */
+    fun findActiveHotels(supplierId: String): List<MappedHotel> =
+        jdbcClient.sql(
+            """
+            select h.internal_hotel_id, h.supplier_hotel_code, h.hotel_name,
+                   r.internal_room_type_id, r.room_type_code, r.room_type_name, r.max_occupancy
+              from hotel_mapping h
+              join room_type_mapping r on r.internal_hotel_id = h.internal_hotel_id
+             where h.supplier = :supplier
+               and h.missing_since is null
+               and r.missing_since is null
+             order by h.supplier_hotel_code, r.room_type_code
+            """.trimIndent(),
+        )
+            .param("supplier", supplierId)
+            .query { rs, _ ->
+                MappedRow(
+                    hotelId = rs.getObject("internal_hotel_id", UUID::class.java),
+                    hotelCode = rs.getString("supplier_hotel_code"),
+                    hotelName = rs.getString("hotel_name"),
+                    roomType = MappedRoomType(
+                        internalRoomTypeId = rs.getObject("internal_room_type_id", UUID::class.java),
+                        roomTypeCode = rs.getString("room_type_code"),
+                        name = rs.getString("room_type_name"),
+                        maxOccupancy = rs.getInt("max_occupancy"),
+                    ),
+                )
+            }
+            .list()
+            .groupBy { it.hotelId }
+            .map { (hotelId, rows) ->
+                MappedHotel(
+                    internalHotelId = hotelId,
+                    supplierHotelCode = rows.first().hotelCode,
+                    name = rows.first().hotelName,
+                    roomTypes = rows.map { it.roomType },
+                )
+            }
+
+    /** 조인 결과 한 줄. 숙소별로 묶기 전의 모양이라 밖으로 나가지 않는다 */
+    private data class MappedRow(
+        val hotelId: UUID,
+        val hotelCode: String,
+        val hotelName: String,
+        val roomType: MappedRoomType,
+    )
+
     private fun markAllMissing(supplierId: String) {
         jdbcClient.sql(
             """

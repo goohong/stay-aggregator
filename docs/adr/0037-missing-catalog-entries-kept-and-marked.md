@@ -98,4 +98,6 @@ date: 2026-09-16
 숙소가 빠지면 그 숙소의 객실 타입도 표시되고, 돌아오면 같은 내부 식별자로 풀리는지
   → `CatalogSyncIntegrationTest.숙소가 빠지면 그 숙소의 객실 타입도 표시되고 다시 나타나면 같은 식별자로 풀린다`
 
-표시가 남은 행이 검색 대상에서 빠지는지는 검색을 구현할 때 확인하고 여기에 이름을 적는다.
+표시가 남은 행이 검색 대상에서 빠지는지
+  → `MappingReadIntegrationTest.missing_since 가 찍힌 숙소는 읽지 않는다`
+  → `MappingReadIntegrationTest.missing_since 가 찍힌 객실 타입만 빠지고 숙소는 남는다`
