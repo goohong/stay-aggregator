@@ -140,7 +140,7 @@ class AvailabilityNormalizer {
         }
     }
 
-    /** 공급사가 준 요금 모양에 따라 세금 포함 총액 하나를 만든다 (ADR-0042, ADR-0027 의 요금 표) */
+    /** 공급사가 준 요금 형식에 따라 세금 포함 총액 하나를 만든다 (ADR-0042, ADR-0027 의 요금 표) */
     private fun rate(item: FetchedAvailabilityItem, nights: List<LocalDate>): Rate {
         val breakfast = step(ExcludedValue.SALE_CONDITIONS) {
             requireNotNull(item.breakfastIncluded) { "조식 포함 여부가 없다" }

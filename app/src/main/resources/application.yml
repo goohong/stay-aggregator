@@ -14,7 +14,7 @@ management:
         include: health,metrics
 
 stay:
-  # 공급사마다 주소·인증 키를 설정 블록 하나에 두고 (ADR-0038), 타임아웃도 같은 자리에 둔다 (ADR-0039).
+  # 공급사마다 주소·인증 키를 설정 블록 하나에 두고 (ADR-0038), 타임아웃도 같은 설정 블록에 둔다 (ADR-0039).
   # 저장소에는 Mock 을 가리키는 값만 둔다. 실제 값은 환경 변수로 덮어쓴다.
   # 예: STAY_SUPPLIERS_A_BASEURL, STAY_SUPPLIERS_A_APIKEY
   suppliers:
@@ -22,9 +22,9 @@ stay:
       base-url: http://localhost:9090
       api-key: mock
       timeout: PT30S
-      # 재고·요금 호출 하나의 한계. 아직 측정 전 임시값이다. Mock 지연 모드로 재서 정하고 ADR 에 근거를 적는다 (ADR-0045)
+      # 재고·요금 호출 타임아웃. 아직 측정 전 임시값이다. Mock 지연 모드로 재서 정하고 ADR 에 근거를 적는다 (ADR-0045)
       availability-timeout: PT5S
-      # 연결 수립만 기다리는 한계. AWS SDK 의 standard 모드 기본값을 따랐다 (ADR-0066)
+      # 연결 타임아웃. 연결 수립에만 건다. AWS SDK 의 standard 모드 기본값을 따랐다 (ADR-0066)
       connect-timeout: PT3.1S
     b:
       base-url: http://localhost:9090

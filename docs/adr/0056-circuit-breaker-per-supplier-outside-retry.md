@@ -11,12 +11,12 @@ date: 2026-09-17
 
 공급사가 계속 장애 상태이면 지금은 검색마다 그 공급사를 호출하고 기다린다. 무응답이면 검색 한 건이 5초씩 늘어난다 ([검색 지연 측정](../research/search-latency.md)).
 반복해서 실패하는 공급사를 한동안 호출하지 않는 것이 서킷 브레이커이고, 요구사항의 선택 항목이다.
-[ADR-0045](0045-search-concurrency-and-budget.md) 가 이것을 재시도와 같은 자리에서 보기로 넘겼다.
+[ADR-0045](0045-search-concurrency-and-budget.md) 가 이것을 재시도와 함께 검토하기로 넘겼다.
 
 서킷은 Reactor 에 없다. 재시도·타임아웃·동시 실행 수 제한은 Reactor 연산자로 이미 했다 ([ADR-0051](0051-retry-transient-supplier-failures.md), ADR-0045).
 라이브러리는 resilience4j 를 쓴다. 어느 모듈을 쓸지는 이 ADR 이 아니라 따로 정한다.
 
-재시도가 이미 있어서, 서킷이 무엇을 셀지가 갈린다.
+재시도가 이미 있어서, 서킷이 무엇을 셀지 선택지가 나뉜다.
 
 ## Options
 

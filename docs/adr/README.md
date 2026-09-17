@@ -18,7 +18,7 @@
 | [0011](0011-internal-id-random-uuid.md) | 내부 식별자를 무작위 UUID 로 발급해 저장 | accepted |
 | [0012](0012-static-info-from-catalog.md) | 응답의 숙소·객실 타입 정적 정보는 숙소 목록 기준으로 저장해 사용 | accepted |
 | [0013](0013-catalog-sync-on-startup-and-interval.md) | 숙소 목록은 앱 기동 시와 일정 주기마다 받아오기로 결정 | accepted |
-| [0014](0014-detect-drift-in-search-correct-in-sync.md) | 목록 어긋남은 검색에서 감지하고 교정은 동기화 주기에 맡기기로 결정 | accepted |
+| [0014](0014-detect-drift-in-search-correct-in-sync.md) | 목록 불일치(drift)는 검색에서 감지하고 교정은 동기화 주기에 맡기기로 결정 | accepted |
 | [0015](0015-exclude-unmapped-room-types.md) | 매핑에 없는 객실 타입은 응답에서 빼고 뺀 사실을 남기기로 결정 | accepted |
 | [0016](0016-catalog-sync-interval-default-daily.md) | 숙소 목록 갱신 주기는 기본 하루 한 번으로 두고 설정으로 바꿀 수 있게 결정 | accepted |
 | [0017](0017-mapping-in-server-rdb.md) | 매핑은 서버형 관계형 DB 에 저장하기로 결정 | accepted |
@@ -35,7 +35,7 @@
 | [0028](0028-implement-decided-units-first.md) | 결정이 끝난 구현 단위부터 구현하고 남은 설계를 이어가기로 결정 | accepted (Verification 짝 규칙은 superseded by [0029](0029-verification-sweep-instead-of-pairing.md)) |
 | [0029](0029-verification-sweep-instead-of-pairing.md) | ADR Verification 은 커밋마다 맞추지 않고 모아서 점검하기로 결정 | accepted |
 | [0030](0030-supplier-response-dto-receives-without-validation.md) | 공급사 응답 DTO 는 스펙 필드를 모두 받기만 하고 검증은 내부 로직에 두기로 결정 | accepted |
-| [0031](0031-supplier-adapter-boundaries.md) | 공급사 어댑터를 기능별 경계로 나누고 공급사마다 한 클래스로 구현하기로 결정 | accepted |
+| [0031](0031-supplier-adapter-boundaries.md) | 공급사 어댑터를 기능별 인터페이스로 나누고 공급사마다 한 클래스로 구현하기로 결정 | accepted |
 | [0032](0032-mapping-persistence-with-jdbcclient.md) | 매핑 저장은 Spring JDBC 의 JdbcClient 로 하기로 결정 | accepted |
 | [0033](0033-flyway-for-schema-migration.md) | 스키마 변경 도구로 Flyway 채택 | accepted |
 | [0034](0034-internal-id-as-uuid-column.md) | 내부 식별자를 uuid 컬럼 타입으로 저장하기로 결정 | accepted |

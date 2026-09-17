@@ -153,7 +153,7 @@ class AvailabilityNormalizerTest {
         assertThat(result.outOfSpecCount).isEqualTo(1)
     }
 
-    // ── 이름 어긋남 (ADR-0062) ──
+    // ── 이름 불일치 (ADR-0062) ──
 
     @Test
     fun `재고 응답의 이름이 목록과 다르면 항목은 내보내고 경고를 남긴다`() {

@@ -7,12 +7,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
 /**
- * 지표의 결과 태그가 결정한 다섯 값으로 갈리는지 본다 (ADR-0060).
+ * 지표의 결과 태그가 결정한 다섯 값으로 구분되는지 본다 (ADR-0060).
  */
 class SupplierCallMetricsTest {
 
     @Test
-    fun `실패 종류마다 결과 태그가 갈린다`() {
+    fun `실패 종류마다 결과 태그가 다르다`() {
         assertThat(SupplierCallMetrics.outcomeOf(null)).isEqualTo(Outcome.SUCCESS)
         assertThat(SupplierCallMetrics.outcomeOf(SupplierResponseException("느림", timedOut = true))).isEqualTo(Outcome.TIMEOUT)
         assertThat(SupplierCallMetrics.outcomeOf(SupplierResponseException("503"))).isEqualTo(Outcome.SUPPLIER_FAILURE)

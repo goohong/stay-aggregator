@@ -11,7 +11,7 @@ date: 2026-09-16
 
 매핑은 PostgreSQL 에 저장하고([ADR-0018](0018-postgresql-for-mapping.md)) 저장·조회는 `JdbcClient` 로 한다([ADR-0032](0032-mapping-persistence-with-jdbcclient.md)).
 테이블을 만들고 이후 바꾸는 일을 무엇으로 할지 정해야 한다. 지금 테이블은 매핑 두 종류뿐이지만, 병합 그룹([ADR-0010](0010-keep-internal-id-on-merge.md))이나
-어긋남 기록(Q17) 같은 것이 붙으면 스키마가 늘어난다.
+목록 불일치 기록(Q17) 같은 것이 붙으면 스키마가 늘어난다.
 
 확인한 사실 (모두 [Spring Boot, Database Initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html) 과 Boot 4.1.1 의 [의존성 목록](https://github.com/spring-projects/spring-boot/blob/v4.1.1/platform/spring-boot-dependencies/build.gradle))
 
@@ -44,7 +44,7 @@ SQL 을 그대로 쓰는 쪽이 `JdbcClient` 선택과 같은 결이다.
 
 **얻는 것**
 - 스키마 변경 이력이 SQL 파일로 남고, 기동할 때 적용된다
-- ADR-0018 에서 PostgreSQL 을 고른 이유(실패한 스키마 변경이 트랜잭션으로 되돌아감)를 실제로 쓰는 자리가 생긴다
+- ADR-0018 에서 PostgreSQL 을 고른 이유(실패한 스키마 변경이 트랜잭션으로 되돌아감)를 실제로 쓰는 곳이 생긴다
 
 **잃는 것**
 - 도구가 하나 늘고, 테스트에서 스키마를 준비하는 방식도 여기에 맞춰야 한다
@@ -56,7 +56,7 @@ SQL 을 그대로 쓰는 쪽이 `JdbcClient` 선택과 같은 결이다.
 Flyway 스타터와 PostgreSQL 전용 모듈이 함께 있는지
   → `app/build.gradle.kts` 의 `spring-boot-starter-flyway` 와 `org.flywaydb:flyway-database-postgresql`
 
-스크립트가 정한 자리에 정한 이름으로 있는지
+스크립트가 정한 위치에 정한 이름으로 있는지
   → `app/src/main/resources/db/migration/V1__mapping.sql`
 
 앱을 띄웠을 때 테이블이 만들어지는지

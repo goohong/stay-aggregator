@@ -67,7 +67,7 @@ class QuarantineRecorder(
     }
 
     companion object {
-        /** 내려갈 때 쓰던 기록을 기다리는 한계. 넘으면 버린다 */
+        /** 종료할 때 쓰던 기록을 기다리는 타임아웃. 넘으면 버린다 */
         private val SHUTDOWN_WAIT: Duration = Duration.ofSeconds(2)
     }
 }

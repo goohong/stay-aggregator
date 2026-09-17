@@ -15,10 +15,10 @@ import java.time.Duration
 import java.time.LocalDate
 
 /**
- * 재고·요금 경계의 어댑터가 공급사마다 다른 요금 모양을 검증 없이 그대로 넘기는지,
+ * 재고·요금 인터페이스의 어댑터가 공급사마다 다른 요금 형식을 검증 없이 그대로 넘기는지,
  * 요청 파라미터가 스펙대로 나가는지 확인한다 (ADR-0031, ADR-0049).
  *
- * 실패 표현의 통일은 [SupplierCatalogAdapterTest] 가 목록 경계로 확인했고, 두 경계가 같은 실패 변환([asSupplierFailure])을 쓰므로 여기서는 B 의 결과 코드 하나만 다시 본다.
+ * 실패 표현의 통일은 [SupplierCatalogAdapterTest] 가 목록 인터페이스로 확인했고, 두 인터페이스가 같은 실패 변환([asSupplierFailure])을 쓰므로 여기서는 B 의 결과 코드 하나만 다시 본다.
  */
 class SupplierAvailabilityAdapterTest {
 
@@ -45,7 +45,7 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
-    fun `공급사 A 의 날짜별 요금과 재고를 갈라서 그대로 넘긴다`() {
+    fun `공급사 A 의 날짜별 요금과 재고를 분리해 그대로 넘긴다`() {
         respond(
             "/a/v1/availability",
             status = 200,
@@ -123,7 +123,7 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
-    fun `공급사 B 가 본문 결과 코드로 알린 실패는 목록 경계와 같은 오류가 된다`() {
+    fun `공급사 B 가 본문 결과 코드로 알린 실패는 목록 인터페이스와 같은 오류가 된다`() {
         respond("/b/api/search", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
 
         assertThatThrownBy { adapterB().fetchAvailability(request).block() }
@@ -209,7 +209,7 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
-    fun `공급사 B 의 결과 코드도 갈린다`() {
+    fun `공급사 B 의 결과 코드도 재시도 가능 여부가 구분된다`() {
         respond("/b/api/search", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
         assertThat(transientOf { adapterB().fetchAvailability(request).block() }).isTrue()
 

@@ -13,7 +13,7 @@ import java.util.concurrent.TimeoutException
  * `onErrorMap` 은 위에서 난 오류만 보므로 그것은 이 함수를 지나간다.
  *
  * "이미 우리 예외면 바꾸지 않는다" 는 조건은 두지 않는다. 위에서 그 예외가 올 경로가 없어 실행되지 않는 검사가 되고,
- * 조건이 없으면 자리를 뒤로 잘못 옮겼을 때 메시지가 겹쳐 보여 그 실수가 드러난다.
+ * 조건이 없으면 이 함수의 위치를 뒤로 잘못 옮겼을 때 메시지가 겹쳐 보여 그 실수가 드러난다.
  *
  * 이것이 없으면 실패를 HTTP 로 알리는 공급사와 본문으로 알리는 공급사가 consumer 에게 다른 예외로 보인다.
  *
@@ -22,7 +22,7 @@ import java.util.concurrent.TimeoutException
  *
  * 원인 클래스 이름을 메시지에 넣는다. 예외에 따라 `message` 가 비어 있고, 로그에서 실패 종류를 가릴 방법이 이것뿐이다.
  *
- * 여기서 [SupplierResponseException.transient] 도 정한다. HTTP 상태와 연결·시간 초과는 공급사마다 다르지 않아 공통인 이 자리에서 본다.
+ * 여기서 [SupplierResponseException.transient] 도 정한다. HTTP 상태와 연결·시간 초과는 공급사마다 다르지 않아 공통 함수인 여기서 본다.
  * 본문 결과 코드는 체계가 공급사마다 달라 어댑터가 본다 (ADR-0051).
  */
 fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =

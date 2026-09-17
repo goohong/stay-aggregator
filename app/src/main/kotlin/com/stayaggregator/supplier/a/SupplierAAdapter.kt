@@ -89,7 +89,7 @@ class SupplierAAdapter(properties: StayProperties) : SupplierAdapter {
                     roomTypeName = item.roomTypeName,
                     breakfastIncluded = item.breakfastIncluded,
                     currency = item.currency,
-                    // 요금과 재고가 한 목록에 섞여 오므로 둘로 갈라 넘긴다
+                    // 요금과 재고가 한 목록에 섞여 오므로 둘로 분리해 넘긴다
                     pricing = FetchedPricing.Daily(
                         rates = item.dailyRates?.map { day ->
                             FetchedDailyRate(date = day.date, nightlyRate = day.nightlyRate, taxAmount = day.taxAmount)

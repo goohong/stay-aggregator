@@ -6,7 +6,7 @@ import java.time.LocalDate
 /**
  * 공급사 A 의 재고·요금 응답. 스펙에 있는 필드를 모두 받는다 (ADR-0030).
  *
- * 항목 하나가 숙소 하나의 객실 타입 하나다. 요금은 날짜마다 1박 금액과 세금액이 따로 오고 재고도 같은 자리에 온다.
+ * 항목 하나가 숙소 하나의 객실 타입 하나다. 요금은 날짜마다 1박 금액과 세금액이 따로 오고 재고도 같은 항목에 온다.
  * 규칙은 [SupplierAHotelsResponse] 와 같다. 모르는 필드는 무시하고, 값은 모두 null 을 허용하며, 유효한지는 정규화 단계가 검증한다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

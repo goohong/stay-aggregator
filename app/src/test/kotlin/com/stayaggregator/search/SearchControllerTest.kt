@@ -13,9 +13,9 @@ import java.time.LocalDate
 import java.util.UUID
 
 /**
- * 검색 API 의 계약을 본다. 응답 JSON 의 모양, 부분 실패의 표시, 잘못된 입력의 400.
+ * 검색 API 의 계약을 본다. 응답 JSON 의 구조, 부분 실패의 표시, 잘못된 입력의 400.
  *
- * 검색 흐름 자체는 [SearchServiceIntegrationTest] 가 보고, 여기서는 서비스를 가짜로 두고 HTTP 경계만 본다.
+ * 검색 흐름 자체는 [SearchServiceIntegrationTest] 가 보고, 여기서는 서비스를 가짜로 두고 HTTP 계층만 본다.
  */
 @WebMvcTest(SearchController::class)
 class SearchControllerTest {

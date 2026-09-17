@@ -52,9 +52,9 @@ date: 2026-09-16
 **이유**
 
 - 공급사 실패 예외와 어댑터 인터페이스는 목록과 재고 양쪽이 쓴다. consumer 쪽에 두면 반대편 consumer 가 그 패키지를 보게 되고,
-  [ADR-0031](0031-supplier-adapter-boundaries.md) 이 정한 "두 경계를 묶는 인터페이스"는 두 consumer 패키지를 모두 보게 된다. `supplier` 에 모으면 그 일이 없다
+  [ADR-0031](0031-supplier-adapter-boundaries.md) 이 정한 "두 인터페이스를 묶는 인터페이스"는 두 consumer 패키지를 모두 보게 된다. `supplier` 에 모으면 그 일이 없다
 - 매핑 테이블은 동기화가 쓰고 검색이 읽는 유일한 공유물이다. 저장소가 `catalog` 에 있으면 검색이 `catalog` 를 보게 된다.
-  `missing_since` 를 표시하고([ADR-0037](0037-missing-catalog-entries-kept-and-marked.md)) 그 표시로 거르는 일이 한 패키지 안에 있어야 규칙이 갈라지지 않는다
+  `missing_since` 를 표시하고([ADR-0037](0037-missing-catalog-entries-kept-and-marked.md)) 그 표시로 거르는 일이 한 패키지 안에 있어야 규칙이 분산되지 않는다
 - `config` 패키지는 만들지 않는다. 공급사 설정은 `supplier` 것이고, `stay.catalog.sync.*` 는 `@Scheduled` 의 문자열로 읽어 클래스가 없다
 
 **규칙을 지키는 방법** — Kotlin 의 `internal` 은 모듈 단위라 컴파일러가 막지 못한다. 검토할 때 import 를 본다.
@@ -79,7 +79,7 @@ grep -rn "import com.stayaggregator.catalog" app/src/main/kotlin/com/stayaggrega
 
 **넘기는 것**
 - 공급사별 `WebClient` 를 한 곳에서 만들지는 Q23(동시 호출 수·풀 설정)과 함께 정한다. 지금은 어댑터가 각자 만든다
-- 공급사 클래스 이름은 재고·요금 경계를 함께 구현할 때 `SupplierAAdapter` 로 바꾼다. 지금 바꾸면 이름이 사실과 달라진다
+- 공급사 클래스 이름은 재고·요금 인터페이스를 함께 구현할 때 `SupplierAAdapter` 로 바꾼다. 지금 바꾸면 이름이 사실과 달라진다
 
 ## Discussion
 

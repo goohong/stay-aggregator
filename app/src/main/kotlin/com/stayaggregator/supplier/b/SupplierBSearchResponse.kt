@@ -6,7 +6,7 @@ import java.time.LocalDate
 /**
  * 공급사 B 의 재고·요금 응답. 스펙에 있는 필드를 모두 받는다 (ADR-0030).
  *
- * 껍데기는 [SupplierBPropertiesResponse] 와 같다. 장애여도 HTTP 200 이고 `resultCode` 로만 실패를 알린다.
+ * 공통 응답 구조(envelope)는 [SupplierBPropertiesResponse] 와 같다. 장애여도 HTTP 200 이고 `resultCode` 로만 실패를 알린다.
  * 항목 하나가 숙소 하나의 객실 타입 하나다. 요금은 기간 총액 하나이고 세금액은 없이 포함 여부만 온다. 재고는 요금과 분리된 목록이다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
