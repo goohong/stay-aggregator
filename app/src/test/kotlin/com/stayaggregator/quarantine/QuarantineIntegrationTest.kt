@@ -64,6 +64,14 @@ class QuarantineIntegrationTest {
     }
 
     @Test
+    fun `같은 값이라도 제외와 경고는 다른 행이다`() {
+        repository.record(entry(value = ExcludedValue.HOTEL_NAME), null)
+        repository.record(entry(value = ExcludedValue.HOTEL_NAME).copy(kind = RecordKind.WARNING), null)
+
+        assertThat(rowCount()).isEqualTo(2)
+    }
+
+    @Test
     fun `코드가 비어 있는 문제끼리도 한 행으로 묶인다`() {
         repository.record(entry(hotelCode = null, value = ExcludedValue.HOTEL_CODE), null)
         repository.record(entry(hotelCode = null, value = ExcludedValue.HOTEL_CODE), null)

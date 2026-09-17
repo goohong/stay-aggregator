@@ -17,7 +17,7 @@ data class SupplierAAvailabilityResponse(
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class Item(
         val hotelCode: String?,
-        /** 받기만 하고 쓰지 않는다. 이름은 매핑 저장본에서 쓴다 (ADR-0012) */
+        /** 응답에는 매핑 저장본의 이름을 쓴다 (ADR-0012). 이것은 목록과 비교하는 데만 쓴다 (ADR-0062) */
         val hotelName: String?,
         val roomTypeCode: String?,
         /** 위와 같다 */

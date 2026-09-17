@@ -54,4 +54,11 @@ date: 2026-09-17
 
 ## Verification
 
-구현할 때 확인하고 테스트 이름을 여기에 적는다.
+이름이 다르면 항목은 내보내고 경고를 남기는지, 응답 건수에 넣지 않는지
+  → `AvailabilityNormalizerTest.재고 응답의 이름이 목록과 다르면 항목은 내보내고 경고를 남긴다`
+
+앞뒤 공백만 무시하고 표기 차이는 경고하는지
+  → `AvailabilityNormalizerTest.이름이 앞뒤 공백만 다르면 경고하지 않고 표기가 다르면 경고한다`
+
+같은 값이라도 제외와 경고가 다른 문제로 묶이는지
+  → `QuarantineIntegrationTest.같은 값이라도 제외와 경고는 다른 행이다`

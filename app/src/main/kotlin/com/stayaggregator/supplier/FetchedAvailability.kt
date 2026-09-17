@@ -17,10 +17,14 @@ data class FetchedAvailability(
     val items: List<FetchedAvailabilityItem>?,
 )
 
-/** 항목 하나는 숙소 하나의 객실 타입 하나다. 이름과 최대 수용 인원도 응답에 오지만 받지 않는다. 그 값은 매핑 저장본에서 쓴다 (ADR-0012) */
+/** 항목 하나는 숙소 하나의 객실 타입 하나다. 응답의 이름과 최대 수용 인원은 매핑 저장본 것을 쓴다 (ADR-0012). 이름은 목록과 비교하려고만 받는다 (ADR-0062) */
 data class FetchedAvailabilityItem(
     val hotelCode: String?,
     val roomTypeCode: String?,
+    /** 응답에는 쓰지 않는다(ADR-0012). 목록 이름과 달라졌는지 비교하는 데만 쓴다 (ADR-0062) */
+    val hotelName: String? = null,
+    /** 위와 같다 */
+    val roomTypeName: String? = null,
     val breakfastIncluded: Boolean?,
     val currency: String?,
     val pricing: FetchedPricing?,

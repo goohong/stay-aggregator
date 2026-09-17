@@ -152,6 +152,31 @@ class AvailabilityNormalizerTest {
         assertThat(result.outOfSpecCount).isEqualTo(1)
     }
 
+    // ── 이름 어긋남 (ADR-0062) ──
+
+    @Test
+    fun `재고 응답의 이름이 목록과 다르면 항목은 내보내고 경고를 남긴다`() {
+        val item = itemA(rates = fullRates(), inventory = fullInventory()).copy(hotelName = "강변 호텔 본관", roomTypeName = "디럭스")
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.available).hasSize(1)
+        assertThat(result.outOfSpecCount).isZero()
+        assertThat(result.warnings).singleElement().satisfies({ w ->
+            assertThat(w.value).isEqualTo(com.stayaggregator.quarantine.ExcludedValue.HOTEL_NAME)
+            assertThat(w.reason).contains("강변 호텔 본관")
+        })
+    }
+
+    @Test
+    fun `이름이 앞뒤 공백만 다르면 경고하지 않고 표기가 다르면 경고한다`() {
+        val spaced = itemA(rates = fullRates(), inventory = fullInventory()).copy(hotelName = " 강변 호텔 ", roomTypeName = "디럭스 ")
+        val suffixed = spaced.copy(roomTypeName = "디럭스 룸")
+
+        assertThat(normalizer.normalize(FetchedAvailability(listOf(spaced)), mapped, threeNights, requestedCodes).warnings).isEmpty()
+        assertThat(normalizer.normalize(FetchedAvailability(listOf(suffixed)), mapped, threeNights, requestedCodes).warnings).hasSize(1)
+    }
+
     // ── 재고 표 (ADR-0027) ──
 
     @Test

@@ -25,7 +25,7 @@ data class SupplierBSearchResponse(
     @JsonIgnoreProperties(ignoreUnknown = true)
     data class Item(
         val propertyId: String?,
-        /** 받기만 하고 쓰지 않는다. 이름은 매핑 저장본에서 쓴다 (ADR-0012) */
+        /** 응답에는 매핑 저장본의 이름을 쓴다 (ADR-0012). 이것은 목록과 비교하는 데만 쓴다 (ADR-0062) */
         val propertyName: String?,
         /** 이름과 달리 객실 타입이다 */
         val roomId: String?,

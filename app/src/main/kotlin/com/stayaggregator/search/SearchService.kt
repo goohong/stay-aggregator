@@ -4,6 +4,7 @@ import com.stayaggregator.mapping.MappedHotel
 import com.stayaggregator.mapping.MappingRepository
 import com.stayaggregator.quarantine.QuarantineEntry
 import com.stayaggregator.quarantine.QuarantineRecorder
+import com.stayaggregator.quarantine.RecordKind
 import com.stayaggregator.supplier.AvailabilityAdapter
 import com.stayaggregator.supplier.AvailabilityRequest
 import com.stayaggregator.supplier.GuestCount
@@ -130,6 +131,10 @@ class SearchService(
         val failedChunks = failed.size
         val normalized = succeeded.map { it.result }
         val excluded = normalized.flatMap { it.excluded }
+        val warnings = normalized.flatMap { it.warnings }
+        if (warnings.isNotEmpty()) {
+            quarantine.record(warnings.map { QuarantineEntry(supplierId, it.hotelCode, it.roomTypeCode, it.value, it.reason, it.source, RecordKind.WARNING) })
+        }
         if (excluded.isNotEmpty()) {
             log.info("검색 제외 supplier={} {}", supplierId, excluded.joinToString { "${it.hotelCode}/${it.roomTypeCode} ${it.kind}: ${it.reason}" })
             // 응답을 기다리게 하지 않고 뒤에서 쓴다 (ADR-0055)

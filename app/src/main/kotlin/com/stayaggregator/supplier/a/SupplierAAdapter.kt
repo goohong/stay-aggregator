@@ -87,6 +87,8 @@ class SupplierAAdapter(properties: StayProperties) : SupplierAdapter {
                 FetchedAvailabilityItem(
                     hotelCode = item.hotelCode,
                     roomTypeCode = item.roomTypeCode,
+                    hotelName = item.hotelName,
+                    roomTypeName = item.roomTypeName,
                     breakfastIncluded = item.breakfastIncluded,
                     currency = item.currency,
                     // 요금과 재고가 한 목록에 섞여 오므로 둘로 갈라 넘긴다

@@ -89,6 +89,8 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
                 FetchedAvailabilityItem(
                     hotelCode = item.propertyId,
                     roomTypeCode = item.roomId,
+                    hotelName = item.propertyName,
+                    roomTypeName = item.roomName,
                     breakfastIncluded = item.breakfastIncluded,
                     currency = item.currency,
                     pricing = FetchedPricing.Total(totalPrice = item.totalPrice, taxIncluded = item.taxIncluded),

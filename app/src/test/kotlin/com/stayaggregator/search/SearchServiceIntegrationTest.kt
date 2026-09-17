@@ -363,15 +363,15 @@ class SearchServiceIntegrationTest {
 
     private fun itemA(hotelCode: String, roomTypeCode: String, breakfast: Boolean) =
         FetchedAvailabilityItem(
-            hotelCode, roomTypeCode, breakfast, "KRW",
-            FetchedPricing.Daily(listOf(FetchedDailyRate(oct5, 110_000, 11_000), FetchedDailyRate(oct6, 140_000, 14_000), FetchedDailyRate(oct7, 110_000, 11_000))),
-            listOf(FetchedDailyInventory(oct5, 3), FetchedDailyInventory(oct6, 1), FetchedDailyInventory(oct7, 5)),
+            hotelCode, roomTypeCode, breakfastIncluded = breakfast, currency = "KRW",
+            pricing = FetchedPricing.Daily(listOf(FetchedDailyRate(oct5, 110_000, 11_000), FetchedDailyRate(oct6, 140_000, 14_000), FetchedDailyRate(oct7, 110_000, 11_000))),
+            dailyInventory = listOf(FetchedDailyInventory(oct5, 3), FetchedDailyInventory(oct6, 1), FetchedDailyInventory(oct7, 5)),
         )
 
     private fun itemB(hotelCode: String, roomTypeCode: String, total: Long, breakfast: Boolean) =
         FetchedAvailabilityItem(
-            hotelCode, roomTypeCode, breakfast, "KRW",
-            FetchedPricing.Total(total, taxIncluded = true),
-            listOf(FetchedDailyInventory(oct5, 4), FetchedDailyInventory(oct6, 2), FetchedDailyInventory(oct7, 6)),
+            hotelCode, roomTypeCode, breakfastIncluded = breakfast, currency = "KRW",
+            pricing = FetchedPricing.Total(total, taxIncluded = true),
+            dailyInventory = listOf(FetchedDailyInventory(oct5, 4), FetchedDailyInventory(oct6, 2), FetchedDailyInventory(oct7, 6)),
         )
 }

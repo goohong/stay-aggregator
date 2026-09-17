@@ -48,6 +48,7 @@ class AvailabilityNormalizer {
 
         val available = mutableListOf<AvailableRoomType>()
         val excluded = mutableListOf<ExcludedRoomType>()
+        val warnings = mutableListOf<NameMismatch>()
 
         // 같은 숙소·객실 타입이 두 번 오면 날짜 중복과 같은 규칙이다. 같은 값이면 하나만 쓰고, 다르면 어느 쪽인지 정할 수 없어 뺀다 (ADR-0027)
         val distinctItems = items.groupBy { it.hotelCode to it.roomTypeCode }.flatMap { (key, same) ->
@@ -82,6 +83,7 @@ class AvailabilityNormalizer {
                 // 단계마다 문제가 된 값을 붙인다. 어느 단계에서 거부됐는지가 곧 무엇이 문제인지다 (ADR-0054)
                 val rooms = step(ExcludedValue.INVENTORY) { availableRooms(item.dailyInventory, nights) }
                 val rate = rate(item, nights)
+                warnings += nameMismatches(item, hotel, roomType)
                 available += step(ExcludedValue.INVENTORY) {
                     AvailableRoomType(
                         internalHotelId = hotel.internalHotelId,
@@ -97,8 +99,25 @@ class AvailabilityNormalizer {
                 excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, e.value, e.reason, item)
             }
         }
-        return NormalizedAvailability(available, excluded)
+        return NormalizedAvailability(available, excluded, warnings)
     }
+
+    /**
+     * 재고 응답의 이름이 목록 이름과 다른지 본다. 다르면 목록이 뒤처진 신호다 (ADR-0014, ADR-0062).
+     *
+     * 앞뒤 공백만 무시한다. 대소문자나 "Room" 같은 표기를 정규화해 같다고 보는 것은 추정이라 하지 않는다.
+     * 응답에 이름이 없으면 비교할 것이 없어 넘어간다. 이름은 응답에 쓰지 않으므로 없어도 항목을 빼지 않는다.
+     */
+    private fun nameMismatches(item: FetchedAvailabilityItem, hotel: MappedHotel, roomType: MappedRoomType): List<NameMismatch> =
+        listOfNotNull(
+            mismatch(item, ExcludedValue.HOTEL_NAME, received = item.hotelName, cataloged = hotel.name),
+            mismatch(item, ExcludedValue.ROOM_TYPE_NAME, received = item.roomTypeName, cataloged = roomType.name),
+        )
+
+    private fun mismatch(item: FetchedAvailabilityItem, value: ExcludedValue, received: String?, cataloged: String): NameMismatch? =
+        received?.trim()?.takeIf { it != cataloged.trim() }?.let {
+            NameMismatch(item.hotelCode, item.roomTypeCode, value, "목록 이름 '$cataloged' 와 재고 응답 이름 '$it' 이 다르다", item)
+        }
 
     /**
      * 날짜별 잔여 수를 요청한 날짜와 대조해 최솟값을 낸다 (ADR-0023, ADR-0027 의 재고 표).
@@ -184,6 +203,8 @@ class AvailabilityNormalizer {
 data class NormalizedAvailability(
     val available: List<AvailableRoomType>,
     val excluded: List<ExcludedRoomType>,
+    /** 항목은 내보냈지만 알아 둘 것. 응답 건수에 넣지 않는다 (ADR-0062) */
+    val warnings: List<NameMismatch> = emptyList(),
 ) {
     /** 응답에 싣는 건수는 스펙과 달라 뺀 것만이다. 매핑에 없어 뺀 것은 세지 않는다 (ADR-0046) */
     val outOfSpecCount: Int
@@ -201,6 +222,15 @@ data class ExcludedRoomType(
     val value: ExcludedValue,
     val reason: String,
     /** 우리가 읽어 들인 그 항목. 격리 기록에 JSON 으로 남긴다 (ADR-0055) */
+    val source: FetchedAvailabilityItem,
+)
+
+/** 목록과 재고 응답의 이름이 다르다. 항목은 빼지 않는다 (ADR-0062) */
+data class NameMismatch(
+    val hotelCode: String?,
+    val roomTypeCode: String?,
+    val value: ExcludedValue,
+    val reason: String,
     val source: FetchedAvailabilityItem,
 )
 

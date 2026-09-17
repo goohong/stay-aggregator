@@ -17,10 +17,10 @@ class QuarantineRepository(private val jdbcClient: JdbcClient) {
         jdbcClient.sql(
             """
             insert into quarantine_record (
-                supplier, hotel_code, room_type_code, excluded_value,
+                supplier, hotel_code, room_type_code, excluded_value, record_kind,
                 occurrences, first_seen, last_seen, last_reason, last_source
             )
-            values (:supplier, :hotelCode, :roomTypeCode, :value, 1, now(), now(), :reason, cast(:source as jsonb))
+            values (:supplier, :hotelCode, :roomTypeCode, :value, :kind, 1, now(), now(), :reason, cast(:source as jsonb))
             on conflict on constraint uk_quarantine_problem
             do update set occurrences = quarantine_record.occurrences + 1,
                           last_seen   = excluded.last_seen,
@@ -32,6 +32,7 @@ class QuarantineRepository(private val jdbcClient: JdbcClient) {
             .param("hotelCode", entry.hotelCode)
             .param("roomTypeCode", entry.roomTypeCode)
             .param("value", entry.value.name)
+            .param("kind", entry.kind.name)
             .param("reason", entry.reason)
             .param("source", sourceJson)
             .update()
