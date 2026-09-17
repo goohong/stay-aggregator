@@ -22,36 +22,43 @@ stay:
       base-url: http://localhost:9090
       api-key: mock
       timeout: PT30S
-      # 재고·요금 호출 타임아웃. 아직 측정 전 임시값이다. Mock 지연 모드로 재서 정하고 ADR 에 근거를 적는다 (ADR-0045)
-      availability-timeout: PT5S
-      # 연결 타임아웃. 연결 수립에만 건다. AWS SDK 의 standard 모드 기본값을 따랐다 (ADR-0066)
-      connect-timeout: PT3.1S
+      # 재고·요금 호출 타임아웃. 시도 세 번과 그 사이 대기가 검색 전체 타임아웃 안에 여유를 두고 들어가게 했다.
+      # 3 × 2s + 대기 최대 0.45s = 6.45s ≤ 8s, 남은 1.5s 는 매핑 읽기 같은 앞 단계 몫이다 (ADR-0068)
+      availability-timeout: PT2S
+      # 연결 타임아웃. 연결 수립에만 건다. AWS SDK in-region 모드 기본값 1100ms 이고 호출 타임아웃보다 짧아야 한다 (ADR-0066, ADR-0068)
+      connect-timeout: PT1.1S
     b:
       base-url: http://localhost:9090
       api-key: mock
       timeout: PT30S
-      availability-timeout: PT5S
-      connect-timeout: PT3.1S
+      availability-timeout: PT2S
+      connect-timeout: PT1.1S
 
   search:
-    # 검색 전체 타임아웃과 공급사당 동시 호출 수. 둘 다 측정 전 임시값이다 (ADR-0045)
+    # 검색 전체 타임아웃. Nielsen 의 "주의를 붙잡아 두는 한계" 10초에서 네트워크·화면 몫 2초를 뺐다(2초는 판단값) (ADR-0068)
     timeout: PT8S
+    # 공급사당 동시 호출 수. WebClient 기본 풀(최소 16)을 넘지 않게 잡은 값이다 (ADR-0045)
     concurrency-per-supplier: 4
-    # 일시적인 실패만 재시도한다 (ADR-0051). 시도 세 번(= 재시도 2회)은 Google SRE 를 따랐고
-    # 대기 시간 둘은 아직 임시값이다.
-    max-retries: 2
-    retry-min-backoff: PT0.1S
-    retry-max-backoff: PT1S
-    # 반복해서 실패하는 공급사를 한동안 호출하지 않는다 (ADR-0056). 모두 임시값이다.
+    # 5xx·연결 실패만 재시도한다 (ADR-0051). 시도 세 번(= 재시도 2회)은 Google SRE 를 따랐다.
+    # 설정 객체가 "호출 타임아웃 × 시도 수 + 대기 최대치 < 검색 전체 타임아웃" 을 검사한다 (ADR-0068)
+    retry:
+      max-retries: 2
+      min-backoff: PT0.1S
+      max-backoff: PT1S
+    # 반복해서 실패하는 공급사를 한동안 호출하지 않는다 (ADR-0056). 값마다 근거와 관계식은 ADR-0068 에 있다
     circuit-breaker:
       failure-rate-threshold: 50
       sliding-window-size: 20
-      minimum-number-of-calls: 10
+      # 동시 호출 수의 두 배. 응답 없는 공급사면 검색 두 건에 열린다(판단값)
+      minimum-number-of-calls: 8
+      # Envoy·Istio 의 기본 차단 시간 30초
       wait-duration-in-open-state: PT30S
-      permitted-number-of-calls-in-half-open-state: 3
+      # 동시 호출 수와 같게 둔다. 적으면 반열림 상태의 검색에서 첫 chunk 일부가 거절된다
+      permitted-number-of-calls-in-half-open-state: 4
 
   quarantine:
-    # 마지막으로 본 지 이만큼 지난 격리 기록은 목록 동기화 때 지운다 (ADR-0055). 임시값이다
+    # 마지막으로 본 지 이만큼 지난 격리 기록은 목록 동기화 때 지운다 (ADR-0055).
+    # 운영자가 한 달에 한 번은 본다는 가정의 판단값이다 (ADR-0068)
     retention: P30D
 
   # 목록 동기화는 기동 직후 한 번 돌고, 그 뒤로는 앞선 실행이 끝난 시점부터 주기를 잰다 (ADR-0013, ADR-0016).

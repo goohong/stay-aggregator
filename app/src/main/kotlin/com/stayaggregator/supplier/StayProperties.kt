@@ -52,27 +52,56 @@ data class StayProperties(
         val timeout: Duration,
         /** 공급사 하나에서 chunk 호출을 동시에 몇 개 띄우는가. WebClient 기본 풀 크기를 넘지 않게 잡는다 (ADR-0045) */
         val concurrencyPerSupplier: Int,
-        /**
-         * 일시적인 실패를 재시도하는 최대 횟수. 첫 호출은 여기 들지 않는다. 2 면 최대 세 번 호출한다 (ADR-0051).
-         * 0 이면 재시도하지 않는다.
-         */
-        val maxRetries: Int,
-        /** 최소 백오프. 첫 재시도 전에 기다리는 시간이고 여기서부터 두 배씩 늘고 Reactor 가 무작위를 섞는다 (ADR-0051) */
-        val retryMinBackoff: Duration,
-        /** 최대 백오프. 재시도 대기의 상한이고 걸지 않으면 사실상 무한이다 (ADR-0051) */
-        val retryMaxBackoff: Duration,
+        /** 5xx·연결 실패처럼 재시도 가능한 실패의 재시도 기준 (ADR-0051, ADR-0068) */
+        val retry: RetryPolicy,
         /** 공급사마다 하나씩 두는 서킷의 기준 (ADR-0056). 모든 공급사가 같은 기준을 쓴다 */
         val circuitBreaker: CircuitBreaker,
+    )
+
+    /**
+     * 재시도 기준 하나. 첫 호출은 횟수에 들지 않는다. [maxRetries] 가 2 면 최대 세 번 호출하고, 0 이면 재시도하지 않는다 (ADR-0051).
+     *
+     * 대기는 [minBackoff] 에서 시작해 두 배씩 늘고 [maxBackoff] 를 넘지 않는다. Reactor 가 여기에 [JITTER_FACTOR] 만큼 무작위를 섞는다.
+     */
+    data class RetryPolicy(
+        val maxRetries: Int,
+        /** 최소 백오프. 첫 재시도 전에 기다리는 시간 */
+        val minBackoff: Duration,
+        /** 최대 백오프. 재시도 대기의 상한이고 걸지 않으면 사실상 무한이다 */
+        val maxBackoff: Duration,
     ) {
         init {
             require(maxRetries >= 0) { "재시도 횟수가 음수다" }
-            require(!retryMinBackoff.isNegative) { "재시도 최소 백오프가 음수다" }
-            require(retryMaxBackoff >= retryMinBackoff) { "재시도 최대 백오프가 최소 백오프보다 짧다" }
+            require(!minBackoff.isNegative) { "재시도 최소 백오프가 음수다" }
+            require(maxBackoff >= minBackoff) { "재시도 최대 백오프가 최소 백오프보다 짧다" }
+        }
+
+        /**
+         * 호출마다 [callTimeout] 을 다 쓰고 재시도를 모두 썼을 때 chunk 하나가 걸리는 시간의 상한 (ADR-0068 의 관계식).
+         *
+         * 재시도 i 번째(0 부터)의 대기는 Reactor 가 `min(최소 백오프 × 2^i, 최대 백오프)` 에 무작위를 더해 정하고,
+         * 더하는 값은 그 대기의 [JITTER_FACTOR] 배와 `최대 백오프 − 대기` 중 작은 것을 넘지 않는다
+         * (reactor-core 3.8.7 `RetryBackoffSpec.generateCompanion` 의 `highBound`). 그래서 한 번의 대기는 `min(최대 백오프, 1.5 × 대기)` 이하다.
+         */
+        fun worstCase(callTimeout: Duration): Duration {
+            var total = callTimeout.multipliedBy(maxRetries + 1L)
+            var backoff = minBackoff
+            repeat(maxRetries) {
+                val jittered = backoff.plusMillis((backoff.toMillis() * JITTER_FACTOR).toLong())
+                total = total.plus(minOf(jittered, maxBackoff))
+                backoff = minOf(backoff.multipliedBy(2), maxBackoff)
+            }
+            return total
+        }
+
+        companion object {
+            /** 대기에 섞는 무작위의 비율. Reactor 의 기본값과 같고, [worstCase] 가 이 값을 전제하므로 검색이 명시적으로 넘긴다 */
+            const val JITTER_FACTOR = 0.5
         }
     }
 
     /**
-     * 서킷을 여닫는 기준. 값은 아직 임시값이고 선택 항목을 마친 뒤 근거를 붙여 정한다 (ADR-0056).
+     * 서킷을 여닫는 기준 (ADR-0056). 값의 근거는 ADR-0068 에 있다.
      * 세는 단위는 호출 한 번이 아니라 **재시도까지 거친 chunk 하나의 최종 결과**다.
      */
     data class CircuitBreaker(
@@ -97,11 +126,12 @@ data class StayProperties(
     }
 
     init {
-        // 검색 전체 타임아웃으로 취소된 chunk 는 서킷이 실패로 세지 않는다. 호출 타임아웃이 그보다 짧아야
-        // 무응답 공급사가 타임아웃 실패로 세어져 서킷이 열린다 (ADR-0056)
+        // 검색 전체 타임아웃으로 취소된 chunk 는 서킷이 실패로 세지 않는다. 재시도까지 다 쓴 chunk 가 그보다 먼저 끝나야
+        // 무응답이거나 계속 실패하는 공급사가 실패로 세어져 서킷이 열린다 (ADR-0056, ADR-0068)
         suppliers.forEach { (id, supplier) ->
-            require(supplier.availabilityTimeout < search.timeout) {
-                "공급사 $id 의 재고·요금 호출 타임아웃(${supplier.availabilityTimeout})이 검색 전체 타임아웃(${search.timeout})보다 짧아야 한다"
+            val worstCase = search.retry.worstCase(supplier.availabilityTimeout)
+            require(worstCase < search.timeout) {
+                "공급사 $id 의 chunk 하나가 재시도까지 다 쓰면 최대 $worstCase 걸린다(재고·요금 호출 타임아웃 ${supplier.availabilityTimeout}). 검색 전체 타임아웃(${search.timeout})보다 짧아야 한다"
             }
         }
     }

@@ -253,9 +253,7 @@ class SupplierAvailabilityAdapterTest {
             search = StayProperties.Search(
                 timeout = Duration.ofSeconds(2),
                 concurrencyPerSupplier = 4,
-                maxRetries = 0,
-                retryMinBackoff = Duration.ofMillis(10),
-                retryMaxBackoff = Duration.ofMillis(50),
+                retry = StayProperties.RetryPolicy(maxRetries = 0, minBackoff = Duration.ofMillis(10), maxBackoff = Duration.ofMillis(50)),
                 circuitBreaker = StayProperties.CircuitBreaker(50f, 4, 4, Duration.ofSeconds(1), 1),
             ),
         )

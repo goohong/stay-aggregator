@@ -114,8 +114,10 @@ class SearchService(
      * 다 써도 실패하면 **원래 실패를 그대로** 올린다. 다른 예외로 감싸면 consumer 가 보는 예외가 달라져 ADR-0027 이 정한 "한 가지 실패"가 깨진다.
      */
     private fun retryTransient(supplierId: String, request: AvailabilityRequest): Retry =
-        Retry.backoff(search.maxRetries.toLong(), search.retryMinBackoff)
-            .maxBackoff(search.retryMaxBackoff)
+        Retry.backoff(search.retry.maxRetries.toLong(), search.retry.minBackoff)
+            .maxBackoff(search.retry.maxBackoff)
+            // 설정이 검색 전체 타임아웃과의 관계를 이 비율로 계산한다 (StayProperties.RetryPolicy.worstCase)
+            .jitter(StayProperties.RetryPolicy.JITTER_FACTOR)
             .filter { it is SupplierResponseException && it.transient }
             .doBeforeRetry { signal ->
                 log.info(

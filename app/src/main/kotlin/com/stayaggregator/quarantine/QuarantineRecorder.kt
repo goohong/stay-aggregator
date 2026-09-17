@@ -75,6 +75,6 @@ class QuarantineRecorder(
 /** 격리 기록 설정 */
 @ConfigurationProperties("stay.quarantine")
 data class QuarantineProperties(
-    /** 마지막으로 본 지 이만큼 지난 기록은 지운다. 값은 임시값이다 (ADR-0055) */
+    /** 마지막으로 본 지 이만큼 지난 기록은 지운다 (ADR-0055). 값의 근거는 ADR-0068 에 있다 */
     val retention: Duration,
 )

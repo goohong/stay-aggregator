@@ -6,21 +6,23 @@ stay:
       base-url: http://localhost:9090
       api-key: test
       timeout: PT1S
-      availability-timeout: PT1S
-      connect-timeout: PT0.5S
+      availability-timeout: PT0.5S
+      connect-timeout: PT0.25S
     b:
       base-url: http://localhost:9090
       api-key: test
       timeout: PT1S
-      availability-timeout: PT1S
-      connect-timeout: PT0.5S
+      availability-timeout: PT0.5S
+      connect-timeout: PT0.25S
   search:
     timeout: PT2S
     concurrency-per-supplier: 4
     # 테스트는 기다림을 짧게 둔다
-    max-retries: 2
-    retry-min-backoff: PT0.01S
-    retry-max-backoff: PT0.05S
+    # 시도 세 번이 검색 전체 타임아웃 안에 들어가야 설정이 만들어진다 (ADR-0068)
+    retry:
+      max-retries: 2
+      min-backoff: PT0.01S
+      max-backoff: PT0.05S
     circuit-breaker:
       failure-rate-threshold: 50
       sliding-window-size: 4
