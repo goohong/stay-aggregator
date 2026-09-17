@@ -70,6 +70,8 @@ object SupplierFixtures {
 
     val A_ERROR = """{ "error": "SERVICE_UNAVAILABLE", "message": "supplier temporarily unavailable" }"""
 
+    val A_TOO_MANY_HOTEL_CODES = """{ "error": "TOO_MANY_HOTEL_CODES", "message": "hotelCodes exceeds 50" }"""
+
     val B_PROPERTIES = """
         {
           "resultCode": "0000",
@@ -116,4 +118,6 @@ object SupplierFixtures {
     """.trimIndent()
 
     val B_ERROR = """{ "resultCode": "E503", "resultMessage": "TEMPORARILY_UNAVAILABLE", "data": null }"""
+
+    val B_BAD_REQUEST = """{ "resultCode": "E400", "resultMessage": "BAD_REQUEST", "data": null }"""
 }

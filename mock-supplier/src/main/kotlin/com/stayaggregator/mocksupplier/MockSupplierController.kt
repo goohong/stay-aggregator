@@ -53,23 +53,39 @@ class MockSupplierController {
             failure = ResponseEntity.ok(SupplierFixtures.B_ERROR),
         )
 
+    /**
+     * 숙소 코드가 50개를 넘으면 공급사 스펙대로 거절한다 (ADR-0045). 그 밖의 파라미터는 보지 않는다.
+     * 스펙에 오류로 적힌 것까지만 흉내 낸다.
+     */
     @GetMapping("/a/v1/availability", produces = [APPLICATION_JSON_VALUE])
-    fun availabilityA(): ResponseEntity<String> =
-        respond(
+    fun availabilityA(@RequestParam("hotelCodes", defaultValue = "") hotelCodes: String): ResponseEntity<String> {
+        if (count(hotelCodes) > MAX_HOTEL_CODES) {
+            return ResponseEntity.badRequest().body(SupplierFixtures.A_TOO_MANY_HOTEL_CODES)
+        }
+        return respond(
             supplier = "a",
             success = SupplierFixtures.A_AVAILABILITY,
             // A 는 HTTP 상태 코드로 실패를 알린다
             failure = ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(SupplierFixtures.A_ERROR),
         )
+    }
 
     @GetMapping("/b/api/search", produces = [APPLICATION_JSON_VALUE])
-    fun searchB(): ResponseEntity<String> =
-        respond(
+    fun searchB(@RequestParam("propertyIds", defaultValue = "") propertyIds: String): ResponseEntity<String> {
+        if (count(propertyIds) > MAX_HOTEL_CODES) {
+            // B 는 잘못된 요청도 HTTP 200 에 본문 코드로 알린다
+            return ResponseEntity.ok(SupplierFixtures.B_BAD_REQUEST)
+        }
+        return respond(
             supplier = "b",
             success = SupplierFixtures.B_SEARCH,
             // B 는 장애여도 HTTP 200 이고 본문 resultCode 로만 실패를 알린다
             failure = ResponseEntity.ok(SupplierFixtures.B_ERROR),
         )
+    }
+
+    private fun count(commaSeparated: String): Int =
+        if (commaSeparated.isBlank()) 0 else commaSeparated.split(',').size
 
     private fun respond(supplier: String, success: String, failure: ResponseEntity<String>): ResponseEntity<String> {
         val behavior = behaviors[supplier] ?: Behavior.NORMAL
@@ -109,5 +125,8 @@ class MockSupplierController {
     companion object {
         /** 연결은 받되 응답을 주지 않는 시간. 앱의 타임아웃보다 충분히 길면 된다 */
         private val NO_RESPONSE_HOLD: Duration = Duration.ofMinutes(10)
+
+        /** 두 공급사 모두 재고·요금 조회 한 번에 받는 숙소 코드 상한 */
+        private const val MAX_HOTEL_CODES = 50
     }
 }

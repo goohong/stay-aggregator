@@ -98,5 +98,8 @@ Mock 의 숙소 코드 수 검사
 한 공급사가 시간 한계를 넘겨도 나머지 결과로 응답하는지
   → `SearchServiceIntegrationTest.시간 한계를 넘긴 공급사만 실패가 되고 나머지는 그대로 나간다`
 
-Mock 이 50개 초과를 공급사처럼 거절하는지는 Mock 을 고칠 때 확인하고 여기에 적는다.
+Mock 이 50개 초과를 공급사처럼 거절하는지
+  → 2026-09-17 Mock 을 띄우고 확인. 코드 50개는 A 가 200, B 가 `0000`. 51개는 A 가 HTTP 400 `TOO_MANY_HOTEL_CODES`, B 가 HTTP 200 `E400`
+    `curl "localhost:9090/a/v1/availability?hotelCodes=H-1,…,H-51"` / `curl "localhost:9090/b/api/search?propertyIds=H-1,…,H-51"`
+
 동시 실행 수·시간 한계·재고 호출 타임아웃의 값은 측정 뒤에 정하고 그 근거를 여기에 적는다.
