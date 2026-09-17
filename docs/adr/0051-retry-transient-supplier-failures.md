@@ -124,3 +124,8 @@ date: 2026-09-17
 목록 동기화는 다시 부르지 않는지
   → `app/src/main/kotlin/com/stayaggregator/catalog/CatalogSyncService.kt` 의 `sync` 에 `retryWhen` 이 없다
     (`grep -n "retryWhen" app/src/main/kotlin/com/stayaggregator/catalog/` 가 비어 있다)
+
+실제 HTTP 에서도 그렇게 도는지
+  → 2026-09-17 Mock 으로 확인. A 를 장애 모드(HTTP 503)로 두고 검색하면 재시도 로그가 두 줄 남고
+    (`검색 묶음 재시도 supplier=a 숙소=2개 1번째/2번째`), 두 줄의 시각 차가 132ms 로 기준 대기(100ms)에 무작위가 섞인 값이다.
+    A 를 무응답 모드로 두면 재시도 로그가 없고 5.05초에 끊긴다
