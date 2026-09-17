@@ -43,6 +43,8 @@ dependencies {
     developmentOnly("org.springframework.boot:spring-boot-docker-compose")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // Boot 4 는 @WebMvcTest 같은 테스트 슬라이스를 기술별 모듈로 나눴다. 스타터가 끌고 오지 않아 따로 넣는다.
+    testImplementation("org.springframework.boot:spring-boot-webmvc-test")
     // 테스트는 실제 PostgreSQL 컨테이너에서 돈다 (ADR-0035).
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     // Testcontainers 2.x 부터 모듈 이름이 `testcontainers-<제품>` 으로 바뀌었다. 예전 이름은 1.21.x 에서 멈춰 있다.
