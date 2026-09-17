@@ -76,3 +76,4 @@
 | [0069](0069-domain-package.md) | 공급사와 무관한 값 객체를 domain 패키지로 모으기로 결정 | accepted |
 | [0070](0070-supplier-failure-sealed.md) | 공급사 실패 예외를 boolean 성질 대신 sealed 하위 타입으로 나누기로 결정 | accepted |
 | [0071](0071-resilience-as-adapter-decorator.md) | 재시도·서킷·지표를 검색 서비스가 아니라 어댑터를 감싸는 Decorator 에 두기로 결정 | accepted |
+| [0072](0072-adapter-http-helper-and-archunit.md) | 어댑터의 HTTP 호출 조각을 한 클래스로 고정하고 어댑터 규칙을 기동 검사와 ArchUnit 테스트로 지키기로 결정 | accepted |

@@ -11,10 +11,9 @@ import com.stayaggregator.supplier.FetchedRoomType
 import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierAdapter
 import com.stayaggregator.supplier.SupplierFailure
-import com.stayaggregator.supplier.asSupplierFailure
-import com.stayaggregator.supplier.supplierWebClient
+import com.stayaggregator.supplier.SupplierHttp
+import com.stayaggregator.supplier.apiKeyHeader
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 
 /**
@@ -32,32 +31,21 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
 
     private val config = properties.of(SUPPLIER_ID)
 
-    private val webClient: WebClient = supplierWebClient(config, API_KEY_HEADER)
+    private val http = SupplierHttp(SUPPLIER_ID, config, apiKeyHeader(API_KEY_HEADER, config.apiKey))
 
     override fun fetchCatalog(): Mono<FetchedCatalog> =
-        webClient.get()
-            .uri("/b/api/properties")
-            .retrieve()
-            .bodyToMono(SupplierBPropertiesResponse::class.java)
-            .timeout(config.timeout)
-            .asSupplierFailure(SUPPLIER_ID)
+        http.getCatalog("/b/api/properties", SupplierBPropertiesResponse::class.java)
             .map { response -> response.toFetchedCatalog() }
 
     override fun fetchAvailability(request: AvailabilityRequest): Mono<FetchedAvailability> =
-        webClient.get()
-            .uri { builder ->
-                builder.path("/b/api/search")
-                    .queryParam("propertyIds", request.hotelCodes.joinToString(","))
-                    .queryParam("checkIn", request.period.checkIn)
-                    .queryParam("checkOut", request.period.checkOut)
-                    .queryParam("adults", request.guests.adults)
-                    .queryParam("children", request.guests.children)
-                    .build()
-            }
-            .retrieve()
-            .bodyToMono(SupplierBSearchResponse::class.java)
-            .timeout(config.availabilityTimeout)
-            .asSupplierFailure(SUPPLIER_ID)
+        http.getAvailability(SupplierBSearchResponse::class.java) { builder ->
+            builder.path("/b/api/search")
+                .queryParam("propertyIds", request.hotelCodes.joinToString(","))
+                .queryParam("checkIn", request.period.checkIn)
+                .queryParam("checkOut", request.period.checkOut)
+                .queryParam("adults", request.guests.adults)
+                .queryParam("children", request.guests.children)
+        }
             .map { response -> response.toFetchedAvailability() }
 
     private fun SupplierBPropertiesResponse.toFetchedCatalog(): FetchedCatalog {

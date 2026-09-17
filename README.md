@@ -116,7 +116,7 @@ curl -X POST 'localhost:9090/control/a/mode?value=normal'                # 되�
 
 | 만들거나 고칠 것 | 내용 |
 |---|---|
-| `app/.../supplier/c/SupplierCAdapter.kt` | `SupplierAdapter` 를 구현합니다. 목록 조회와 재고·요금 조회 둘 다입니다. 하나를 빠뜨리면 컴파일되지 않습니다 |
+| `app/.../supplier/c/SupplierCAdapter.kt` | `SupplierAdapter` 를 구현합니다. 목록 조회와 재고·요금 조회 둘 다입니다. 하나만 구현하면 기동 검사와 ArchUnit 테스트가 실패합니다 ([ADR-0072](docs/adr/0072-adapter-http-helper-and-archunit.md)) |
 | `app/.../supplier/c/SupplierC*Response.kt` | 그 공급사의 응답을 받는 DTO 둘. 스펙의 필드를 모두 받기만 하고 검증하지 않습니다 ([ADR-0030](docs/adr/0030-supplier-response-dto-receives-without-validation.md)) |
 | `application.yml` 의 `stay.suppliers.c` | 주소·인증 키·타임아웃 두 개 |
 

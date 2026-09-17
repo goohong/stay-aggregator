@@ -53,7 +53,7 @@ ADR-0047 은 공용 패키지(나)를 검토하고 버리면서 **다시 볼 조
 옮긴 뒤 의존 방향이 위 문장대로인지
   → `grep -rn "import com.stayaggregator\." app/src/main/kotlin/com/stayaggregator/domain` 이 아무것도 찾지 않는다 (2026-09-17 실행, 출력 없음)
   → `grep -rn "import com.stayaggregator\." app/src/main/kotlin/com/stayaggregator/supplier app/src/main/kotlin/com/stayaggregator/mapping app/src/main/kotlin/com/stayaggregator/quarantine | grep -v "\.domain\."` 이 자기 패키지 밖을 가리키지 않는다
-  (ArchUnit 테스트로 바꿀 예정. 그 단위에서 테스트 이름으로 교체한다)
+  → 이후 [ADR-0072](0072-adapter-http-helper-and-archunit.md) 의 `ArchitectureTest` 네 규칙(`domain 은 아무 패키지도 보지 않는다` 등)이 같은 것을 지킨다
 
 기존 테스트가 그대로 통과하는지
   → `./gradlew :app:test` 146건 통과 (이동만이라 새 테스트는 없다)

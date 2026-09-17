@@ -58,6 +58,8 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     // Testcontainers 2.x 부터 모듈 이름이 `testcontainers-<제품>` 으로 바뀌었다. 예전 이름은 1.21.x 에서 멈춰 있다.
     testImplementation("org.testcontainers:testcontainers-postgresql")
+    // 패키지 의존 방향과 어댑터 규칙을 테스트로 지킨다 (ADR-0072)
+    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
 }
 
 tasks.withType<Test> {

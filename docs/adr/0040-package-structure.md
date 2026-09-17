@@ -100,6 +100,7 @@ grep -rn "import com.stayaggregator.catalog" app/src/main/kotlin/com/stayaggrega
 
 `supplier` 와 `mapping` 이 다른 패키지를 보지 않는지
   → `grep -rn "import com.stayaggregator." app/src/main/kotlin/com/stayaggregator/supplier app/src/main/kotlin/com/stayaggregator/mapping`
+  → 지금은 `ArchitectureTest` 의 패키지 방향 규칙 넷이 지킨다 (ADR-0069, ADR-0072)
     를 돌리면 `mapping` 은 한 줄도 나오지 않고, `supplier` 는 하위 패키지(`a`·`b`)가 부모인 `supplier` 를 가리키는 줄만 나온다(2026-09-17 확인)
 
 검색을 만든 뒤 `search` 가 `catalog` 를 import 하지 않는지는 그때 확인하고 여기에 적는다

@@ -27,7 +27,7 @@
 | **숙소 목록 API** | `CatalogAdapter.fetchCatalog` | 공급사가 취급하는 숙소와 객실 타입을 조건 없이 전부 주는 API. 드물게 바뀐다. 요금·재고는 여기 없다 |
 | **재고·요금 API** | `AvailabilityAdapter.fetchAvailability` | 숙소 코드 목록과 날짜·인원을 주면 그 조건의 재고와 요금을 주는 API. 매번 바뀐다.<br>한 번에 숙소 코드 50개까지 받고 **넘으면 공급사가 오류로 거절한다** ([ADR-0045](adr/0045-search-concurrency-and-budget.md)) |
 | **chunk** | `AvailabilityRequest` | 위 상한에 맞춰 숙소 코드를 50개 이하로 나눈 한 덩어리에 숙박 구간·인원을 붙인 것. 검색 한 건이 chunk 여러 개를 호출한다.<br>50개를 넘는 chunk 는 만들어지지 않는다 ([ADR-0047](adr/0047-request-types-in-supplier-package.md)) |
-| **공급사 인터페이스** | `SupplierAdapter` | 한 공급사가 구현해야 하는 두 인터페이스(`CatalogAdapter`·`AvailabilityAdapter`)를 묶은 것. consumer 는 이것을 보지 않는다.<br>한 인터페이스를 빠뜨리면 컴파일에서 드러나게 하는 것이 유일한 역할이다 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)) |
+| **공급사 인터페이스** | `SupplierAdapter` | 한 공급사가 구현해야 하는 두 인터페이스(`CatalogAdapter`·`AvailabilityAdapter`)를 묶은 것. consumer 는 이것을 보지 않는다.<br>두 인터페이스를 함께 구현한다는 관례를 이름으로 드러낸다. 타입이 강제하지는 않아 기동 검사와 ArchUnit 테스트가 지킨다 ([ADR-0072](adr/0072-adapter-http-helper-and-archunit.md), [ADR-0031](adr/0031-supplier-adapter-boundaries.md)) |
 | **어댑터** | `SupplierAAdapter` 등 | 한 공급사의 API 를 호출하고 그 응답을 우리 형태로 바꾸는 클래스. 공급사마다 하나 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)).<br>검증은 하지 않는다. 공급사마다 다른 것만 흡수한다 |
 | **consumer** | `CatalogSyncService` 등 | 어댑터를 주입받아 쓰는 쪽. 목록 동기화와 검색 둘 |
 | **공급사 실패** | `SupplierFailure` (sealed) | 응답을 스펙대로 받지 못한 것. HTTP 상태, 본문의 결과 코드, 본문을 읽지 못한 것,<br>타임아웃, 연결하지 못한 것이 모두 여기 든다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md)).<br>공급사가 "실패"라고 말한 것만이 아니다 |

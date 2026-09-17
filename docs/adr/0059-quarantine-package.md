@@ -49,5 +49,6 @@ date: 2026-09-17
 
 `quarantine` 이 다른 패키지를 보지 않는지
   → `grep -rn "import com.stayaggregator." app/src/main/kotlin/com/stayaggregator/quarantine` 에 `quarantine` 밖을 가리키는 줄이 없다
+  → 지금은 `ArchitectureTest.supplier·mapping·quarantine 은 domain 만 본다` 가 지킨다 (ADR-0072)
 
   → 2026-09-17 확인. `quarantine` 에는 `com.stayaggregator.` import 가 없다. `catalog`·`search` 가 `quarantine` 을 본다
