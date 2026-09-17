@@ -1,4 +1,4 @@
-# 테스트에서 쓰는 값이다. 타임아웃만 짧게 두어 끊기는 동작을 빨리 확인한다.
+# 테스트에서 쓰는 값이다. 타임아웃만 짧게 두어 타임아웃 동작을 빨리 확인한다.
 # 운영 값은 app/src/main/resources/application.yml 에 있다 (ADR-0039).
 stay:
   suppliers:

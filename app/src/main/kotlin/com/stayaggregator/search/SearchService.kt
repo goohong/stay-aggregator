@@ -146,7 +146,7 @@ class SearchService(
         }
         if (excluded.isNotEmpty()) {
             log.info("검색 제외 supplier={} {}", supplierId, excluded.joinToString { "${it.hotelCode}/${it.roomTypeCode} ${it.kind}: ${it.reason}" })
-            // 응답을 기다리게 하지 않고 뒤에서 쓴다 (ADR-0055)
+            // 응답을 기다리게 하지 않고 비동기로 기록한다 (ADR-0055)
             quarantine.record(excluded.map { QuarantineEntry(supplierId, it.hotelCode, it.roomTypeCode, it.value, it.reason, it.source) })
         }
         return SupplierResult.succeeded(
@@ -165,7 +165,7 @@ class SearchService(
         if (e is SupplierResponseException || e is TimeoutException) {
             log.warn("검색 공급사 실패 supplier={} 이유={}", supplierId, reason)
         } else {
-            // 공급사가 알린 실패가 아니면 우리 쪽 결함일 수 있어 어디서 났는지까지 남긴다
+            // 공급사가 알린 실패가 아니면 내부 오류일 수 있어 어디서 났는지까지 남긴다
             log.warn("검색 공급사 실패 supplier={} 이유={}", supplierId, reason, e)
         }
         return SupplierResult.failed(supplierId, reason)

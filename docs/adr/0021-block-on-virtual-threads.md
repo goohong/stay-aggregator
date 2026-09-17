@@ -37,7 +37,7 @@ date: 2026-09-15
   그 기본값은 200 이다([Tomcat 11 HTTP Connector](https://tomcat.apache.org/tomcat-11.0-doc/config/http.html) 의 `maxThreads`: "If not specified, this attribute is set to 200").
   이 200 은 드러나지 않는 입장 제한 역할도 해서, 나중에 제한이 사라지면 그 뒤의 커넥션 풀 설계를 다시 해야 한다.
 - **(나) 컨트롤러가 `Mono` 반환** — 기다리는 동안 Tomcat 스레드를 놓아준다. 대신 공급사 응답 뒤의 처리가
-  이벤트 루프에서 돌아 그 안의 DB 호출이 조용히 이벤트 루프를 막을 수 있고, ThreadLocal(MDC)이 기본적으로 끊기며,
+  이벤트 루프에서 돌아 그 안의 DB 호출이 조용히 이벤트 루프를 막을 수 있고, ThreadLocal(MDC)이 기본적으로 전파되지 않으며,
   필터가 ASYNC 디스패치에서 호출되지 않고, 테스트에 `asyncDispatch` 가 필요하며, Tomcat 30초 비동기 타임아웃과
   우리 타임아웃을 함께 맞춰야 한다.
 - **(다) 컨트롤러에서 `block()`, 가상 스레드** ← AI 추천 — (가)의 코드 모양을 유지하면서 기다리는 동안 OS 스레드를

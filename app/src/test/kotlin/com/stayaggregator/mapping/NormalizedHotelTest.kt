@@ -15,7 +15,7 @@ class NormalizedHotelTest {
     private val roomType = NormalizedRoomType("DLX", "디럭스", 2)
 
     @Test
-    fun `값이 온전하면 만들어진다`() {
+    fun `값이 유효하면 만들어진다`() {
         val hotel = NormalizedHotel("A-1", "강변 호텔", listOf(roomType))
 
         assertThat(hotel.roomTypes).containsExactly(roomType)

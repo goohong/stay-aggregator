@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
  * `ignoreUnknown = true` 는 Jackson 3 의 기본 동작이기도 하지만, 기본값에 기대지 않고 여기에 적는다.
  * 공급사가 필드를 더 붙여 보내도 우리 출력값 계산에 쓰이지 않으므로 무시한다 (ADR-0027 의 두 번째 질문).
  *
- * 필드는 모두 null 을 허용한다. 스펙상 반드시 오는 값이라도 마찬가지이고, 값이 쓸 만한지는 정규화 단계가 본다 (ADR-0030).
+ * 필드는 모두 null 을 허용한다. 스펙상 반드시 오는 값이라도 마찬가지이고, 값이 유효한지는 정규화 단계가 본다 (ADR-0030).
  * 숙소 코드는 스펙의 응답 예시 표기(`hotelCode`)를 따른다. 설명 표의 대문자 표기는 받지 않는다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -83,7 +83,7 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
-    fun `목록에서 빠지면 사라진 시각이 찍히고 다시 나타나면 풀린다`() {
+    fun `목록에서 빠지면 missing_since 가 기록되고 다시 나타나면 비워진다`() {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val firstId = hotelId("A-1")
 
@@ -103,7 +103,7 @@ class CatalogSyncIntegrationTest {
         )
         assertThat(apply(two).missingHotels).isZero()
 
-        // 같은 목록을 다시 받으면, 반영 도중 전부 표시했다가 되살리므로 남는 것이 없다
+        // 같은 목록을 다시 받으면, 반영 도중 전부 표시했다가 missing_since 를 비우므로 남는 것이 없다
         assertThat(apply(two).missingHotels).isZero()
 
         val one = catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)))
@@ -117,7 +117,7 @@ class CatalogSyncIntegrationTest {
 
         syncWith(FakeCatalogAdapter("a", Mono.error(SupplierResponseException("읽을 수 없는 응답"))))
 
-        // 표시했다가 되살리는 순서라, 읽지 못한 동기화가 표시만 남기고 끝나면 있는 숙소가 사라진 것이 된다 (ADR-0037)
+        // 표시했다가 missing_since 를 비우는 순서라, 읽지 못한 동기화가 표시만 남기고 끝나면 목록에 있는 숙소에 missing_since 가 남는다 (ADR-0037)
         assertThat(missingSince("A-1")).isNull()
         assertThat(hotelId("A-1")).isEqualTo(before)
     }
@@ -134,7 +134,7 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
-    fun `숙소는 남고 객실 타입만 빠지면 그 객실 타입에만 사라진 시각이 찍힌다`() {
+    fun `숙소는 남고 객실 타입만 빠지면 그 객실 타입에만 missing_since 가 기록된다`() {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2), roomType("STD", "스탠다드", 2))))
 
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
@@ -145,7 +145,7 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
-    fun `숙소가 빠지면 그 숙소의 객실 타입도 표시되고 다시 나타나면 같은 식별자로 풀린다`() {
+    fun `숙소가 빠지면 그 숙소의 객실 타입도 표시되고 다시 나타나면 같은 식별자로 missing_since 가 비워진다`() {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val before = roomTypeId("DLX")
 
@@ -162,7 +162,7 @@ class CatalogSyncIntegrationTest {
         sync(catalog(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val before = hotelId("A-1")
 
-        // 반영은 먼저 모두 표시하고 되살리는 순서라, 중간에 멈추면 있는 숙소가 사라진 것으로 남을 수 있다.
+        // 반영은 먼저 모두 표시하고 missing_since 를 비우는 순서라, 중간에 멈추면 목록에 있는 숙소에 missing_since 가 남을 수 있다.
         // DB 가 받지 못하는 값으로 실패를 만들어 트랜잭션이 통째로 취소되는지 본다 (ADR-0038).
         // 실패하는 숙소 앞에 정상 숙소를 두어, 이미 저장된 것까지 되돌려지는지도 함께 본다.
         val rejected = listOf(
@@ -218,7 +218,7 @@ class CatalogSyncIntegrationTest {
 
     @Test
     fun `공급사가 알린 실패가 아니어도 다른 공급사는 반영된다`() {
-        // 우리 쪽 결함으로 나는 예외다. 공급사 실패와 다른 가지를 타지만 건너뛰는 것은 같다 (ADR-0019)
+        // 내부 오류로 나는 예외다. 공급사 실패와 다른 가지를 타지만 건너뛰는 것은 같다 (ADR-0019)
         val broken = FakeCatalogAdapter("a", Mono.error(IllegalStateException("어댑터 안에서 난 오류")))
         val working = FakeCatalogAdapter("b", Mono.just(FetchedCatalog(listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2))))))
 

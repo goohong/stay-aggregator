@@ -89,4 +89,4 @@ date: 2026-09-16
 
 그 제약이 실제로 같은 코드를 하나로 모으는지
   → `CatalogSyncIntegrationTest.다시 동기화해도 내부 식별자가 그대로다`,
-    `CatalogSyncIntegrationTest.숙소가 빠지면 그 숙소의 객실 타입도 표시되고 다시 나타나면 같은 식별자로 풀린다`
+    `CatalogSyncIntegrationTest.숙소가 빠지면 그 숙소의 객실 타입도 표시되고 다시 나타나면 같은 식별자로 missing_since 가 비워진다`

@@ -18,7 +18,7 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
     @Transactional
     fun applyCatalog(supplierId: String, hotels: List<NormalizedHotel>): AppliedCatalog {
         // 이번 목록에 없는 행을 찾으려고 코드 수천 개를 조건에 넣는 대신,
-        // 그 공급사 행을 먼저 모두 "없음"으로 표시하고 이번 목록에 있는 것만 되살린다.
+        // 그 공급사 행을 먼저 모두 "없음"으로 표시하고 이번 목록에 있는 것만 missing_since 를 비운다.
         // 한 트랜잭션 안이라 커밋 전까지 중간 상태는 밖에서 보이지 않는다.
         markAllMissing(supplierId)
 
@@ -33,7 +33,7 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
         return AppliedCatalog(
             hotels = hotels.size,
             roomTypes = roomTypeCount,
-            // 되살리기까지 끝난 뒤에 세야 이번 목록에서 실제로 빠진 행이 나온다
+            // missing_since 를 비우기까지 끝난 뒤에 세야 이번 목록에서 실제로 빠진 행이 나온다
             missingHotels = countMissingHotels(supplierId),
         )
     }

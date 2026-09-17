@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
  * 그래서 이 값을 보지 않으면 장애를 정상 응답으로 처리하게 된다.
  *
  * `ignoreUnknown = true` 는 Jackson 3 의 기본 동작이기도 하지만 기본값에 기대지 않고 여기에 적는다 (ADR-0030).
- * 필드는 모두 null 을 허용하고, 값이 쓸 만한지는 정규화 단계가 본다.
+ * 필드는 모두 null 을 허용하고, 값이 유효한지는 정규화 단계가 본다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class SupplierBPropertiesResponse(

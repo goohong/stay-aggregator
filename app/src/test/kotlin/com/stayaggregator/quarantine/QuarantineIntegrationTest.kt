@@ -92,7 +92,7 @@ class QuarantineIntegrationTest {
     }
 
     @Test
-    fun `기록은 뒤에서 쓰여 곧 남는다`() {
+    fun `기록은 비동기로 쓰여 곧 남는다`() {
         recorder.record(listOf(QuarantineEntry("a", "A-1", "DLX", ExcludedValue.CURRENCY, "통화가 없다", mapOf("currency" to null))))
 
         awaitRows(1)
@@ -106,7 +106,7 @@ class QuarantineIntegrationTest {
 
     private fun column(name: String): Any? = jdbcClient.sql("select $name from quarantine_record").query().singleRow()[name]
 
-    /** 기록이 뒤에서 쓰이므로 잠깐 기다린다 */
+    /** 기록이 비동기로 쓰이므로 잠깐 기다린다 */
     private fun awaitRows(expected: Int) {
         val deadline = System.currentTimeMillis() + 5_000
         while (rowCount() < expected && System.currentTimeMillis() < deadline) Thread.sleep(50)

@@ -156,7 +156,7 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
-    fun `정한 시간 안에 오지 않은 것은 시간 초과로 표시된다`() {
+    fun `타임아웃으로 난 실패는 timedOut 으로 표시된다`() {
         server.createContext("/a/v1/availability") { exchange ->
             Thread.sleep(2_000)
             write(exchange, 200, """{"items":[]}""")

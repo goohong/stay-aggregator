@@ -146,7 +146,7 @@ class SupplierCatalogAdapterTest {
     }
 
     @Test
-    fun `공급사가 응답하지 않으면 정한 시간에 끊는다`() {
+    fun `공급사가 응답하지 않으면 타임아웃으로 취소한다`() {
         server.createContext("/a/v1/hotels") { exchange ->
             Thread.sleep(2_000)
             write(exchange, 200, "{}")

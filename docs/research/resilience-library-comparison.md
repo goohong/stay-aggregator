@@ -55,7 +55,7 @@ checked: 2026-09-17
 
 - Gradle 이 `reactor-core:3.4.24 -> 3.8.7` 로 올려 해석했고 연결 오류는 없었다
 - `resilience4j-reactor` POM 이 retry·timelimiter·bulkhead·ratelimiter·micrometer 를 runtime 으로 함께 끈다
-- 실험 프로젝트에서는 `slf4j-api:1.7.30` 이 해석됐다. 우리 저장소는 Boot 가 `slf4j-api:2.0.18` 로 관리한다. 넣은 뒤 어느 쪽으로 풀리는지는 저장소에서 확인한다
+- 실험 프로젝트에서는 `slf4j-api:1.7.30` 이 해석됐다. 우리 저장소는 Boot 가 `slf4j-api:2.0.18` 로 관리한다. 넣은 뒤 어느 쪽으로 해석되는지는 저장소에서 확인한다
 
 ## 4. resilience4j 에만 있는 것
 

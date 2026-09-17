@@ -17,7 +17,7 @@ import java.time.Duration
  *
  * 테스트에서는 컨텍스트가 뜨자마자 동기화가 돌아 테스트의 DB 작업과 겹치므로, 설정으로 이 빈을 끈다.
  *
- * 주기가 [MIN_INTERVAL] 보다 짧으면 앱이 뜨지 않는다 (ADR-0061). 목록은 자주 바뀌지 않는데 짧은 주기는 공급사와 DB 에 부담만 준다.
+ * 주기가 [MIN_INTERVAL] 보다 짧으면 앱이 기동에 실패한다 (ADR-0061). 목록은 자주 바뀌지 않는데 짧은 주기는 공급사와 DB 에 부담만 준다.
  */
 @Component
 @ConditionalOnProperty(name = ["stay.catalog.sync.enabled"], matchIfMissing = true)

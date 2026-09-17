@@ -19,7 +19,7 @@ date: 2026-09-17
 
 **셋은 자리가 따라온다.** 금액·판매 조건·요금은 정규화를 마친 표준 모델이다. 어댑터는 이것들을 만들지 않는다.
 어댑터가 내놓는 것은 값이 없을 수 있는 `Fetched…` 형태이고([ADR-0030](0030-supplier-response-dto-receives-without-validation.md)),
-값이 쓸 만한지는 그 값을 담는 객체의 생성자가 본다([ADR-0041](0041-validate-in-constructors.md)).
+값이 유효한지는 그 값을 담는 객체의 생성자가 본다([ADR-0041](0041-validate-in-constructors.md)).
 검증을 통과한 객체를 정규화 전 단계에서 만들면 두 결정이 함께 어긋난다. 그래서 이 셋은 어댑터 밖, 즉 `search` 것이다.
 목록 동기화에서 `NormalizedHotel` 이 `mapping` 에 있는 것과 같은 모양이다.
 

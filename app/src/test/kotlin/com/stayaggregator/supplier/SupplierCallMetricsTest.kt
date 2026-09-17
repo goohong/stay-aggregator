@@ -21,7 +21,7 @@ class SupplierCallMetricsTest {
     }
 
     @Test
-    fun `공급사 실패가 아닌 우리 쪽 오류는 공급사 실패에 섞지 않는다`() {
+    fun `공급사 실패가 아닌 내부 오류는 공급사 실패에 섞지 않는다`() {
         assertThat(SupplierCallMetrics.outcomeOf(IllegalStateException("변환 결함"))).isEqualTo(Outcome.INTERNAL_ERROR)
     }
 }

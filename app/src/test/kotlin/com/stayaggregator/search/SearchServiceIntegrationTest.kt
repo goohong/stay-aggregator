@@ -245,7 +245,7 @@ class SearchServiceIntegrationTest {
 
         service(a).search(period, guests)
 
-        // 뒤에서 쓰이므로 잠깐 기다린다 (ADR-0055)
+        // 비동기로 기록되므로 잠깐 기다린다 (ADR-0055)
         val deadline = System.currentTimeMillis() + 5_000
         fun rows() = jdbcClient.sql("select excluded_value from quarantine_record").query(String::class.java).list()
         while (rows().isEmpty() && System.currentTimeMillis() < deadline) Thread.sleep(50)
@@ -314,10 +314,10 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `공급사 실패가 아닌 우리 쪽 오류는 서킷이 성공으로도 실패로도 세지 않는다`() {
-        // 우리 결함 때문에 멀쩡한 공급사를 끊지 않는다 (ADR-0056)
+    fun `공급사 실패가 아닌 내부 오류는 서킷이 성공으로도 실패로도 세지 않는다`() {
+        // 내부 오류 때문에 정상인 공급사를 차단하지 않는다 (ADR-0056)
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
-        val a = FakeAdapter("a") { Mono.error(IllegalStateException("우리 쪽 결함")) }
+        val a = FakeAdapter("a") { Mono.error(IllegalStateException("내부 오류")) }
         val breakers = breakers()
 
         repeat(6) { service(a, breakers = breakers).search(period, guests) }

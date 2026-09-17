@@ -37,7 +37,7 @@ class SupplierCallMetrics(private val registry: MeterRegistry) {
         SUPPLIER_FAILURE("supplier_failure"),
         CIRCUIT_OPEN("circuit_open"),
 
-        /** 공급사 실패가 아닌 우리 쪽 오류. 공급사 성공률에 섞지 않으려고 따로 둔다 */
+        /** 공급사 실패가 아닌 내부 오류. 공급사 성공률에 섞지 않으려고 따로 둔다 */
         INTERNAL_ERROR("internal_error"),
     }
 

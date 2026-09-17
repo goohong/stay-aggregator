@@ -27,7 +27,7 @@ date: 2026-09-14
 
 **예외는 언어 선택의 결과다.** Kotlin 을 골랐기 때문에 필요한 것은 기능과 무관하므로 골격에 넣는다.
 `kotlin("plugin.spring")` 이 그렇다. `@Configuration` 클래스가 Kotlin 에서 기본 final 이라
-이것이 없으면 앱 자체가 뜨지 않는다. 반면 `kotlin("plugin.jpa")` 는 `@Entity` 가 생길 때
+이것이 없으면 앱 자체가 기동에 실패한다. 반면 `kotlin("plugin.jpa")` 는 `@Entity` 가 생길 때
 필요한 것이므로 JPA 와 함께 넣는다.
 
 **이유** — 미리 다 넣으면 왜 넣었는지가 이력에서 사라진다.

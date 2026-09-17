@@ -49,7 +49,7 @@ Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정
   "checkIn": "2026-10-05", "checkOut": "2026-10-08", "nights": 3,
   "adults": 2, "children": 0,
 
-  // 공급사마다 결과가 온전한지 알려줍니다
+  // 공급사마다 결과를 빠짐없이 만들었는지 알려줍니다
   "suppliers": [
     { "supplier": "a", "status": "SUCCEEDED", "failureReason": null,
       "roomTypeCount": 2, "outOfSpecCount": 0, "failedChunks": 0 },
@@ -133,12 +133,12 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 |---|---|---|
 | 병렬 호출 | 공급사들을 동시에 호출하고, 한 공급사 안에서도 chunk 를 동시에 호출합니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
 | 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 호출하고, 동시에 호출하는 chunk 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
-| 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 연결 수립에는 따로 짧은 타임아웃을 걸어, 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않습니다([ADR-0066](docs/adr/0066-connect-timeout-in-shared-webclient.md)). 호출 하나의 타임아웃은 검색 전체 한계보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 배경 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
+| 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 연결 수립에는 따로 짧은 타임아웃을 걸어, 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않습니다([ADR-0066](docs/adr/0066-connect-timeout-in-shared-webclient.md)). 호출 타임아웃은 검색 전체 타임아웃보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 백그라운드 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
 | 실패 분류 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 공급사 실패 예외로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 재시도 | **일시적인 실패만** 재시도합니다. 지수 백오프에 무작위를 섞습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md) |
 | 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 chunk 가 많으면 한동안 그 공급사를 호출하지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
-| 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·우리 쪽 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
+| 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·내부 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
 | 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 그룹화해 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 목록과 재고 응답의 이름이 다른 것은 항목을 빼지 않고 경고로 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
 
 재시도·타임아웃·동시 실행 수 제한은 **이미 쓰는 Reactor 의 연산자**로, 서킷은 **resilience4j** 로 했습니다.

@@ -29,7 +29,7 @@ date: 2026-09-17
 
 - **chunk 호출 하나마다** 걸린 시간과 결과를 센다. 이름은 `stay.supplier.availability`, 태그는 `supplier` 와 `outcome`
 - `outcome` 은 다섯이다: `success`, `timeout`, `supplier_failure`, `circuit_open`, `internal_error`
-  - `internal_error` 는 공급사 실패가 아닌 우리 쪽 오류다. 우리 결함이 공급사 성공률을 떨어뜨려 공급사 탓으로 보이지 않게 따로 센다. 서킷이 우리 쪽 오류를 세지 않는 것(ADR-0056)과 같은 기준이다
+  - `internal_error` 는 공급사 실패가 아닌 내부 오류다. 내부 오류가 공급사 성공률을 떨어뜨려 공급사 탓으로 보이지 않게 따로 센다. 서킷이 내부 오류를 세지 않는 것(ADR-0056)과 같은 기준이다
   - 검색 전체 타임아웃으로 취소된 chunk 는 끝나지 않아 세지 않는다. 타임아웃 비율에는 호출 하나의 타임아웃만 들어간다
   - 재시도까지 거친 **최종 결과**를 센다. 서킷이 세는 단위와 같다 ([ADR-0056](0056-circuit-breaker-per-supplier-outside-retry.md))
 - 목록 동기화도 공급사마다 결과를 센다. 이름은 `stay.supplier.catalog`, 같은 태그
@@ -70,12 +70,12 @@ date: 2026-09-17
 
 ## Verification
 
-결과 태그가 다섯으로 갈리고, 우리 쪽 오류가 공급사 실패에 섞이지 않는지
+결과 태그가 다섯으로 갈리고, 내부 오류가 공급사 실패에 섞이지 않는지
   → `SupplierCallMetricsTest.실패 종류마다 결과 태그가 갈린다`
-  → `SupplierCallMetricsTest.공급사 실패가 아닌 우리 쪽 오류는 공급사 실패에 섞지 않는다`
+  → `SupplierCallMetricsTest.공급사 실패가 아닌 내부 오류는 공급사 실패에 섞지 않는다`
 
 타임아웃이 공급사 실패 예외에 표시되는지
-  → `SupplierAvailabilityAdapterTest.정한 시간 안에 오지 않은 것은 시간 초과로 표시된다`
+  → `SupplierAvailabilityAdapterTest.타임아웃으로 난 실패는 timedOut 으로 표시된다`
 
 검색이 chunk 호출마다 공급사·결과로 기록하는지
   → `SearchServiceIntegrationTest.chunk 호출마다 공급사와 결과로 나눠 센다`

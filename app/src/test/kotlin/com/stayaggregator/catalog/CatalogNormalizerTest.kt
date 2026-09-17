@@ -18,7 +18,7 @@ class CatalogNormalizerTest {
     private val normalizer = CatalogNormalizer()
 
     @Test
-    fun `값이 온전한 숙소와 객실 타입은 그대로 쓴다`() {
+    fun `값이 유효한 숙소와 객실 타입은 그대로 쓴다`() {
         val fetched = catalog(
             hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)),
         )
