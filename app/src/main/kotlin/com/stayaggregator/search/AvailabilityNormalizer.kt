@@ -16,7 +16,9 @@ import java.time.LocalDate
  * 한 공급사의 재고·요금 응답에서 쓸 것과 뺄 것을 가른다. 판정 규칙은 공급사 공통이라 어댑터 밖 여기에 있다 (ADR-0031).
  *
  * 항목마다 세 가지를 본다.
- * 1. 매핑에 있는가. 없으면 우리가 아직 모르는 상품이라 뺀다. 공급사 응답의 문제가 아니므로 스펙 제외로 세지 않는다 (ADR-0015, ADR-0046)
+ * 1. 식별자가 있고 매핑에 있는가.
+ *    **식별자가 없는 것과 매핑에 없는 것은 다르다.** 매핑에 없는 것은 우리 동기화가 아직 따라잡지 못한 것이라 다음 주기에 끝나고,
+ *    그래서 스펙 제외로 세지 않는다 (ADR-0015, ADR-0046). 식별자가 아예 없는 것은 공급사 응답의 스펙 위반이고 동기화로 끝나지 않아 세어야 한다
  * 2. 재고를 하나로 정할 수 있는가. ADR-0027 의 재고 표대로다. 정해지면 날짜별 최솟값이 예약 가능 객실 수다 (ADR-0023)
  * 3. 요금을 하나로 정할 수 있는가. ADR-0027 의 요금 표대로다. 날짜별 금액은 요청한 날짜가 다 있을 때만 더한다
  *
@@ -37,6 +39,10 @@ class AvailabilityNormalizer {
         val excluded = mutableListOf<ExcludedRoomType>()
 
         items.forEach { item ->
+            if (item.hotelCode.isNullOrBlank() || item.roomTypeCode.isNullOrBlank()) {
+                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, "숙소 코드나 객실 타입 코드가 없다")
+                return@forEach
+            }
             val hotel = hotelsByCode[item.hotelCode]
             val roomType = hotel?.roomTypes?.firstOrNull { it.roomTypeCode == item.roomTypeCode }
             if (hotel == null || roomType == null) {
@@ -139,7 +145,10 @@ data class ExcludedRoomType(
 )
 
 enum class ExclusionKind {
-    /** 매핑에 없다. 다음 동기화에서 저절로 끝나는 상태라 응답에 드러내지 않는다 (ADR-0015) */
+    /**
+     * 매핑에 없다. 공급사가 목록 동기화 이후에 추가한 상품이라 **다음 동기화에서 저절로 끝나는 상태**이고, 그래서 응답에 드러내지 않는다 (ADR-0015).
+     * 식별자가 아예 없는 것은 여기가 아니라 [OUT_OF_SPEC] 이다. 그것은 동기화로 끝나지 않는다
+     */
     UNMAPPED,
 
     /** 스펙과 달라 값을 하나로 정할 수 없다. 건수를 응답에 싣는다 (ADR-0027, ADR-0046) */

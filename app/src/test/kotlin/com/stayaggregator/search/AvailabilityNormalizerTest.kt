@@ -95,6 +95,21 @@ class AvailabilityNormalizerTest {
     }
 
     @Test
+    fun `숙소 코드가 없는 항목은 매핑 누락이 아니라 스펙 제외로 센다`() {
+        // 매핑에 없는 것은 다음 동기화에서 끝나지만 코드가 없는 것은 끝나지 않는다 (ADR-0046)
+        val noCode = itemA(rates = fullRates(), inventory = fullInventory()).copy(hotelCode = null)
+
+        assertOutOfSpec(noCode, "숙소 코드나 객실 타입 코드가 없다")
+    }
+
+    @Test
+    fun `객실 타입 코드가 비어 있어도 스펙 제외로 센다`() {
+        val blankCode = itemA(rates = fullRates(), inventory = fullInventory()).copy(roomTypeCode = " ")
+
+        assertOutOfSpec(blankCode, "숙소 코드나 객실 타입 코드가 없다")
+    }
+
+    @Test
     fun `매핑에 없는 숙소도 같다`() {
         val unknown = itemA(rates = fullRates(), inventory = fullInventory()).copy(hotelCode = "A-9")
 
