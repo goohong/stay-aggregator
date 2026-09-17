@@ -16,8 +16,9 @@ date: 2026-09-14
 
 - Spring Boot 최신 정식 릴리스는 4.1.1. OSS 지원 종료가 4.1은 2027-07-31, 4.0은 2026-12-31,
   3.5는 2026-06-30, 3.4는 2025-12-31로 **3.4·3.5는 이미 지원이 끝났다.**
-  Spring Boot 는 Kotlin 처럼 라인마다 지원 기간을 두는 정책이고, JDK 의 LTS 같은
-  별도 명칭은 없다.
+  Spring Boot 는 Kotlin 처럼 라인마다 지원 기간을 두는 정책이다. 무료 지원에는 JDK 의 LTS 같은
+  구분이 없고, 상용 구독에는 메이저의 마지막 마이너에 붙는 장기 지원이 따로 있다
+  ([지원 기간 API](https://api.spring.io/projects/spring-boot/generations) 에서 3.5 의 상용 종료일만 2032 로 멀다).
 - Spring Boot 4.1.1 공식 시스템 요구사항은 Java 17–26, Gradle 8.14+ 및 9.x.
 - Spring Boot 4 는 WebClient 전용 스타터 `spring-boot-starter-webclient` 를 새로 낸다.
   실제로 무엇을 끌고 오는지 의존성 트리로 확인한 결과
@@ -25,13 +26,14 @@ date: 2026-09-14
   `spring-boot-webclient`, `reactor-netty-http` 뿐이고 **리액티브 서버가 들어오지 않는다.**
   Spring Boot 3 에서는 WebClient 를 쓰려면 `spring-boot-starter-webflux` 를 넣어야 하고,
   그 안에 쓰지 않을 리액티브 서버 의존성이 함께 들어온다.
-- Kotlin 최신은 2.4.20. Kotlin Gradle 플러그인이 명시적으로 테스트하는 Gradle 범위는
+- Kotlin 최신은 2.4.20. Kotlin Gradle 플러그인이 완전히 지원한다고 적은 Gradle 범위는
   7.6.3–9.7.0. Kotlin 은 2.4.0 부터 JVM 용 표준 라이브러리에 릴리스 라인마다 18개월
   보안 지원을 둔다. 별도의 LTS 명칭은 문서에서 찾지 못했다.
 - Gradle 최신은 9.7.1. Gradle 실행에 필요한 JDK 범위는 9.4.1 과 9.7.1 이
   **동일하게 17–26**이다. 27 은 둘 다 지원하지 않는다. 9.7.1 릴리스 노트를 확인한
   결과 9.7.0 대비 버그 수정 6건이 포함되어 있고, 그중 하나가 Kotlin DSL 의
-  `Option` 애너테이션 인자 순서 문제다. 전에 되던 것이 다시 깨진 항목은 없다.
+  `Option` 애너테이션 인자 순서 문제다. 그 여섯 건은 모두 9.7.0 에서 깨진 것을 되돌린 수정이다.
+  9.7.1 자체가 새로 깨뜨린 것이 있는지는 릴리스 노트로 알 수 없고, 로컬 빌드·기동으로만 확인했다.
 - JDK 25 의 JEP 목록을 확인한 결과, 이 설계가 쓸 만한 새 라이브러리 API 가 없다.
   팬아웃 구조에 가장 맞아 보이는 Structured Concurrency(JEP 505)는 25 에서도
   다섯 번째 Preview 로 정식이 아니고, 애초에 이 프로젝트가 쓰는 것은
@@ -48,7 +50,7 @@ date: 2026-09-14
 | 사실 | 원문 |
 |---|---|
 | Spring Boot 4.1.1 요구사항 Java 17–26, Gradle 8.14+·9.x | [Java](https://docs.spring.io/spring-boot/system-requirements.html#:~:text=Spring%20Boot%204.1.1%20requires%20at%20least%20Java%2017) · [Gradle](https://docs.spring.io/spring-boot/system-requirements.html#:~:text=Gradle%208.x%20%288.14%20or%20later%29%20and%209.x) |
-| Boot 4 스타터 이름 변경, `starter-webclient` 신설 | [마이그레이션 가이드 스타터 표](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide#user-content-starters) |
+| Boot 4 스타터 이름 변경, `starter-webclient` 신설 | [마이그레이션 가이드 스타터 표](https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-4.0-Migration-Guide#user-content-starters) (표는 스타터를 나열할 뿐 "신설"이라고 적지 않는다. 신설이라는 사실은 [메타데이터](https://repo1.maven.org/maven2/org/springframework/boot/spring-boot-starter-webclient/maven-metadata.xml) 의 최초 버전이 4.0.0-M1 이고 3.x 가 없는 것으로 확인) |
 | Kotlin Gradle 플러그인 2.4.20 의 Gradle 상한 9.7.0 | [호환표](https://kotlinlang.org/docs/gradle-configure-project.html#apply-the-plugin:~:text=the%20maximum%20fully%20supported%20version%20is%209.7.0) |
 | Kotlin 표준 라이브러리 18개월 보안 지원 | [릴리스 문서](https://kotlinlang.org/docs/releases.html#standard-library-security-support:~:text=has%20an%2018%E2%80%93month%20support%20window%20for%20each%20release%20line) |
 | Gradle 9.4.1·9.7.1 실행 JVM 17–26 | [9.4.1](https://docs.gradle.org/9.4.1/userguide/compatibility.html#:~:text=A%20JVM%20version%20between%2017%20and%2026%20is%20required%20to%20execute%20Gradle) · [9.7.1](https://docs.gradle.org/current/userguide/compatibility.html#java_runtime:~:text=A%20JVM%20version%20between%2017%20and%2026%20is%20required%20to%20execute%20Gradle) |
@@ -91,7 +93,7 @@ Kotlin Gradle 플러그인(KGP)의 공식 Gradle 지원 범위표를 확인한 �
 
 ### Gradle
 
-- **(가) 9.4.1** — Kotlin Gradle 플러그인이 명시적으로 테스트했다고 문서에 적은 범위
+- **(가) 9.4.1** — Kotlin Gradle 플러그인이 완전히 지원한다고 문서에 적은 범위
   (7.6.3–9.7.0) 안이다. 대신 "이미 검증했다"는 관성일 뿐, 9.7.1 보다 나은 점을
   대지 못한다.
 - **(나) 9.7.1** ← AI 추천 — 실행 JDK 범위가 9.4.1 과 같고, 9.7.0 대비 버그 수정을
@@ -105,7 +107,7 @@ Kotlin Gradle 플러그인(KGP)의 공식 Gradle 지원 범위표를 확인한 �
 - **(가) 25** — 최신 LTS. Boot 4.1 의 지원 상한(26) 안이다.
 - **(나) 21** ← AI 추천 — 이 설계가 22 이상에서 쓸 라이브러리 API 가 없다.
   툴체인 다운로드 저장소 플러그인을 넣지 않기로 했으므로(ADR-0007 Decision 참고) 빌드하는 사람의 컴퓨터에
-  해당 JDK 가 미리 깔려 있어야 하고, 21 이 가장 널리 배포된 LTS 라 그 확률이 높다.
+  해당 JDK 가 미리 깔려 있어야 한다. 21 이 더 흔할 것으로 보았으나 배포 점유율 자료를 찾아보지는 않았다.
 
 ## Decision
 
@@ -125,7 +127,7 @@ JDK 24 이상(JEP 491, `synchronized` 안에서의 가상 스레드 pinning 제�
 
 `jackson-module-kotlin` 은 Jackson 3 좌표(`tools.jackson.module:jackson-module-kotlin`)로
 JSON 처리를 실제로 만들 때 추가한다(ADR-0006). 옛 좌표(`com.fasterxml.jackson.module`)는
-Jackson 2 용이라 넣으면 조용히 아무 일도 안 하다가 나중에 역직렬화 오류로 드러난다.
+Jackson 2 용이라 Boot 4 가 설정하는 Jackson 3 에 붙지 않는다. 어느 시점에 어떤 증상으로 드러나는지는 확인하지 않았다.
 
 **이유** — Spring Boot 4 의 `starter-webclient` 가 이미 정한 "MVC 서버에서 WebClient 호출만"
 이라는 설계를 설정이 아니라 의존성 구조로 강제해 준다.
@@ -153,6 +155,8 @@ Jackson 2 용이라 넣으면 조용히 아무 일도 안 하다가 나중에 �
   `spring.main.web-application-type: servlet` 으로 서버를 눌러야 한다"고 여러 번 말했다
 - **반박** — Boot 3 도 webmvc 와 webflux 가 클래스패스에 함께 있으면 자동으로 SERVLET
   으로 판정한다. 그 설정은 필요 없다
+  ([Boot 3.5.0 의 `WebApplicationType.deduceFromClasspath()`](https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/WebApplicationType.java) 는
+  WebFlux 지표가 있고 MVC 지표가 없을 때만 REACTIVE 를 돌려준다)
 - **검증 결과** — 반박이 맞다. Boot 3 의 실제 단점은 그 설정이 필요해서가 아니라
   안 쓰는 리액티브 서버 의존성이 함께 들어오는 것이다
 - **그래서 어떻게 바뀌었나** — Boot 4 를 고르는 이유를 "설정을 안 눌러도 된다"가 아니라

@@ -19,11 +19,11 @@ date: 2026-09-15
 |---|---|
 | MVC 는 컨트롤러가 돌려준 `Mono` 를 `DeferredResult` 처럼 다뤄, 요청 스레드를 놓아주고 나중에 ASYNC 디스패치로 응답한다 | [Spring MVC, Reactive Types](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-async.html#mvc-ann-async-reactive-types) · [Async Spring MVC compared to WebFlux](https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-async.html#mvc-ann-async-vs-webflux) |
 | Reactor 연산자는 따로 지정하지 않으면 앞 연산자가 돌던 스레드에서 이어 실행된다. 공급사 응답 뒤의 처리는 이벤트 루프에서 돈다 | [Reactor, Threading and Schedulers](https://projectreactor.io/docs/core/release/reference/coreFeatures/schedulers.html#:~:text=most%20operators%20continue%20working%20in%20the%20Thread%20on%20which%20the%20previous%20operator%20executed) |
-| Reactor 가 논블로킹 스레드에서 막는 것은 `block()` 호출뿐이다. JDBC 같은 다른 블로킹 호출은 예외 없이 실행된다 | [BlockingSingleSubscriber.java L87](https://github.com/reactor/reactor-core/blob/main/reactor-core/src/main/java/reactor/core/publisher/BlockingSingleSubscriber.java#L87) |
+| Reactor 가 논블로킹 스레드에서 막는 것은 `block()` 호출뿐이다. 그 검사가 이 클래스에만 있어 JDBC 같은 다른 블로킹 호출은 감지되지 않는다(감지는 BlockHound 같은 별도 도구가 한다). 이 마지막 문장은 소스에 적힌 것이 아니라 검사 위치에서 끌어낸 것이다 | [BlockingSingleSubscriber.java](https://github.com/reactor/reactor-core/blob/main/reactor-core/src/main/java/reactor/core/publisher/BlockingSingleSubscriber.java) 의 `blockingGet` 안 `Schedulers.isInNonBlockingThread()` 검사. `main` 브랜치라 줄 번호는 밀린다 |
 | ThreadLocal 값은 기본적으로 리액티브 연산자 안에 다시 채워지지 않는다 | [Spring Boot, Context Propagation](https://docs.spring.io/spring-boot/reference/actuator/observability.html#actuator.observability.context-propagation) |
 | `OncePerRequestFilter` 는 기본적으로 ASYNC 디스패치에서 다시 불리지 않는다 | [OncePerRequestFilter Javadoc](https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/web/filter/OncePerRequestFilter.html#shouldNotFilterAsyncDispatch()) |
 | Tomcat 비동기 요청의 기본 타임아웃은 30초다 | [Tomcat 11 HTTP Connector, asyncTimeout](https://tomcat.apache.org/tomcat-11.0-doc/config/http.html#:~:text=Servlet%20specification%20default%20of%2030000) |
-| `block()` 은 `CountDownLatch` 로 기다리고, 가상 스레드는 `LockSupport` 대기에서 캐리어 스레드를 놓아준다 | [BlockingSingleSubscriber.java L33](https://github.com/reactor/reactor-core/blob/main/reactor-core/src/main/java/reactor/core/publisher/BlockingSingleSubscriber.java#L33) · [JEP 444, java.util.concurrent](https://openjdk.org/jeps/444#java-util-concurrent) |
+| `block()` 은 `CountDownLatch` 로 기다리고, 가상 스레드는 `LockSupport` 대기에서 캐리어 스레드를 놓아준다 | [BlockingSingleSubscriber.java](https://github.com/reactor/reactor-core/blob/main/reactor-core/src/main/java/reactor/core/publisher/BlockingSingleSubscriber.java) 는 클래스 선언에서 `CountDownLatch` 를 상속한다 · [JEP 444, java.util.concurrent](https://openjdk.org/jeps/444#java-util-concurrent) |
 | 가상 스레드는 빨라지는 게 아니라, 기다리는 작업이 많을 때 처리량을 늘린다 | [JEP 444, Using virtual threads vs. platform threads](https://openjdk.org/jeps/444#Using-virtual-threads-vs--platform-threads) |
 | 가상 스레드를 켜면 Tomcat 요청 처리 실행기가 가상 스레드 실행기로 바뀌고, 스레드 풀 크기 설정은 더 이상 적용되지 않는다 | [TomcatVirtualThreadsWebServerFactoryCustomizer](https://github.com/spring-projects/spring-boot/blob/v4.1.1/module/spring-boot-tomcat/src/main/java/org/springframework/boot/tomcat/autoconfigure/TomcatVirtualThreadsWebServerFactoryCustomizer.java) · [Spring Boot, Virtual threads](https://docs.spring.io/spring-boot/reference/features/spring-application.html#features.spring-application.virtual-threads) |
 | Spring Boot 는 가상 스레드에 Java 24 이상을 강력히 권장하고, 가상 스레드는 데몬 스레드라 `spring.main.keep-alive` 를 권한다 | 위 Virtual threads 절 |
@@ -33,7 +33,8 @@ date: 2026-09-15
 ## Options
 
 - **(가) 컨트롤러에서 `block()`, 플랫폼 스레드** — 컨트롤러 안은 평범한 동기 코드라 어디서 DB 를 불러도 된다.
-  대신 공급사 응답을 기다리는 동안 Tomcat 스레드가 묶이고, 동시 검색 수가 Tomcat 최대 스레드 수(기본 200)에서 막힌다.
+  대신 공급사 응답을 기다리는 동안 Tomcat 스레드가 묶이고, 동시 검색 수가 Tomcat 최대 스레드 수에서 막힌다.
+  그 기본값은 200 이다([Tomcat 11 HTTP Connector](https://tomcat.apache.org/tomcat-11.0-doc/config/http.html) 의 `maxThreads`: "If not specified, this attribute is set to 200").
   이 200 은 드러나지 않는 입장 제한 역할도 해서, 나중에 제한이 사라지면 그 뒤의 커넥션 풀 설계를 다시 해야 한다.
 - **(나) 컨트롤러가 `Mono` 반환** — 기다리는 동안 Tomcat 스레드를 놓아준다. 대신 공급사 응답 뒤의 처리가
   이벤트 루프에서 돌아 그 안의 DB 호출이 조용히 이벤트 루프를 막을 수 있고, ThreadLocal(MDC)이 기본적으로 끊기며,
@@ -53,7 +54,8 @@ HikariCP 는 JDBC 를 추가할 때 7.1.0 이상으로 둔다([ADR-0006](0006-ad
 **이유** — 한 요청이 가장 오래 기다리는 곳은 공급사 응답이다. (다)는 그 시간 동안 요청이 OS 스레드를 붙잡지 않으면서,
 블로킹 DB 호출을 어느 단계에서 불러도 되는 동기 코드 모양을 유지한다. (나)의 약점은 모두 확인된 동작이고
 조용히 드러나는 종류인 반면, (다)의 약점은 의존성 버전과 런타임을 올리는 것으로 좁혀진다.
-동시 검색 요청이 몰리는 도메인이므로, 입장 제한을 드러나지 않는 스레드 수에 맡기지 않고 처음부터 명시적으로 설계한다.
+동시 검색 요청이 몰릴 수 있다고 보고, 입장 제한을 드러나지 않는 스레드 수에 맡기지 않고 처음부터 명시적으로 설계한다.
+요구사항은 요청당 호출 수만 말하고 동시 요청 수를 말하지 않아, 이 전제는 우리 판단이다.
 
 ## Consequences
 

@@ -17,7 +17,7 @@ date: 2026-09-16
 
 | 사실 | 원문 |
 |---|---|
-| Flyway 는 스타터를 넣으면 기동 시 `classpath:db/migration` 의 스크립트를 실행한다. 이름은 `V<버전>__<이름>.sql` | "To automatically run Flyway database migrations on startup, add the `spring-boot-starter-flyway` starter to your classpath." |
+| Flyway 는 기동 시 `classpath:db/migration` 의 스크립트를 실행한다. 이름은 `V<버전>__<이름>.sql`. **스타터만으로 되는 것은 인메모리·파일 기반 DB 뿐이고, PostgreSQL 은 전용 모듈이 따로 필요하다** | "To automatically run Flyway database migrations on startup, add the appropriate Flyway module to your classpath. In-memory and file-based databases are supported by the `spring-boot-starter-flyway` starter. Other cases require also a database-specific module. For example, use `org.flywaydb:flyway-database-postgresql` with PostgreSQL" |
 | Liquibase 는 기본으로 `db/changelog/db.changelog-master.yaml` 을 읽고 YAML·JSON·XML·SQL 형식을 지원한다 | "add the `spring-boot-starter-liquibase` starter to your classpath" |
 | 기본 SQL 스크립트(`schema.sql`)를 마이그레이션 도구와 함께 쓰는 것은 권장되지 않는다 | "Using the basic `schema.sql` and `data.sql` scripts alongside Flyway or Liquibase is not recommended and support will be removed in a future release." |
 | Boot 4.1.1 이 관리하는 버전은 Flyway 12.4.0, Liquibase 5.0.3 | 의존성 목록 |
