@@ -85,7 +85,7 @@ class SearchService(
             // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
             // 검색 시간 한계로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
             .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
-            .map<ChunkOutcome> { fetched -> ChunkOutcome.Succeeded(normalizer.normalize(fetched, mapped, request.period)) }
+            .map<ChunkOutcome> { fetched -> ChunkOutcome.Succeeded(normalizer.normalize(fetched, mapped, request.period, request.hotelCodes)) }
             .onErrorResume { e ->
                 logChunkFailure(adapter.supplierId, request, e)
                 Mono.just(ChunkOutcome.Failed(reason = chunkFailureReason(adapter.supplierId, e)))

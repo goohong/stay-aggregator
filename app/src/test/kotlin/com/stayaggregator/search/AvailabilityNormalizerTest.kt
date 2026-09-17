@@ -29,6 +29,9 @@ class AvailabilityNormalizerTest {
     private val oct7 = LocalDate.of(2026, 10, 7)
     private val threeNights = StayPeriod(oct5, LocalDate.of(2026, 10, 8))
 
+    /** 테스트 응답에 나오는 숙소 코드를 모두 요청한 것으로 둔다 */
+    private val requestedCodes = listOf("A-1", "A-2", "A-9")
+
     private val hotelId = UUID.randomUUID()
     private val roomTypeId = UUID.randomUUID()
     private val mapped = listOf(
@@ -45,7 +48,7 @@ class AvailabilityNormalizerTest {
             inventory = listOf(inv(oct5, 3), inv(oct6, 1), inv(oct7, 5)),
         )
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).singleElement().satisfies({ room ->
             assertThat(room.internalHotelId).isEqualTo(hotelId)
@@ -62,7 +65,7 @@ class AvailabilityNormalizerTest {
     fun `총액 요금은 그대로 총액이 되고 조식 조건이 붙는다`() {
         val item = itemB(totalPrice = 431_000, taxIncluded = true, breakfast = true, inventory = listOf(inv(oct5, 4), inv(oct6, 2), inv(oct7, 6)))
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).singleElement()
             .satisfies({ room -> assertThat(room.rate).isEqualTo(Rate(Money(431_000, "KRW"), RateConditions(breakfastIncluded = true))) })
@@ -73,7 +76,7 @@ class AvailabilityNormalizerTest {
         // 잔여 수 2/0/4 → 0 (ADR-0023 의 예시 값), 0 이어도 뺀 것이 아니다 (ADR-0026)
         val item = itemA(rates = fullRates(), inventory = listOf(inv(oct5, 2), inv(oct6, 0), inv(oct7, 4)))
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).singleElement().satisfies({ room -> assertThat(room.availableRooms).isZero() })
     }
@@ -84,7 +87,7 @@ class AvailabilityNormalizerTest {
     fun `매핑에 없는 객실 타입은 빼고 스펙 제외로 세지 않는다`() {
         val unknown = itemA(rates = fullRates(), inventory = fullInventory()).copy(roomTypeCode = "NEW")
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(unknown)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(unknown)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).isEmpty()
         assertThat(result.excluded).singleElement().satisfies({ ex ->
@@ -113,9 +116,40 @@ class AvailabilityNormalizerTest {
     fun `매핑에 없는 숙소도 같다`() {
         val unknown = itemA(rates = fullRates(), inventory = fullInventory()).copy(hotelCode = "A-9")
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(unknown)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(unknown)), mapped, threeNights, requestedCodes)
 
         assertThat(result.excluded).singleElement().satisfies({ ex -> assertThat(ex.kind).isEqualTo(ExclusionKind.UNMAPPED) })
+    }
+
+    @Test
+    fun `요청하지 않은 숙소 코드가 오면 버리고 응답 건수에 넣지 않는다`() {
+        val item = itemA(rates = fullRates(), inventory = fullInventory())
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedHotelCodes = listOf("A-7"))
+
+        assertThat(result.available).isEmpty()
+        assertThat(result.excluded).singleElement().satisfies({ ex -> assertThat(ex.kind).isEqualTo(ExclusionKind.IGNORED) })
+        assertThat(result.outOfSpecCount).isZero()
+    }
+
+    @Test
+    fun `같은 숙소 객실 타입이 같은 값으로 두 번 오면 하나만 내보낸다`() {
+        val item = itemA(rates = fullRates(), inventory = fullInventory())
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(item, item)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.available).hasSize(1)
+    }
+
+    @Test
+    fun `같은 숙소 객실 타입이 다른 값으로 두 번 오면 뺀다`() {
+        val one = itemA(rates = fullRates(), inventory = fullInventory())
+        val other = one.copy(breakfastIncluded = true)
+
+        val result = normalizer.normalize(FetchedAvailability(listOf(one, other)), mapped, threeNights, requestedCodes)
+
+        assertThat(result.available).isEmpty()
+        assertThat(result.outOfSpecCount).isEqualTo(1)
     }
 
     // ── 재고 표 (ADR-0027) ──
@@ -124,7 +158,7 @@ class AvailabilityNormalizerTest {
     fun `요청하지 않은 날짜가 섞이면 그 날짜만 버린다`() {
         val item = itemA(rates = fullRates(), inventory = fullInventory() + inv(LocalDate.of(2026, 10, 8), 0))
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).singleElement().satisfies({ room -> assertThat(room.availableRooms).isEqualTo(2) })
     }
@@ -147,7 +181,7 @@ class AvailabilityNormalizerTest {
     fun `같은 날짜가 같은 값으로 두 번 오면 그 값으로 계산한다`() {
         val item = itemA(rates = fullRates(), inventory = fullInventory() + inv(oct6, 2))
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).singleElement().satisfies({ room -> assertThat(room.availableRooms).isEqualTo(2) })
     }
@@ -172,7 +206,7 @@ class AvailabilityNormalizerTest {
     fun `금액이 0 이면 그대로 계산한다`() {
         val item = itemB(totalPrice = 0, taxIncluded = true, breakfast = true, inventory = fullInventory())
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).singleElement().satisfies({ room -> assertThat(room.rate.total).isEqualTo(Money(0, "KRW")) })
     }
@@ -202,7 +236,7 @@ class AvailabilityNormalizerTest {
 
     @Test
     fun `항목 목록이 없으면 공급사 실패다`() {
-        assertThatThrownBy { normalizer.normalize(FetchedAvailability(null), mapped, threeNights) }
+        assertThatThrownBy { normalizer.normalize(FetchedAvailability(null), mapped, threeNights, requestedCodes) }
             .isInstanceOf(SupplierResponseException::class.java)
     }
 
@@ -213,7 +247,7 @@ class AvailabilityNormalizerTest {
         val bad = itemA(rates = fullRates(), inventory = listOf(inv(oct5, 4)))
         val good = itemA(rates = fullRates(), inventory = fullInventory()).copy(hotelCode = "A-2", roomTypeCode = "ONDOL")
 
-        val result = normalizer.normalize(FetchedAvailability(listOf(bad, good)), mappedTwo, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(bad, good)), mappedTwo, threeNights, requestedCodes)
 
         assertThat(result.available).extracting<UUID> { it.internalRoomTypeId }.containsExactly(other)
         assertThat(result.outOfSpecCount).isEqualTo(1)
@@ -222,7 +256,7 @@ class AvailabilityNormalizerTest {
     // ── 도우미 ──
 
     private fun assertOutOfSpec(item: FetchedAvailabilityItem, reason: String) {
-        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights)
+        val result = normalizer.normalize(FetchedAvailability(listOf(item)), mapped, threeNights, requestedCodes)
 
         assertThat(result.available).isEmpty()
         assertThat(result.excluded).singleElement().satisfies({ ex ->

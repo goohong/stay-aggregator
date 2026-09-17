@@ -31,18 +31,45 @@ import java.time.LocalDate
 @Component
 class AvailabilityNormalizer {
 
-    fun normalize(fetched: FetchedAvailability, mapped: List<MappedHotel>, period: StayPeriod): NormalizedAvailability {
+    /**
+     * @param requestedHotelCodes 이번 호출 묶음에 넣은 숙소 코드. 응답이 여기 없는 숙소를 주면 이번 출력에 쓰이지 않으므로 버린다 (ADR-0027 두 번째 질문).
+     *   이것을 보지 않으면 다른 묶음의 숙소가 섞여 왔을 때 두 묶음에서 같은 항목이 두 번 나간다
+     */
+    fun normalize(
+        fetched: FetchedAvailability,
+        mapped: List<MappedHotel>,
+        period: StayPeriod,
+        requestedHotelCodes: Collection<String>,
+    ): NormalizedAvailability {
         val items = fetched.items ?: throw SupplierResponseException("응답에 항목 목록이 없다")
         val hotelsByCode = mapped.associateBy { it.supplierHotelCode }
+        val requested = requestedHotelCodes.toSet()
         val nights = period.nightDates()
 
         val available = mutableListOf<AvailableRoomType>()
         val excluded = mutableListOf<ExcludedRoomType>()
 
-        items.forEach { item ->
+        // 같은 숙소·객실 타입이 두 번 오면 날짜 중복과 같은 규칙이다. 같은 값이면 하나만 쓰고, 다르면 어느 쪽인지 정할 수 없어 뺀다 (ADR-0027)
+        val distinctItems = items.groupBy { it.hotelCode to it.roomTypeCode }.flatMap { (key, same) ->
+            val (hotelCode, roomTypeCode) = key
+            when {
+                hotelCode.isNullOrBlank() || roomTypeCode.isNullOrBlank() -> same
+                same.distinct().size == 1 -> listOf(same.first())
+                else -> {
+                    excluded += ExcludedRoomType(hotelCode, roomTypeCode, ExclusionKind.OUT_OF_SPEC, ExcludedValue.ROOM_TYPE_CODE, "같은 객실 타입이 다른 값으로 두 번 왔다", same.first())
+                    emptyList()
+                }
+            }
+        }
+
+        distinctItems.forEach { item ->
             if (item.hotelCode.isNullOrBlank() || item.roomTypeCode.isNullOrBlank()) {
                 val value = if (item.hotelCode.isNullOrBlank()) ExcludedValue.HOTEL_CODE else ExcludedValue.ROOM_TYPE_CODE
                 excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, value, "숙소 코드나 객실 타입 코드가 없다", item)
+                return@forEach
+            }
+            if (item.hotelCode !in requested) {
+                excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.IGNORED, ExcludedValue.HOTEL_CODE, "요청하지 않은 숙소 코드가 왔다", item)
                 return@forEach
             }
             val hotel = hotelsByCode[item.hotelCode]
@@ -186,4 +213,10 @@ enum class ExclusionKind {
 
     /** 스펙과 달라 값을 하나로 정할 수 없다. 건수를 응답에 싣는다 (ADR-0027, ADR-0046) */
     OUT_OF_SPEC,
+
+    /**
+     * 이번 출력에 쓰이지 않는 것이 섞여 와 버렸다. 예: 요청하지 않은 숙소 코드.
+     * ADR-0027 의 두 번째 질문("출력값 계산에 쓰이는가")에 "아니요"라 버리고 기록만 한다. 결과가 줄어든 것이 아니라 응답 건수에 넣지 않는다
+     */
+    IGNORED,
 }
