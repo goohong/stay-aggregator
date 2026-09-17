@@ -29,7 +29,7 @@
 | **호출 묶음** | `AvailabilityRequest` | 위 상한에 맞춰 숙소 코드를 50개 이하로 나눈 한 덩어리에 숙박 구간·인원을 붙인 것. 검색 한 건이 여러 묶음을 부른다.<br>50개를 넘는 묶음은 만들어지지 않는다 ([ADR-0047](adr/0047-request-types-in-supplier-package.md)) |
 | **공급사 경계** | `SupplierAdapter` | 한 공급사가 구현해야 하는 두 경계(`CatalogAdapter`·`AvailabilityAdapter`)를 묶은 것. consumer 는 이것을 보지 않는다.<br>한 경계를 빠뜨리면 컴파일에서 드러나게 하는 것이 유일한 역할이다 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)) |
 | **어댑터** | `SupplierAAdapter` 등 | 한 공급사의 API 를 부르고 그 응답을 우리 형태로 바꾸는 클래스. 공급사마다 하나 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)).<br>판정은 하지 않는다. 공급사마다 다른 것만 흡수한다 |
-| **consumer** | `CatalogSyncService` 등 | 어댑터를 주입받아 쓰는 쪽. 지금은 목록 동기화 하나, 검색이 생기면 둘 |
+| **consumer** | `CatalogSyncService` 등 | 어댑터를 주입받아 쓰는 쪽. 목록 동기화와 검색 둘 |
 | **공급사 실패** | `SupplierResponseException` | 응답을 스펙대로 받지 못한 것. HTTP 상태, 본문의 결과 코드, 본문을 읽지 못한 것,<br>정한 시간 안에 오지 않은 것, 연결하지 못한 것이 모두 여기 든다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md)).<br>공급사가 "실패"라고 말한 것만이 아니다 |
 | **동일 숙소** | `same_hotel_id`, `sameHotelId` | **사람이 확인한** 같은 숙소의 모음. 확인된 짝끼리 같은 값을 갖고, 짝이 없는 숙소도 자기 값을 갖는다 ([ADR-0058](adr/0058-same-hotel-confirmed-pairs-only.md)).<br>이번 응답 안에서 모으는 데 쓰는 값이다. 짝이 바뀌면 값이 바뀌니 저장해 다시 찾는 키로 쓰지 않는다. 숙소를 가리키는 값은 내부 숙소 식별자다 |
 | **동일 숙소 후보** | (동기화가 계산) | 정규화한 숙소명이 같은 다른 공급사 숙소 쌍. **추정이라 응답에 내지 않는다.** 사람이 확인하면 동일 숙소가 된다 |

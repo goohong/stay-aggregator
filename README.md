@@ -40,6 +40,8 @@ PostgreSQL 은 `compose.yml` 의 것을 앱이 함께 띄웁니다.
 GET /api/v1/stays/search?checkIn=2026-10-05&checkOut=2026-10-08&adults=2&children=0
 ```
 
+Mock 은 요청 날짜와 상관없이 2026-10-05 ~ 10-08(3박) 재고를 고정으로 줍니다. 다른 날짜로 불러도 같은 값이 옵니다.
+
 체크아웃일은 숙박에 넣지 않습니다. 위 요청은 3박입니다 ([ADR-0043](docs/adr/0043-stay-period-value-object.md)).
 
 ```jsonc
@@ -130,11 +132,14 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 | | 어떻게 | |
 |---|---|---|
 | 병렬 호출 | 공급사들을 동시에 부르고, 한 공급사 안에서도 호출 묶음을 동시에 부릅니다 | [ADR-0045](docs/adr/0045-search-concurrency-and-budget.md) |
-| 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 목록 동기화는 배경 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
+| 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 부르고, 동시에 부르는 묶음 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
+| 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 호출 하나의 한계는 **연결부터 응답까지 한 값**입니다. 기다리는 쪽에게는 어느 단계에서 늦었든 같은 대기라 나누지 않았습니다. 호출 하나의 한계는 검색 전체 한계보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 배경 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
 | 실패 판정 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 신호로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 재시도 | **일시적인 실패만** 다시 부릅니다. 지수 백오프에 무작위를 섞습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md) |
 | 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 묶음이 많으면 한동안 그 공급사를 부르지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
+| 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·우리 쪽 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
+| 격리 기록 | 스펙과 달라 뺀 항목을 버리지 않고 남깁니다. 같은 문제는 한 행으로 묶어 횟수·처음과 마지막 시각·마지막 사유와 원본을 두고, 오래된 행은 목록 동기화 때 지웁니다. 목록과 재고 응답의 이름이 다른 것은 항목을 빼지 않고 경고로 남깁니다 | [ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md), [ADR-0062](docs/adr/0062-name-mismatch-warning.md) |
 
 재시도·타임아웃·동시 실행 수 제한은 **이미 쓰는 Reactor 의 연산자**로, 서킷은 **resilience4j** 로 했습니다.
 resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자를 부르는 것을 확인해, 옮겨도 동작이 같아 옮기지 않았습니다.
@@ -151,11 +156,13 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 
 ## 하지 않은 것
 
-- **변환하지 못한 원본 응답의 보관.** 지금 남기는 것은 제외 사유와 로그까지입니다
-- **연동 지표·모니터링.** 로그에 원인 종류가 남게 해 두어 나중에 셀 수 있습니다 ([용어](docs/glossary.md))
+- **공급사 HTTP 원문 그대로의 보관.** 격리 기록의 원본은 우리가 읽어 들인 항목 하나입니다. 원문은 숙소 50개가 한 덩어리라 항목 하나를 떼기 어렵습니다 ([ADR-0055](docs/adr/0055-quarantine-grouped-in-db.md))
+- **경보와 대시보드.** 지표는 세어 내보내지만, 무엇에 경보를 걸지는 설계로만 남겼습니다 ([ADR-0060](docs/adr/0060-supplier-call-metrics.md))
+- **예약 대행.** 공급사 규약에 예약 API 가 없어 설계만 남겼습니다 ([ADR-0064](docs/adr/0064-reservation-proxy-design-only.md))
 - **체크인일이 지난 날짜인지 검사.** 숙소의 시간대를 우리가 모릅니다. 서버 기준으로 막으면 현지로는 아직 어제인 숙소의 합법인 요청을 막게 됩니다 ([ADR-0052](docs/adr/0052-no-past-date-check.md))
-- **두 공급사가 파는 같은 숙소를 하나로 합치기.** 공통 키가 없어 숙소명으로 추정해야 하는데, 추정이 틀리면 다른 숙소가 하나로 보입니다.
-  지금은 각각 내보내고 `supplier` 를 함께 싣습니다. 내부 식별자는 합치더라도 바꾸지 않기로 이미 정해 두었습니다 ([ADR-0010](docs/adr/0010-keep-internal-id-on-merge.md))
+- **숙소명으로 같은 숙소를 추정해 합치기.** 공통 키도 주소도 없어 동명 숙소를 잘못 합칠 수 있습니다.
+  사람이 확인한 짝만 같은 값으로 묶기로 정했고 아직 구현하지 않았습니다. 지금은 각각 내보내고 `supplier` 를 함께 싣습니다 ([ADR-0058](docs/adr/0058-same-hotel-confirmed-pairs-only.md))
+- **요금·재고 캐시.** 숙소 단위로 판정한 결과를 Redis 에 두는 설계는 정했고 아직 구현하지 않았습니다 ([ADR-0065](docs/adr/0065-availability-cache-redis.md))
 
 ## 주요 결정
 
