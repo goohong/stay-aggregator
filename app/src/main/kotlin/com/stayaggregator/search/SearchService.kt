@@ -1,7 +1,7 @@
 package com.stayaggregator.search
 
 import com.stayaggregator.mapping.MappedHotel
-import com.stayaggregator.mapping.MappingRepository
+import com.stayaggregator.mapping.ActiveMappingSource
 import com.stayaggregator.quarantine.QuarantineEntry
 import com.stayaggregator.quarantine.QuarantineRecorder
 import com.stayaggregator.quarantine.RecordKind
@@ -36,7 +36,7 @@ import java.util.concurrent.TimeoutException
 @Service
 class SearchService(
     resilientAdapters: ResilientAvailabilityAdapters,
-    private val repository: MappingRepository,
+    private val mappings: ActiveMappingSource,
     private val normalizer: AvailabilityNormalizer,
     private val quarantine: QuarantineRecorder,
     properties: StayProperties,
@@ -55,7 +55,7 @@ class SearchService(
     }
 
     private fun searchSupplier(adapter: AvailabilityAdapter, period: StayPeriod, guests: GuestCount): Mono<SupplierResult> =
-        Mono.fromCallable { repository.findActiveHotels(adapter.supplierId) }
+        Mono.fromCallable { mappings.findActiveHotels(adapter.supplierId) }
             .flatMap { mapped -> fetchAll(adapter, mapped, period, guests) }
             .timeout(search.timeout)
             .onErrorResume { e -> Mono.just(failed(adapter.supplierId, e)) }

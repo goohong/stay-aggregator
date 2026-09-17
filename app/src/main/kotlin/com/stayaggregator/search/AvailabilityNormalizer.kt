@@ -1,6 +1,7 @@
 package com.stayaggregator.search
 
 import com.stayaggregator.domain.Money
+import com.stayaggregator.domain.Rejected
 import com.stayaggregator.domain.Rate
 import com.stayaggregator.domain.RateConditions
 import com.stayaggregator.domain.AvailableRoomType
@@ -99,7 +100,7 @@ class AvailabilityNormalizer {
                         rate = rate,
                     )
                 }
-            } catch (e: Rejected) {
+            } catch (e: StepRejected) {
                 excluded += ExcludedRoomType(item.hotelCode, item.roomTypeCode, ExclusionKind.OUT_OF_SPEC, e.value, e.reason, item)
             }
         }
@@ -130,29 +131,27 @@ class AvailabilityNormalizer {
      * 음수는 객실 수로 성립하지 않아 거부한다. 0 은 예약 불가일 뿐 거부가 아니다 (ADR-0026).
      */
     private fun availableRooms(inventory: List<FetchedDailyInventory>?, nights: List<LocalDate>): Int {
-        require(inventory != null) { "날짜별 재고가 없다" }
+        if (inventory == null) refuse(ExcludedValue.INVENTORY, "날짜별 재고가 없다")
         val byDate = inventory.filter { it.date in nights }.groupBy { it.date }
         return nights.minOf { night ->
             val onThatNight = byDate[night]
-            require(!onThatNight.isNullOrEmpty()) { "숙박일 $night 의 재고가 없다" }
+            if (onThatNight.isNullOrEmpty()) refuse(ExcludedValue.INVENTORY, "숙박일 $night 의 재고가 없다")
             val values = onThatNight.map { it.remainingRooms }.distinct()
-            require(values.size == 1) { "숙박일 $night 의 재고가 다른 값으로 두 번 왔다: $values" }
+            if (values.size != 1) refuse(ExcludedValue.INVENTORY, "숙박일 $night 의 재고가 다른 값으로 두 번 왔다: $values")
             val rooms = values.single()
-            require(rooms != null) { "숙박일 $night 의 잔여 수가 없다" }
-            require(rooms >= 0) { "숙박일 $night 의 잔여 수가 음수다: $rooms" }
+            if (rooms == null) refuse(ExcludedValue.INVENTORY, "숙박일 $night 의 잔여 수가 없다")
+            if (rooms < 0) refuse(ExcludedValue.INVENTORY, "숙박일 $night 의 잔여 수가 음수다: $rooms")
             rooms
         }
     }
 
     /** 공급사가 준 요금 형식에 따라 세금 포함 총액 하나를 만든다 (ADR-0042, ADR-0027 의 요금 표) */
     private fun rate(item: FetchedAvailabilityItem, nights: List<LocalDate>): Rate {
-        val breakfast = step(ExcludedValue.SALE_CONDITIONS) {
-            requireNotNull(item.breakfastIncluded) { "조식 포함 여부가 없다" }
-        }
-        val currency = item.currency ?: throw Rejected(ExcludedValue.CURRENCY, "통화가 없다")
+        val breakfast = item.breakfastIncluded ?: refuse(ExcludedValue.SALE_CONDITIONS, "조식 포함 여부가 없다")
+        val currency = item.currency ?: refuse(ExcludedValue.CURRENCY, "통화가 없다")
         val total = step(ExcludedValue.RATE) {
             when (val pricing = item.pricing) {
-                null -> throw IllegalArgumentException("요금이 없다")
+                null -> refuse(ExcludedValue.RATE, "요금이 없다")
                 is FetchedPricing.Total -> total(pricing, currency)
                 is FetchedPricing.Daily -> sumDaily(pricing.rates, currency, nights)
             }
@@ -163,7 +162,8 @@ class AvailabilityNormalizer {
     /**
      * 만들어 보고, 거부되면 문제가 된 값을 붙여 올린다.
      *
-     * 값이 유효한지는 여전히 값을 담는 객체가 `require` 로 검증한다 (ADR-0041). 여기서는 그 거부에 "무엇이 문제였나"를 붙일 뿐이다.
+     * 값이 유효한지는 여전히 값을 담는 객체가 검증한다 (ADR-0041). 여기서는 그 거부([Rejected])에 "무엇이 문제였나"를 붙일 뿐이다.
+     * 값 객체의 거부가 아닌 예외는 잡지 않는다. 우리 결함이 "공급사 데이터 문제"로 격리 기록에 남지 않게 하려는 것이다 (ADR-0073).
      */
     private fun <T> step(value: ExcludedValue, block: () -> T): T =
         try {
@@ -174,33 +174,37 @@ class AvailabilityNormalizer {
                 Money.Field.AMOUNT -> value
                 Money.Field.CURRENCY -> ExcludedValue.CURRENCY
             }
-            throw Rejected(rejected, e.message ?: "값을 쓸 수 없다")
-        } catch (e: IllegalArgumentException) {
-            throw Rejected(value, e.message ?: "값을 쓸 수 없다")
+            throw StepRejected(rejected, e.message ?: "값을 쓸 수 없다")
+        } catch (e: Rejected) {
+            // 값 객체의 거부만 항목 사유로 받는다. 그 밖의 예외는 우리 결함이라 삼키지 않는다 (ADR-0073)
+            throw StepRejected(value, e.message ?: "값을 쓸 수 없다")
         }
 
     /** 한 항목을 뺄 때만 쓰는 신호. 정규화 밖으로 나가지 않는다 */
-    private class Rejected(val value: ExcludedValue, val reason: String) : RuntimeException(reason, null, false, false)
+    private class StepRejected(val value: ExcludedValue, val reason: String) : RuntimeException(reason, null, false, false)
+
+    /** 정규화 자신이 정한 거부. 값 객체의 거부와 같은 신호로 올린다 */
+    private fun refuse(value: ExcludedValue, reason: String): Nothing = throw StepRejected(value, reason)
 
     private fun total(pricing: FetchedPricing.Total, currency: String): Money {
-        require(pricing.totalPrice != null) { "총액이 없다" }
+        if (pricing.totalPrice == null) refuse(ExcludedValue.RATE, "총액이 없다")
         // 세금액이 따로 오지 않으므로 미포함이면 세금 포함 총액을 만들 수 없다 (ADR-0042)
-        require(pricing.taxIncluded == true) { "총액에 세금이 포함되지 않았다" }
+        if (pricing.taxIncluded != true) refuse(ExcludedValue.RATE, "총액에 세금이 포함되지 않았다")
         return Money(pricing.totalPrice, currency)
     }
 
     /** 요청한 날짜가 다 있을 때만 더한다. 빠진 날이 있으면 총액이 아니다 */
     private fun sumDaily(rates: List<FetchedDailyRate>?, currency: String, nights: List<LocalDate>): Money {
-        require(rates != null) { "날짜별 요금이 없다" }
+        if (rates == null) refuse(ExcludedValue.RATE, "날짜별 요금이 없다")
         val byDate = rates.filter { it.date in nights }.groupBy { it.date }
         return nights.fold(Money(0, currency)) { sum, night ->
             val onThatNight = byDate[night]
-            require(!onThatNight.isNullOrEmpty()) { "숙박일 $night 의 요금이 없다" }
+            if (onThatNight.isNullOrEmpty()) refuse(ExcludedValue.RATE, "숙박일 $night 의 요금이 없다")
             val values = onThatNight.distinct()
-            require(values.size == 1) { "숙박일 $night 의 요금이 다른 값으로 두 번 왔다" }
+            if (values.size != 1) refuse(ExcludedValue.RATE, "숙박일 $night 의 요금이 다른 값으로 두 번 왔다")
             val day = values.single()
-            require(day.nightlyRate != null) { "숙박일 $night 의 1박 금액이 없다" }
-            require(day.taxAmount != null) { "숙박일 $night 의 세금액이 없다" }
+            if (day.nightlyRate == null) refuse(ExcludedValue.RATE, "숙박일 $night 의 1박 금액이 없다")
+            if (day.taxAmount == null) refuse(ExcludedValue.RATE, "숙박일 $night 의 세금액이 없다")
             sum + Money(day.nightlyRate, currency) + Money(day.taxAmount, currency)
         }
     }

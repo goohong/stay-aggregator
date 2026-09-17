@@ -60,6 +60,7 @@ checked: 2026-09-17
 | 열림 유지 시간 (W) | `…circuit-breaker.wait-duration-in-open-state` | `PT30S` | 열린 뒤 호출하지 않는 시간 |
 | 반열림 상태에서 허용하는 호출 수 (p) | `…circuit-breaker.permitted-number-of-calls-in-half-open-state` | `4` | HALF_OPEN 에서 시험으로 내보내는 chunk 수 |
 | 격리 보관 기간 (D) | `stay.quarantine.retention` | `P30D` | 마지막으로 본 지 이만큼 지난 격리 기록을 목록 동기화 때 지운다 (ADR-0055) |
+| 격리 쓰기 큐 상한 | `stay.quarantine.queue-capacity` | `1000` | 쓰기를 기다리는 묶음(검색 한 건이 낸 항목들)의 상한. 차면 버리고 `stay.quarantine.dropped` 지표로 센다 ([ADR-0073](adr/0073-small-design-fixes.md)). **판단값**: 쓰기 스레드 하나가 upsert 를 초당 수백 행 처리한다고 보면 1,000 묶음은 수 분의 여유다. 지표가 0 을 넘으면 상한을 올리거나 배치 쓰기(ADR-0055 의 다시 볼 것)로 간다 |
 | 목록 갱신 주기 (I) | `stay.catalog.sync.interval` | 기본 `PT24H` (설정 파일에는 없고 기본값) | 앞선 실행이 끝난 뒤 다음 실행까지 (ADR-0013, ADR-0016) |
 | 첫 실행 지연 | `stay.catalog.sync.initial-delay` | 기본 `PT0S` | 기동 직후 첫 동기화까지. ADR-0013 이 "기동 시"로 정한 값이라 판단 카드가 없다 |
 

@@ -60,14 +60,24 @@ data class SearchResponse(
                 adults = adults,
                 children = children,
                 suppliers = result.suppliers.map { supplier ->
-                    SupplierStatusResponse(
-                        supplier = supplier.supplierId,
-                        status = supplier.status,
-                        failureReason = supplier.failureReason,
-                        roomTypeCount = supplier.roomTypes.size,
-                        outOfSpecCount = supplier.outOfSpecCount,
-                        failedChunks = supplier.failedChunks,
-                    )
+                    when (supplier) {
+                        is SupplierResult.Succeeded -> SupplierStatusResponse(
+                            supplier = supplier.supplierId,
+                            status = supplier.status,
+                            failureReason = null,
+                            roomTypeCount = supplier.available.size,
+                            outOfSpecCount = supplier.outOfSpecCount,
+                            failedChunks = supplier.failedChunks,
+                        )
+                        is SupplierResult.Failed -> SupplierStatusResponse(
+                            supplier = supplier.supplierId,
+                            status = supplier.status,
+                            failureReason = supplier.reason,
+                            roomTypeCount = 0,
+                            outOfSpecCount = 0,
+                            failedChunks = supplier.failedChunks,
+                        )
+                    }
                 },
                 roomTypes = result.suppliers.flatMap { supplier ->
                     supplier.roomTypes.map { room ->

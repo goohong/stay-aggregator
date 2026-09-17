@@ -15,7 +15,7 @@ import java.util.UUID
  * 트랜잭션이 HTTP 호출을 감싸지 않도록, 공급사 호출은 이 메서드 밖에서 끝낸 뒤 들어온다.
  */
 @Repository
-class MappingRepository(private val jdbcClient: JdbcClient) {
+class MappingRepository(private val jdbcClient: JdbcClient) : ActiveMappingSource {
 
     @Transactional
     fun applyCatalog(supplierId: String, hotels: List<NormalizedHotel>): AppliedCatalog {
@@ -46,7 +46,7 @@ class MappingRepository(private val jdbcClient: JdbcClient) {
      * 검색 한 건이 호출 전에 한 번 읽어 두고, 응답이 오면 메모리에서 찾는다. 응답 항목마다 다시 묻지 않는다.
      * 객실 타입이 하나도 남지 않은 숙소는 돌려주지 않는다. 물어봐도 내놓을 것이 없다.
      */
-    fun findActiveHotels(supplierId: String): List<MappedHotel> =
+    override fun findActiveHotels(supplierId: String): List<MappedHotel> =
         jdbcClient.sql(
             """
             select h.internal_hotel_id, h.supplier_hotel_code, h.hotel_name,

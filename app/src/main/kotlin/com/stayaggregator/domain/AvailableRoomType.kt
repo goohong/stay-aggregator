@@ -22,7 +22,12 @@ data class AvailableRoomType(
     val availableRooms: Int,
     val rate: Rate,
 ) {
+    /** 검사한 값 중 무엇이 틀렸나 (ADR-0067) */
+    enum class Field { AVAILABLE_ROOMS }
+
+    class Rejected(override val field: Field, message: String) : com.stayaggregator.domain.Rejected(field, message)
+
     init {
-        require(availableRooms >= 0) { "예약 가능 객실 수가 음수다" }
+        if (availableRooms < 0) throw Rejected(Field.AVAILABLE_ROOMS, "예약 가능 객실 수가 음수다")
     }
 }

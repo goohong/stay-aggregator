@@ -35,3 +35,4 @@ stay:
       permitted-number-of-calls-in-half-open-state: 1
   quarantine:
     retention: P30D
+    queue-capacity: 1000

@@ -25,7 +25,7 @@ date: 2026-09-17
 - **(다) 지금대로 둔다** — 코드가 늘지 않는다. 대신 위 두 우회가 남는다
 
 필드와 예외를 둘 곳
-- **(ㄱ) 값 객체 안에 둔다** (`Money.Field`, `Money.Rejected` 처럼) ← 채택 — 패키지 방향([ADR-0059](0059-quarantine-package.md))을 건드리지 않는다. `mapping` 은 다른 패키지를 보지 않아 공용 예외를 둘 곳이 없다
+- **(ㄱ) 값 객체 안에 둔다** (`Money.Field`, `Money.Rejected` 처럼) ← 채택 — 필드 목록이 그 객체 옆에 있다. (처음 적은 근거 "`mapping` 은 다른 패키지를 보지 않아 공용 예외를 둘 곳이 없다"는 틀렸다. 자리는 있었고, 진짜 이유는 공용 예외를 `mapping` 이나 `supplier` 에 두면 그 패키지의 뜻이 넓어진다는 것이었다. 이후 [ADR-0069](0069-domain-package.md) 로 `domain` 이 생겨 [ADR-0073](0073-small-design-fixes.md) 이 공용 뿌리 `domain.Rejected` 를 뒀다)
 - **(ㄴ) 공용 예외 하나를 한 패키지에 둔다** — 종류가 하나라 간단하다. 대신 `mapping` 이 그 패키지를 보게 되어 방향이 바뀐다
 
 ## Decision

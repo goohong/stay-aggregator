@@ -107,7 +107,7 @@ class SearchServiceIntegrationTest {
 
         val resultA = result.suppliers.single { it.supplierId == "a" }
         assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
-        assertThat(resultA.failureReason).contains("503")
+        assertThat((resultA as SupplierResult.Failed).reason).contains("503")
         assertThat(resultA.roomTypes).isEmpty()
         assertThat(result.suppliers.single { it.supplierId == "b" }.status).isEqualTo(SupplierStatus.SUCCEEDED)
         assertThat(result.roomTypes).extracting<String> { it.roomTypeName }.containsExactly("온돌")
@@ -153,7 +153,7 @@ class SearchServiceIntegrationTest {
 
         val resultA = result.suppliers.single { it.supplierId == "a" }
         assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
-        assertThat(resultA.failureReason).contains("검색 전체 타임아웃")
+        assertThat((resultA as SupplierResult.Failed).reason).contains("검색 전체 타임아웃")
         assertThat(result.roomTypes).extracting<String> { it.roomTypeName }.containsExactly("온돌")
     }
 
@@ -174,7 +174,7 @@ class SearchServiceIntegrationTest {
         val supplier = result.suppliers.single()
         assertThat(supplier.status).isEqualTo(SupplierStatus.SUCCEEDED)
         assertThat(supplier.roomTypes).isEmpty()
-        assertThat(supplier.outOfSpecCount).isEqualTo(1)
+        assertThat((supplier as SupplierResult.Succeeded).outOfSpecCount).isEqualTo(1)
     }
 
     @Test
@@ -229,7 +229,7 @@ class SearchServiceIntegrationTest {
         val supplier = result.suppliers.single()
         assertThat(supplier.status).isEqualTo(SupplierStatus.FAILED)
         // 다른 예외로 감싸지 않고 원래 사유가 그대로 나간다
-        assertThat(supplier.failureReason).isEqualTo("공급사 a 가 503 을 알렸다")
+        assertThat((supplier as SupplierResult.Failed).reason).isEqualTo("공급사 a 가 503 을 알렸다")
     }
 
     @Test
@@ -247,7 +247,7 @@ class SearchServiceIntegrationTest {
 
         assertThat(a.requests).hasSize(2)
         assertThat(Duration.ofNanos(calledAt[1] - calledAt[0])).isGreaterThanOrEqualTo(Duration.ofSeconds(1))
-        assertThat(result.suppliers.single().failureReason).isEqualTo("공급사 a 429")
+        assertThat((result.suppliers.single() as SupplierResult.Failed).reason).isEqualTo("공급사 a 429")
     }
 
     @Test
@@ -328,7 +328,7 @@ class SearchServiceIntegrationTest {
         assertThat(a.requests).hasSize(callsBeforeOpen)
         val resultA = result.suppliers.single { it.supplierId == "a" }
         assertThat(resultA.status).isEqualTo(SupplierStatus.FAILED)
-        assertThat(resultA.failureReason).contains("서킷이 열려 있어")
+        assertThat((resultA as SupplierResult.Failed).reason).contains("서킷이 열려 있어")
         // 다른 공급사는 그대로 나간다
         assertThat(result.suppliers.single { it.supplierId == "b" }.status).isEqualTo(SupplierStatus.SUCCEEDED)
         assertThat(breakers.of("b").state).isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED)

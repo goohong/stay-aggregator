@@ -15,7 +15,7 @@ data class NormalizedHotel(
     /** 검사한 값 중 무엇이 틀렸나. 거부를 받은 쪽이 문장이 아니라 이 값으로 원인을 가른다 (ADR-0067) */
     enum class Field { CODE, NAME, ROOM_TYPES }
 
-    class Rejected(val field: Field, message: String) : IllegalArgumentException(message)
+    class Rejected(override val field: Field, message: String) : com.stayaggregator.domain.Rejected(field, message)
 
     init {
         if (code.isBlank()) throw Rejected(Field.CODE, "숙소 코드가 없다")
@@ -43,7 +43,7 @@ data class NormalizedRoomType(
     /** 검사한 값 중 무엇이 틀렸나 (ADR-0067) */
     enum class Field { CODE, NAME, MAX_OCCUPANCY }
 
-    class Rejected(val field: Field, message: String) : IllegalArgumentException(message)
+    class Rejected(override val field: Field, message: String) : com.stayaggregator.domain.Rejected(field, message)
 
     init {
         if (code.isBlank()) throw Rejected(Field.CODE, "객실 타입 코드가 없다")

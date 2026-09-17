@@ -12,7 +12,7 @@ data class Money(val amount: Long, val currency: String) {
     /** 검사한 값 중 무엇이 틀렸나. 거부를 받은 쪽이 문장이 아니라 이 값으로 원인을 가른다 (ADR-0067) */
     enum class Field { AMOUNT, CURRENCY }
 
-    class Rejected(val field: Field, message: String) : IllegalArgumentException(message)
+    class Rejected(override val field: Field, message: String) : com.stayaggregator.domain.Rejected(field, message)
 
     init {
         if (amount < 0) throw Rejected(Field.AMOUNT, "금액이 음수다")
