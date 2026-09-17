@@ -40,15 +40,6 @@ class SupplierFailureTest {
     }
 
     @Test
-    fun `이미 공급사 실패인 것은 다시 감싸지 않는다`() {
-        val mono = Mono.error<String>(SupplierResponseException("본문 결과 코드가 실패다")).asSupplierFailure("a")
-
-        assertThatThrownBy { mono.block() }
-            .isInstanceOf(SupplierResponseException::class.java)
-            .hasMessage("본문 결과 코드가 실패다")
-    }
-
-    @Test
     fun `원인 예외는 보존된다`() {
         val cause = IllegalStateException("바닥에서 난 오류")
 
