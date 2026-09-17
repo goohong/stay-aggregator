@@ -10,5 +10,13 @@ package com.stayaggregator.supplier
  * 응답이 비어 있는 경우는 동기화 서비스가, 목록을 담는 필드가 없는 경우는 정규화가 만든다 (ADR-0041).
  *
  * `RuntimeException` 을 상속한다. 이 예외가 지나는 자리는 시그니처에 예외를 적을 수 없는 곳이다.
+ *
+ * @property transient **다시 불러 볼 여지가 있는 실패인가** (ADR-0051).
+ *   실패의 성질만 말하고, 실제로 다시 부를지는 부르는 쪽이 정한다. 검색은 다시 부르고 목록 동기화는 부르지 않는다.
+ *   **기본값은 아니요다.** 모르는 실패를 다시 부르지 않는 쪽이 안전하다.
  */
-class SupplierResponseException(message: String, cause: Throwable? = null) : RuntimeException(message, cause)
+class SupplierResponseException(
+    message: String,
+    cause: Throwable? = null,
+    val transient: Boolean = false,
+) : RuntimeException(message, cause)

@@ -100,16 +100,35 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
         )
     }
 
-    /** 두 API 의 껍데기가 같아 실패 판정도 같다. HTTP 200 이어도 결과 코드가 성공이 아니면 공급사 실패다 */
+    /**
+     * 두 API 의 껍데기가 같아 실패 판정도 같다. HTTP 200 이어도 결과 코드가 성공이 아니면 공급사 실패다.
+     *
+     * 다시 불러 볼 여지가 있는지도 여기서 정한다. 결과 코드 체계가 B 것이라 공통 자리가 아니라 어댑터가 본다 (ADR-0051).
+     */
     private fun failIfNotSuccess(resultCode: String?, resultMessage: String?) {
         if (resultCode != SUCCESS_CODE) {
-            throw SupplierResponseException("공급사 B 가 실패를 알렸다: resultCode=$resultCode, resultMessage=$resultMessage")
+            throw SupplierResponseException(
+                "공급사 B 가 실패를 알렸다: resultCode=$resultCode, resultMessage=$resultMessage",
+                transient = isTransient(resultCode),
+            )
         }
     }
+
+    /**
+     * B 의 결과 코드 중 다시 불러 볼 여지가 있는 것 (ADR-0051 의 표).
+     *
+     * `E5xx` 는 공급사 쪽 문제라 순간적일 수 있고, `E429` 는 기다렸다 다시 부르라는 뜻이다.
+     * `E400`·`E401` 은 요청이나 인증이 잘못된 것이라 같은 요청을 다시 보내면 같은 거절이다.
+     * 스펙에 없는 코드가 오면 여지가 없다고 본다. 모르는 실패를 다시 부르지 않는 쪽이 안전하다.
+     */
+    private fun isTransient(resultCode: String?): Boolean =
+        resultCode != null && (resultCode.startsWith(SERVER_ERROR_PREFIX) || resultCode == RATE_LIMITED_CODE)
 
     companion object {
         const val SUPPLIER_ID = "b"
         private const val SUCCESS_CODE = "0000"
+        private const val SERVER_ERROR_PREFIX = "E5"
+        private const val RATE_LIMITED_CODE = "E429"
         private const val API_KEY_HEADER = "X-Api-Key"
     }
 }

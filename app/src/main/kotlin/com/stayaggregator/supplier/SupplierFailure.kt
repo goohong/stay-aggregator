@@ -1,6 +1,9 @@
 package com.stayaggregator.supplier
 
+import org.springframework.web.reactive.function.client.WebClientRequestException
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
+import java.util.concurrent.TimeoutException
 
 /**
  * 공급사마다 다른 실패 표현을 한 가지 신호로 바꾼다 (ADR-0027 의 첫 질문, ADR-0031).
@@ -18,11 +21,32 @@ import reactor.core.publisher.Mono
  * 동기화가 원인을 남기지 않고 한 줄만 찍는다.
  *
  * 원인 클래스 이름을 메시지에 넣는다. 예외에 따라 `message` 가 비어 있고, 로그에서 실패 종류를 가릴 방법이 이것뿐이다.
+ *
+ * 여기서 [SupplierResponseException.transient] 도 정한다. HTTP 상태와 연결·시간 초과는 공급사마다 다르지 않아 공통인 이 자리에서 본다.
+ * 본문 결과 코드는 체계가 공급사마다 달라 어댑터가 본다 (ADR-0051).
  */
 fun <T : Any> Mono<T>.asSupplierFailure(supplierId: String): Mono<T> =
     onErrorMap { cause ->
         SupplierResponseException(
             "공급사 $supplierId 응답을 쓸 수 없다: ${cause.javaClass.simpleName}: ${cause.message}",
             cause,
+            transient = isTransient(cause),
         )
     }
+
+/**
+ * 다시 불러 볼 여지가 있는 실패인지 본다 (ADR-0051 의 표).
+ *
+ * **정한 시간 안에 오지 않은 것은 여지가 없다고 본다.** 공급사가 느리다는 신호이고, 느린 공급사를 다시 불러도 느릴 가능성이 높다.
+ * 본문을 읽지 못한 것도 없다. 응답 구조의 문제라 다시 불러도 같다. 둘 다 여기서 걸리지 않고 기본값(아니요)으로 떨어진다.
+ */
+private fun isTransient(cause: Throwable): Boolean =
+    when (cause) {
+        // 공급사가 상태 코드로 알린 실패. 5xx 는 "지금은 안 된다", 429 는 "기다렸다 다시 불러라" 다
+        is WebClientResponseException -> cause.statusCode.is5xxServerError || cause.statusCode.value() == TOO_MANY_REQUESTS
+        // 연결하지 못한 것. 빠르게 실패하고 공급사 재시작 같은 순간적 상황일 수 있다
+        is WebClientRequestException -> cause.cause !is TimeoutException
+        else -> false
+    }
+
+private const val TOO_MANY_REQUESTS = 429

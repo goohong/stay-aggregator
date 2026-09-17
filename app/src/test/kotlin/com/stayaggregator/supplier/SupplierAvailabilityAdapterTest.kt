@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -130,6 +131,51 @@ class SupplierAvailabilityAdapterTest {
             .hasMessageContaining("E503")
     }
 
+    // ── 다시 불러 볼 여지가 있는 실패인지 (ADR-0051) ──
+
+    @Test
+    fun `공급사가 5xx 로 알린 실패는 다시 불러 볼 여지가 있다`() {
+        respond("/a/v1/availability", status = 503, body = """{"error":"SERVICE_UNAVAILABLE"}""")
+
+        assertThat(transientOf { adapterA().fetchAvailability(request).block() }).isTrue()
+    }
+
+    @Test
+    fun `호출 한도 초과도 여지가 있다`() {
+        respond("/a/v1/availability", status = 429, body = """{"error":"RATE_LIMIT_EXCEEDED"}""")
+
+        assertThat(transientOf { adapterA().fetchAvailability(request).block() }).isTrue()
+    }
+
+    @Test
+    fun `잘못된 요청은 여지가 없다`() {
+        // 같은 요청을 다시 보내면 같은 거절이다
+        respond("/a/v1/availability", status = 400, body = """{"error":"TOO_MANY_HOTEL_CODES"}""")
+
+        assertThat(transientOf { adapterA().fetchAvailability(request).block() }).isFalse()
+    }
+
+    @Test
+    fun `정한 시간 안에 오지 않은 것은 여지가 없다`() {
+        // 느리다는 신호라 다시 불러도 느릴 가능성이 높다 (ADR-0051)
+        server.createContext("/a/v1/availability") { exchange ->
+            Thread.sleep(2_000)
+            write(exchange, 200, """{"items":[]}""")
+        }
+
+        assertThat(transientOf { adapterA().fetchAvailability(request).block() }).isFalse()
+    }
+
+    @Test
+    fun `공급사 B 의 결과 코드도 갈린다`() {
+        respond("/b/api/search", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
+        assertThat(transientOf { adapterB().fetchAvailability(request).block() }).isTrue()
+
+        server.removeContext("/b/api/search")
+        respond("/b/api/search", status = 200, body = """{"resultCode":"E400","resultMessage":"BAD_REQUEST","data":null}""")
+        assertThat(transientOf { adapterB().fetchAvailability(request).block() }).isFalse()
+    }
+
     @Test
     fun `항목 목록 필드가 없으면 없는 대로 넘긴다`() {
         // 판정은 어댑터 밖에서 한다 (ADR-0041)
@@ -138,6 +184,13 @@ class SupplierAvailabilityAdapterTest {
         val fetched = adapterA().fetchAvailability(request).block()!!
 
         assertThat(fetched.items).isNull()
+    }
+
+    /** 던져진 공급사 실패가 다시 불러 볼 여지가 있다고 말하는지 */
+    private fun transientOf(call: () -> Unit): Boolean {
+        val thrown = catchThrowable { call() }
+        assertThat(thrown).isInstanceOf(SupplierResponseException::class.java)
+        return (thrown as SupplierResponseException).transient
     }
 
     private fun adapterA() = SupplierAAdapter(properties("a"))
@@ -154,7 +207,13 @@ class SupplierAvailabilityAdapterTest {
                     availabilityTimeout = Duration.ofSeconds(1),
                 ),
             ),
-            search = StayProperties.Search(budget = Duration.ofSeconds(2), concurrencyPerSupplier = 4),
+            search = StayProperties.Search(
+                budget = Duration.ofSeconds(2),
+                concurrencyPerSupplier = 4,
+                maxRetries = 0,
+                retryMinBackoff = Duration.ofMillis(10),
+                retryMaxBackoff = Duration.ofMillis(50),
+            ),
         )
 
     private fun respond(path: String, status: Int, body: String) {
