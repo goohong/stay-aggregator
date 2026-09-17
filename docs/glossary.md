@@ -16,9 +16,9 @@
 | **예약 가능 객실 수** | (검색 응답) | 그 객실 타입을 몇 실 팔 수 있는가. 연박이면 날짜별 잔여 수의 최솟값 ([ADR-0023](adr/0023-multi-night-availability-minimum.md)).<br>0 이면 예약 불가다. 응답에서 빼지 않고 0 으로 내보낸다 ([ADR-0026](adr/0026-expose-unbookable-as-zero.md)) |
 | **숙박 구간** | `StayPeriod` | 체크인일과 체크아웃일 한 쌍. **체크아웃일은 숙박에 넣지 않는다** ([ADR-0043](adr/0043-stay-period-value-object.md)).<br>3박이면 날짜는 셋이고 체크아웃일은 그중에 없다 |
 | **인원** | `GuestCount` | 검색에 넣는 성인과 아동의 **수**. 나이는 받지 않는다. 성인 최소 인원을 두지 않고, 합이 1 이상이면 된다 ([ADR-0048](adr/0048-guest-count-invariants.md)).<br>객실에 맞는지는 공급사가 최대 수용 인원으로 거른다 |
-| **금액** | `Money` (예정) | 액수와 통화를 함께 담는 값 ([ADR-0042](adr/0042-rate-as-tax-included-total.md)). 통화 없는 액수는 존재하지 않는다 |
-| **요금** | `Rate` (예정) | 금액과 판매 조건을 함께 가진, **팔리는 단위**. 금액 자체가 아니다.<br>같은 객실 타입이라도 조건이 다르면 다른 요금이다 |
-| **판매 조건** | `RateConditions` (예정) | 그 요금으로 살 때 따라오는 것. 지금 담는 것은 조식 포함 여부 하나 ([ADR-0044](adr/0044-rate-conditions-as-value-object.md)).<br>취소 조건은 공급사가 주지 않는다 |
+| **금액** | `Money` | 액수와 통화를 함께 담는 값 ([ADR-0042](adr/0042-rate-as-tax-included-total.md)). 통화 없는 액수는 존재하지 않는다.<br>0 은 된다. 음수만 막는다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md) 의 요금 표) |
+| **요금** | `Rate` | 금액과 판매 조건을 함께 가진, **팔리는 단위**. 금액 자체가 아니다.<br>같은 객실 타입이라도 조건이 다르면 다른 요금이다 |
+| **판매 조건** | `RateConditions` | 그 요금으로 살 때 따라오는 것. 지금 담는 것은 조식 포함 여부 하나 ([ADR-0044](adr/0044-rate-conditions-as-value-object.md)).<br>취소 조건은 공급사가 주지 않는다 |
 
 ## 공급사와 만나는 곳
 
