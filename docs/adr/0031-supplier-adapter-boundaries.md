@@ -95,4 +95,14 @@ date: 2026-09-16
 목록 동기화 서비스가 목록 조회 인터페이스의 목록을 주입받는지
   → `app/src/main/kotlin/com/stayaggregator/catalog/CatalogSyncService.kt` 의 생성자
 
-검색 서비스가 재고 조회 인터페이스만 주입받는지, 공급사 클래스가 두 경계를 함께 구현하는지는 검색을 구현할 때 확인하고 여기에 이름을 적는다.
+공급사 클래스가 두 경계를 함께 구현하는지
+  → `SupplierAAdapter`·`SupplierBAdapter` 가 `SupplierAdapter`(= `CatalogAdapter` + `AvailabilityAdapter`) 를 구현한다
+
+어댑터가 요금을 더하지 않고 공급사가 준 모양 그대로 넘기는지
+  → `SupplierAvailabilityAdapterTest.공급사 A 의 날짜별 요금과 재고를 갈라서 그대로 넘긴다`
+  → `SupplierAvailabilityAdapterTest.공급사 B 의 총액 요금을 그대로 넘긴다`
+
+두 경계가 실패를 같은 신호로 바꾸는지
+  → `SupplierAvailabilityAdapterTest.공급사 B 가 본문 결과 코드로 알린 실패는 목록 경계와 같은 오류가 된다`
+
+검색 서비스가 재고 조회 인터페이스만 주입받는지는 검색 서비스를 만들 때 확인하고 여기에 이름을 적는다.

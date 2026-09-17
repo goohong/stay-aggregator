@@ -87,4 +87,5 @@ consumer 가 어댑터 값을 저장소에 넘기는지
 가짜 어댑터가 식별자와 응답을 따로 맞추지 않는지
   → `CatalogSyncIntegrationTest` 에서 `FakeCatalogAdapter` 를 만드는 자리
 
-재고·요금 경계가 같은 모양인지는 그 경계를 만들 때 확인하고 여기에 적는다.
+재고·요금 경계가 같은 모양인지
+  → `FetchedAvailability` 에 `supplierId` 필드가 없고 `AvailabilityAdapter.supplierId` 만 있다

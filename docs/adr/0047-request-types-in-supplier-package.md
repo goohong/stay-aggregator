@@ -85,4 +85,7 @@ date: 2026-09-17
     하위 패키지(`a`·`b`)가 부모를 가리키는 줄만 나오는지
   → `grep -rn "import com.stayaggregator.catalog" app/src/main/kotlin/com/stayaggregator/search` 가 비는지
 
-검색을 구현할 때 확인하고 결과를 여기에 적는다.
+  → 2026-09-17 재고·요금 경계를 만든 뒤 확인. `supplier` 는 하위 패키지가 부모를 가리키는 줄만 있고, `search` 에는 `catalog` import 가 없다
+
+요청 형태가 `supplier` 에 있고 숙박 구간·인원을 드는지
+  → `app/src/main/kotlin/com/stayaggregator/supplier/AvailabilityRequest.kt`
