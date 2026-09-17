@@ -47,4 +47,6 @@ date: 2026-09-17
 
 ## Verification
 
-구현할 때 확인하고 테스트 이름을 여기에 적는다.
+주기가 1시간보다 짧으면 만들 수 없고, 1시간이면 만들어지는지
+  → `CatalogSyncSchedulerTest.주기가 1시간보다 짧으면 만들 수 없다`
+  → `CatalogSyncSchedulerTest.주기가 1시간이면 만들어진다`
