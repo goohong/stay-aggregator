@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono
  * 항목의 값이 쓸 만한지는 여기서 보지 않는다 (ADR-0031).
  *
  * 요금은 날짜별 1박 금액과 세금액으로 온다. 더하지 않고 그대로 넘긴다. 더하려면 요청한 날짜가 다 왔는지 먼저 봐야 하고
- * 그것은 공급사 공통 판정이다 (ADR-0027 의 요금 표).
+ * 그것은 공급사 공통 검증이다 (ADR-0027 의 요금 표).
  */
 @Component
 class SupplierAAdapter(properties: StayProperties) : SupplierAdapter {
@@ -63,7 +63,7 @@ class SupplierAAdapter(properties: StayProperties) : SupplierAdapter {
 
     private fun SupplierAHotelsResponse.toFetchedCatalog() =
         FetchedCatalog(
-            // 없는 것을 빈 목록으로 바꾸지 않는다. 판정은 정규화가 한다 (ADR-0041)
+            // 없는 것을 빈 목록으로 바꾸지 않는다. 검증은 정규화가 한다 (ADR-0041)
             hotels = items?.map { hotel ->
                 FetchedHotel(
                     code = hotel.hotelCode,

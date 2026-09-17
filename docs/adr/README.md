@@ -27,14 +27,14 @@
 | [0020](0020-mvc-server-with-webclient.md) | 서버는 Spring MVC 로 두고 공급사 호출에만 WebClient 채택 | accepted |
 | [0021](0021-block-on-virtual-threads.md) | 검색 요청은 가상 스레드에서 공급사 응답을 기다리기로 결정 | accepted |
 | [0022](0022-jvm-25.md) | JVM 툴체인을 25 로 올리기로 결정 | accepted |
-| [0023](0023-multi-night-availability-minimum.md) | 연박 예약 가능 객실 수는 날짜별 잔여 수의 최솟값으로 판정 | accepted |
+| [0023](0023-multi-night-availability-minimum.md) | 연박 예약 가능 객실 수는 날짜별 잔여 수의 최솟값으로 계산 | accepted |
 | [0024](0024-missing-night-as-zero-and-record.md) | 숙박일이 빠진 재고 응답은 그 날을 0 으로 보고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
-| [0025](0025-out-of-spec-inventory-dates.md) | 범위 밖·중복·음수 날짜 재고는 보수적으로 판정하고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
+| [0025](0025-out-of-spec-inventory-dates.md) | 범위 밖·중복·음수 날짜 재고는 보수적으로 계산하고 사실을 남기기로 결정 | superseded by [0027](0027-spec-violation-handling-criteria.md) |
 | [0026](0026-expose-unbookable-as-zero.md) | 예약 불가 상품은 응답에서 빼지 않고 예약 가능 객실 수 0 으로 노출 | accepted |
-| [0027](0027-spec-violation-handling-criteria.md) | 스펙과 다른 공급사 응답을 세 가지 질문으로 판정하기로 결정 | accepted |
+| [0027](0027-spec-violation-handling-criteria.md) | 스펙과 다른 공급사 응답을 세 가지 질문으로 분류하기로 결정 | accepted |
 | [0028](0028-implement-decided-units-first.md) | 결정이 끝난 구현 단위부터 구현하고 남은 설계를 이어가기로 결정 | accepted (Verification 짝 규칙은 superseded by [0029](0029-verification-sweep-instead-of-pairing.md)) |
 | [0029](0029-verification-sweep-instead-of-pairing.md) | ADR Verification 은 커밋마다 맞추지 않고 모아서 점검하기로 결정 | accepted |
-| [0030](0030-supplier-response-dto-receives-without-validation.md) | 공급사 응답 DTO 는 스펙 필드를 모두 받기만 하고 판정은 내부 로직에 두기로 결정 | accepted |
+| [0030](0030-supplier-response-dto-receives-without-validation.md) | 공급사 응답 DTO 는 스펙 필드를 모두 받기만 하고 검증은 내부 로직에 두기로 결정 | accepted |
 | [0031](0031-supplier-adapter-boundaries.md) | 공급사 어댑터를 기능별 경계로 나누고 공급사마다 한 클래스로 구현하기로 결정 | accepted |
 | [0032](0032-mapping-persistence-with-jdbcclient.md) | 매핑 저장은 Spring JDBC 의 JdbcClient 로 하기로 결정 | accepted |
 | [0033](0033-flyway-for-schema-migration.md) | 스키마 변경 도구로 Flyway 채택 | accepted |
@@ -69,6 +69,6 @@
 | [0062](0062-name-mismatch-warning.md) | 목록과 재고 응답의 이름이 다르면 경고로 격리 기록에 남기기로 결정 | accepted |
 | [0063](0063-springdoc-openapi.md) | 검색 API 문서를 springdoc-openapi 로 코드에서 만들기로 결정 | accepted |
 | [0064](0064-reservation-proxy-design-only.md) | 예약 대행은 설계만 남기고 결과를 모르는 예약은 같은 멱등 키로 공급사에 물어 확정하기로 결정 | accepted |
-| [0065](0065-availability-cache-redis.md) | 재고·요금을 숙소 단위로 판정한 뒤 Redis 에 캐시하기로 결정 | accepted |
+| [0065](0065-availability-cache-redis.md) | 재고·요금을 숙소 단위로 정규화한 뒤 Redis 에 캐시하기로 결정 | accepted |
 | [0066](0066-connect-timeout-in-shared-webclient.md) | 연결 타임아웃을 호출 타임아웃과 따로 두고 모든 어댑터가 한 함수로 WebClient 를 만들기로 결정 | accepted |
 | [0067](0067-rejection-carries-field.md) | 값 객체가 거부할 때 틀린 필드를 함께 알리고 정규화가 그 필드로 문제 값을 정하기로 결정 | accepted |

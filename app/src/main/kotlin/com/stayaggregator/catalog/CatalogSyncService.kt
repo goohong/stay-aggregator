@@ -44,7 +44,7 @@ class CatalogSyncService(
                 adapter.fetchCatalog().block()
                     ?: throw SupplierResponseException("공급사 ${adapter.supplierId} 응답이 비어 있다")
             } catch (e: Exception) {
-                // 공급사 호출까지만 센다. 판정·저장에서 난 오류는 공급사 지표에 넣지 않는다 (ADR-0060)
+                // 공급사 호출까지만 센다. 정규화·저장에서 난 오류는 공급사 지표에 넣지 않는다 (ADR-0060)
                 metrics.recordCatalog(adapter.supplierId, java.time.Duration.ofNanos(System.nanoTime() - started), e)
                 throw e
             }

@@ -32,7 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * 검색 한 건이 매핑 → 묶음 호출 → 판정 → 합치기로 흐르는지, 부분 실패가 응답에 드러나는지 확인한다.
+ * 검색 한 건이 매핑 → 묶음 호출 → 정규화 → 합치기로 흐르는지, 부분 실패가 응답에 드러나는지 확인한다.
  *
  * 매핑은 실제 PostgreSQL 에 넣고 (ADR-0035), 공급사는 가짜 어댑터로 대신한다. 공급사 HTTP 는 어댑터 테스트가 본다.
  */

@@ -1,5 +1,5 @@
 ---
-topic: 여러 박 검색에서 객실 재고를 표현하고 판정하는 방식
+topic: 여러 박 검색에서 객실 재고를 표현하고 계산하는 방식
 checked: 2026-09-15 (핵심 인용은 원문 HTML·공식 SDK 소스에서 재대조)
 ---
 
@@ -26,7 +26,7 @@ checked: 2026-09-15 (핵심 인용은 원문 HTML·공식 SDK 소스에서 재�
 | Expedia Rapid | 체크인·체크아웃으로 조회하고 요금마다 잔여 수 하나 | "Rates returned are always available." / "The number of bookable rooms remaining with this rate in EPS inventory." | [4] |
 | Hotelbeds Booking API | 요금마다 `allotment` 값 하나. 필드 정의는 문서에 없고 예시 값만 있음 | — | [5] |
 
-## 기간 전체 판정 규칙
+## 기간 전체 예약 가능 규칙
 
 | 곳 | 원문 | 출처 |
 |---|---|---|

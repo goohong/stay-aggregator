@@ -101,7 +101,7 @@ class SupplierCatalogAdapterTest {
 
     @Test
     fun `목록 필드가 없는 응답은 값을 거르지 않고 없는 대로 넘긴다`() {
-        // 판정은 정규화가 한다. 어댑터가 빈 목록으로 바꿔 버리면 그 신호가 사라진다 (ADR-0041)
+        // 검증은 정규화가 한다. 어댑터가 빈 목록으로 바꿔 버리면 그 신호가 사라진다 (ADR-0041)
         respond("/a/v1/hotels", status = 200, body = "{}")
 
         val fetched = adapterA().fetchCatalog().block()!!

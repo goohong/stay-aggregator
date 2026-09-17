@@ -63,7 +63,7 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
     private fun SupplierBPropertiesResponse.toFetchedCatalog(): FetchedCatalog {
         failIfNotSuccess(resultCode, resultMessage)
         return FetchedCatalog(
-            // 없는 것을 빈 목록으로 바꾸지 않는다. 판정은 정규화가 한다 (ADR-0041)
+            // 없는 것을 빈 목록으로 바꾸지 않는다. 검증은 정규화가 한다 (ADR-0041)
             hotels = data?.items?.map { property ->
                 FetchedHotel(
                     code = property.propertyId,
@@ -101,7 +101,7 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
     }
 
     /**
-     * 두 API 의 껍데기가 같아 실패 판정도 같다. HTTP 200 이어도 결과 코드가 성공이 아니면 공급사 실패다.
+     * 두 API 의 껍데기가 같아 실패 분류도 같다. HTTP 200 이어도 결과 코드가 성공이 아니면 공급사 실패다.
      *
      * 다시 불러 볼 여지가 있는지도 여기서 정한다. 결과 코드 체계가 B 것이라 공통 자리가 아니라 어댑터가 본다 (ADR-0051).
      */

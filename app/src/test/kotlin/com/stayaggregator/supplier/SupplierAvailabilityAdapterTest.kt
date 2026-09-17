@@ -15,7 +15,7 @@ import java.time.Duration
 import java.time.LocalDate
 
 /**
- * 재고·요금 경계의 어댑터가 공급사마다 다른 요금 모양을 판정 없이 그대로 넘기는지,
+ * 재고·요금 경계의 어댑터가 공급사마다 다른 요금 모양을 검증 없이 그대로 넘기는지,
  * 요청 파라미터가 스펙대로 나가는지 확인한다 (ADR-0031, ADR-0049).
  *
  * 실패 표현의 통일은 [SupplierCatalogAdapterTest] 가 목록 경계로 확인했고, 두 경계가 같은 감싸기를 쓰므로 여기서는 B 의 결과 코드 하나만 다시 본다.
@@ -220,7 +220,7 @@ class SupplierAvailabilityAdapterTest {
 
     @Test
     fun `항목 목록 필드가 없으면 없는 대로 넘긴다`() {
-        // 판정은 어댑터 밖에서 한다 (ADR-0041)
+        // 검증은 어댑터 밖에서 한다 (ADR-0041)
         respond("/a/v1/availability", status = 200, body = "{}")
 
         val fetched = adapterA().fetchAvailability(request).block()!!

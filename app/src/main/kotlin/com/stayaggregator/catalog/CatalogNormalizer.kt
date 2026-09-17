@@ -12,15 +12,15 @@ import org.springframework.stereotype.Component
 /**
  * 어댑터가 가져온 값([FetchedCatalog])에서 쓸 것과 뺄 것을 가른다.
  *
- * 값이 쓸 만한지는 [NormalizedHotel]·[NormalizedRoomType] 이 판정한다 (ADR-0041).
+ * 값이 유효한지는 [NormalizedHotel]·[NormalizedRoomType] 이 검증한다 (ADR-0041).
  * 여기서는 만들어 보고, 못 만든 것을 사유와 함께 모으는 일만 한다.
  *
  * 목록을 담는 필드가 아예 없으면 응답을 스펙대로 읽지 못한 것이라, 항목 문제가 아니라 그 공급사 실패로 본다
- * (ADR-0027 의 첫 질문, ADR-0041). 이 판정은 공급사마다 다르지 않아 어댑터 밖 한곳에 둔다 (ADR-0031).
+ * (ADR-0027 의 첫 질문, ADR-0041). 이 분류는 공급사마다 다르지 않아 어댑터 밖 한곳에 둔다 (ADR-0031).
  *
  * 같은 코드가 두 번 왔는지는 항목 하나만 봐서는 알 수 없어 여기서 본다. 객체가 자기 불변식으로 지킬 수 없는 유일한 조건이다.
  *
- * 어느 공급사의 응답인지는 모른다. 판정 규칙이 공급사 공통이라 알 필요가 없고, 그 이름은 consumer 가 든다 (ADR-0049).
+ * 어느 공급사의 응답인지는 모른다. 검증 규칙이 공급사 공통이라 알 필요가 없고, 그 이름은 consumer 가 든다 (ADR-0049).
  */
 @Component
 class CatalogNormalizer {

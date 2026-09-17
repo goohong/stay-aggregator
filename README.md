@@ -117,13 +117,13 @@ curl -X POST 'localhost:9090/control/a/mode?value=normal'                # 되�
 | 만들거나 고칠 것 | 내용 |
 |---|---|
 | `app/.../supplier/c/SupplierCAdapter.kt` | `SupplierAdapter` 를 구현합니다. 목록 조회와 재고·요금 조회 둘 다입니다. 하나를 빠뜨리면 컴파일되지 않습니다 |
-| `app/.../supplier/c/SupplierC*Response.kt` | 그 공급사의 응답을 받는 DTO 둘. 규약의 필드를 모두 받기만 하고 판정하지 않습니다 ([ADR-0030](docs/adr/0030-supplier-response-dto-receives-without-validation.md)) |
+| `app/.../supplier/c/SupplierC*Response.kt` | 그 공급사의 응답을 받는 DTO 둘. 규약의 필드를 모두 받기만 하고 검증하지 않습니다 ([ADR-0030](docs/adr/0030-supplier-response-dto-receives-without-validation.md)) |
 | `application.yml` 의 `stay.suppliers.c` | 주소·인증 키·타임아웃 두 개 |
 
 consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사가 늘어도 호출하는 쪽 코드가 그대로입니다
 ([ADR-0031](docs/adr/0031-supplier-adapter-boundaries.md)).
-실패 표현의 차이, 필드 이름, 요금 구조는 어댑터가 흡수하고, 값을 쓸 수 있는지 판정하는 규칙은 어댑터 밖 한 곳에 있습니다.
-그래서 공급사가 늘어도 판정 규칙이 갈라지지 않습니다.
+실패 표현의 차이, 필드 이름, 요금 구조는 어댑터가 흡수하고, 값을 쓸 수 있는지 검증하는 규칙은 어댑터 밖 한 곳에 있습니다.
+그래서 공급사가 늘어도 검증 규칙이 공급사마다 달라지지 않습니다.
 
 공급사 식별자는 어댑터의 상수 한 곳에만 적습니다. 응답 형태에는 싣지 않습니다 ([ADR-0049](docs/adr/0049-supplier-id-on-adapter-only.md)).
 
@@ -135,7 +135,7 @@ consumer 는 어댑터를 인터페이스 목록으로 주입받아, 공급사�
 | 숙소가 많을 때 | 공급사가 한 번에 숙소 코드 50개까지만 받으므로 50개씩 나눠 부르고, 동시에 부르는 묶음 수를 제한합니다. 숙소 3,000개면 공급사당 60번입니다 | ADR-0045 |
 | 타임아웃 | 호출 하나마다, 그리고 검색 한 건 전체에 겁니다. 연결 수립에는 따로 짧은 타임아웃을 걸어, 연결이 안 되는 공급사를 호출 타임아웃까지 기다리지 않습니다([ADR-0066](docs/adr/0066-connect-timeout-in-shared-webclient.md)). 호출 하나의 타임아웃은 검색 전체 한계보다 짧아야 하고, 설정이 그걸 검사합니다. 목록 동기화는 배경 작업이라 다른 값을 씁니다 | [ADR-0039](docs/adr/0039-catalog-sync-remaining.md), ADR-0045 |
 | 부분 실패 | 공급사 하나가 실패해도 나머지로 응답하고 그 사실을 응답에 싣습니다 | [ADR-0046](docs/adr/0046-supplier-status-in-search-response.md) |
-| 실패 판정 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 신호로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
+| 실패 분류 통일 | HTTP 상태로 알리는 실패, 본문 코드로 알리는 실패, 응답이 오지 않은 것을 모두 같은 신호로 바꿉니다 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 재시도 | **일시적인 실패만** 다시 부릅니다. 지수 백오프에 무작위를 섞습니다 | [ADR-0051](docs/adr/0051-retry-transient-supplier-failures.md) |
 | 서킷 브레이커 | 공급사마다 둡니다. 재시도까지 다 실패한 묶음이 많으면 한동안 그 공급사를 부르지 않습니다 | [ADR-0056](docs/adr/0056-circuit-breaker-per-supplier-outside-retry.md) |
 | 지표 | 공급사 호출을 공급사와 결과(성공·타임아웃·공급사 실패·서킷 열림·우리 쪽 오류)로 나눠 세고 `/actuator/metrics` 로 봅니다 | [ADR-0060](docs/adr/0060-supplier-call-metrics.md) |
@@ -162,7 +162,7 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 - **체크인일이 지난 날짜인지 검사.** 숙소의 시간대를 우리가 모릅니다. 서버 기준으로 막으면 현지로는 아직 어제인 숙소의 합법인 요청을 막게 됩니다 ([ADR-0052](docs/adr/0052-no-past-date-check.md))
 - **숙소명으로 같은 숙소를 추정해 합치기.** 공통 키도 주소도 없어 동명 숙소를 잘못 합칠 수 있습니다.
   사람이 확인한 짝만 같은 값으로 묶기로 정했고 아직 구현하지 않았습니다. 지금은 각각 내보내고 `supplier` 를 함께 싣습니다 ([ADR-0058](docs/adr/0058-same-hotel-confirmed-pairs-only.md))
-- **요금·재고 캐시.** 숙소 단위로 판정한 결과를 Redis 에 두는 설계는 정했고 아직 구현하지 않았습니다 ([ADR-0065](docs/adr/0065-availability-cache-redis.md))
+- **요금·재고 캐시.** 숙소 단위로 정규화한 결과를 Redis 에 두는 설계는 정했고 아직 구현하지 않았습니다 ([ADR-0065](docs/adr/0065-availability-cache-redis.md))
 
 ## 주요 결정
 
@@ -177,7 +177,7 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 | 목록에서 빠진 숙소도 행을 남기고 표시만 한다 | 지웠다가 다시 나타나면 내부 식별자가 바뀐다 | [ADR-0037](docs/adr/0037-missing-catalog-entries-kept-and-marked.md) |
 | 연박 예약 가능 수는 날짜별 잔여 수의 최솟값 | 기간 전체를 팔려면 매일 밤 방이 한 실씩 있어야 한다 | [ADR-0023](docs/adr/0023-multi-night-availability-minimum.md) |
 | 예약 불가 상품도 0 으로 노출한다 | 매진을 보여 줄지는 화면이 정할 일이라 서버가 정보를 버리지 않는다 | [ADR-0026](docs/adr/0026-expose-unbookable-as-zero.md) |
-| 규약과 다른 공급사 응답은 세 질문으로 판정한다 | 응답을 읽을 수 있나 / 계산에 쓰이나 / 값을 하나로 정할 수 있나 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
+| 규약과 다른 공급사 응답은 세 질문으로 분류한다 | 응답을 읽을 수 있나 / 계산에 쓰이나 / 값을 하나로 정할 수 있나 | [ADR-0027](docs/adr/0027-spec-violation-handling-criteria.md) |
 | 값 검증은 그 값을 담는 객체의 생성자에 둔다 | 조건과 사유가 한자리에 있고, 검증을 거치지 않은 객체가 존재할 수 없다 | [ADR-0041](docs/adr/0041-validate-in-constructors.md) |
 
 ## 문서

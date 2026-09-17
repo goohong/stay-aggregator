@@ -154,7 +154,7 @@ Jackson 2 용이라 Boot 4 가 설정하는 Jackson 3 에 붙지 않는다. 어�
 - **AI 주장과 근거** — "Boot 3 에서 WebClient 를 쓰려면 webflux 스타터를 넣고
   `spring.main.web-application-type: servlet` 으로 서버를 눌러야 한다"고 여러 번 말했다
 - **반박** — Boot 3 도 webmvc 와 webflux 가 클래스패스에 함께 있으면 자동으로 SERVLET
-  으로 판정한다. 그 설정은 필요 없다
+  으로 정한다. 그 설정은 필요 없다
   ([Boot 3.5.0 의 `WebApplicationType.deduceFromClasspath()`](https://github.com/spring-projects/spring-boot/blob/v3.5.0/spring-boot-project/spring-boot/src/main/java/org/springframework/boot/WebApplicationType.java) 는
   WebFlux 지표가 있고 MVC 지표가 없을 때만 REACTIVE 를 돌려준다)
 - **검증 결과** — 반박이 맞다. Boot 3 의 실제 단점은 그 설정이 필요해서가 아니라

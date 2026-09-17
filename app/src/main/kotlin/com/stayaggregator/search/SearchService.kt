@@ -22,7 +22,7 @@ import reactor.util.retry.Retry
 import java.util.concurrent.TimeoutException
 
 /**
- * 검색 한 건. 공급사마다 매핑을 읽고, 묶음으로 나눠 재고·요금을 물은 뒤, 판정해서 합친다.
+ * 검색 한 건. 공급사마다 매핑을 읽고, 묶음으로 나눠 재고·요금을 물은 뒤, 정규화해서 합친다.
  *
  * 공급사들은 동시에 부르고, 공급사 하나가 실패해도 나머지 결과로 응답한다 (ADR-0046).
  * 한 공급사 안에서는 묶음을 [StayProperties.Search.concurrencyPerSupplier] 개씩 동시에 부르고,
@@ -64,7 +64,7 @@ class SearchService(
             .timeout(search.timeout)
             .onErrorResume { e -> Mono.just(failed(adapter.supplierId, e)) }
 
-    /** 매핑의 숙소 코드를 50개씩 나눠 부르고, 묶음마다 판정한 결과를 모은다 */
+    /** 매핑의 숙소 코드를 50개씩 나눠 부르고, 묶음마다 정규화한 결과를 모은다 */
     private fun fetchAll(adapter: AvailabilityAdapter, mapped: List<MappedHotel>, period: StayPeriod, guests: GuestCount): Mono<SupplierResult> {
         if (mapped.isEmpty()) {
             return Mono.just(SupplierResult.succeeded(adapter.supplierId, emptyList(), outOfSpecCount = 0, failedChunks = 0))
@@ -90,7 +90,7 @@ class SearchService(
                 // 재시도 바깥이라 순간적인 실패는 재시도가 먼저 흡수하고, 다 실패한 묶음만 센다 (ADR-0056).
                 // 검색 전체 타임아웃으로 취소될 때 받은 허가를 돌려주는 일도 이 연산자가 한다 (ADR-0057)
                 .transformDeferred(CircuitBreakerOperator.of(circuitBreakers.of(adapter.supplierId)))
-                // 서킷과 같은 단위(재시도까지 거친 최종 결과)로 센다. 판정 전에 두어 판정 오류는 공급사 지표에 넣지 않는다 (ADR-0060).
+                // 서킷과 같은 단위(재시도까지 거친 최종 결과)로 센다. 정규화 전에 두어 정규화 오류는 공급사 지표에 넣지 않는다 (ADR-0060).
                 // 검색 전체 타임아웃으로 취소된 묶음은 끝나지 않아 세지 않는다
                 .doOnSuccess { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), null) }
                 .doOnError { metrics.recordAvailability(adapter.supplierId, elapsedSince(started), it) }
