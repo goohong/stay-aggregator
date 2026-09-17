@@ -296,7 +296,7 @@ class SearchServiceIntegrationTest {
     }
 
     @Test
-    fun `공급사 실패가 아닌 우리 쪽 오류는 서킷이 세지 않는다`() {
+    fun `공급사 실패가 아닌 우리 쪽 오류는 서킷이 성공으로도 실패로도 세지 않는다`() {
         // 우리 결함 때문에 멀쩡한 공급사를 끊지 않는다 (ADR-0056)
         repository.applyCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2))))
         val a = FakeAdapter("a") { Mono.error(IllegalStateException("우리 쪽 결함")) }
@@ -306,6 +306,9 @@ class SearchServiceIntegrationTest {
 
         assertThat(breakers.of("a").state).isEqualTo(io.github.resilience4j.circuitbreaker.CircuitBreaker.State.CLOSED)
         assertThat(a.requests).hasSize(6)
+        // 무시해야 한다. 성공으로 세면 실패율이 희석된다
+        assertThat(breakers.of("a").metrics.numberOfSuccessfulCalls).isZero()
+        assertThat(breakers.of("a").metrics.numberOfFailedCalls).isZero()
     }
 
     @Test

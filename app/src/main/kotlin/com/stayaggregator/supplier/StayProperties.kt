@@ -53,6 +53,8 @@ data class StayProperties(
     ) {
         init {
             require(maxRetries >= 0) { "재시도 횟수가 음수다" }
+            require(!retryMinBackoff.isNegative) { "재시도 기준 대기가 음수다" }
+            require(retryMaxBackoff >= retryMinBackoff) { "재시도 최대 대기가 기준 대기보다 짧다" }
         }
     }
 
@@ -77,6 +79,17 @@ data class StayProperties(
             require(slidingWindowSize >= 1) { "실패율을 계산할 묶음 수가 1 미만이다" }
             require(minimumNumberOfCalls >= 1) { "최소 묶음 수가 1 미만이다" }
             require(permittedNumberOfCallsInHalfOpenState >= 1) { "시험 삼아 부를 묶음 수가 1 미만이다" }
+            require(waitDurationInOpenState.toMillis() >= 1) { "서킷을 열어 두는 시간이 1ms 미만이다" }
+        }
+    }
+
+    init {
+        // 검색 시간 한계로 취소된 묶음은 서킷이 실패로 세지 않는다. 호출 하나의 타임아웃이 한계보다 짧아야
+        // 무응답 공급사가 타임아웃 실패로 세어져 서킷이 열린다 (ADR-0056)
+        suppliers.forEach { (id, supplier) ->
+            require(supplier.availabilityTimeout < search.budget) {
+                "공급사 $id 의 재고·요금 타임아웃(${supplier.availabilityTimeout})이 검색 시간 한계(${search.budget})보다 짧아야 한다"
+            }
         }
     }
 

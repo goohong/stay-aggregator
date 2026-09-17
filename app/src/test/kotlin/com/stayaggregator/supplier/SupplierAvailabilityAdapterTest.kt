@@ -167,6 +167,15 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
+    fun `연결을 거절당한 것은 여지가 있다`() {
+        // 아무도 듣지 않는 포트. 공급사 재시작 같은 순간적 상황일 수 있다 (ADR-0051)
+        val closedPort = java.net.ServerSocket(0).use { it.localPort }
+        val adapter = SupplierAAdapter(properties("a").let { p -> StayProperties(p.suppliers.mapValues { (_, s) -> s.copy(baseUrl = "http://localhost:$closedPort") }, p.search) })
+
+        assertThat(transientOf { adapter.fetchAvailability(request).block() }).isTrue()
+    }
+
+    @Test
     fun `공급사 B 의 결과 코드도 갈린다`() {
         respond("/b/api/search", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
         assertThat(transientOf { adapterB().fetchAvailability(request).block() }).isTrue()

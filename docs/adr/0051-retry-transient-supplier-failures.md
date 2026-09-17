@@ -112,6 +112,8 @@ date: 2026-09-17
   → `SupplierAvailabilityAdapterTest.잘못된 요청은 여지가 없다`
   → `SupplierAvailabilityAdapterTest.정한 시간 안에 오지 않은 것은 여지가 없다`
   → `SupplierAvailabilityAdapterTest.공급사 B 의 결과 코드도 갈린다` (본문 코드는 어댑터가 본다)
+  → `SupplierAvailabilityAdapterTest.연결을 거절당한 것은 여지가 있다`
+    (Netty 의 연결·읽기 시간 초과는 여지가 없다. 처음 구현은 이것을 일시적으로 판정했고 독립 검토가 찾았다)
 
 일시적인 실패만 다시 부르는지
   → `SearchServiceIntegrationTest.일시적인 실패는 다시 부르고 성공하면 그 결과를 쓴다`

@@ -124,7 +124,7 @@ class SearchService(
         // 하나도 성공하지 못했으면 이 공급사의 응답을 만들 수 없다. 그것이 실패다 (ADR-0050).
         // 왜 실패했는지를 응답에 싣는다 (ADR-0046). 묶음이 여럿이면 원인이 대개 같으므로 마지막 것 하나만 붙인다
         if (succeeded.isEmpty()) {
-            val reason = if (chunkCount == 1) failed.last().reason else "모든 묶음 호출($chunkCount 개)이 실패했다. 마지막 원인: ${failed.last().reason}"
+            val reason = if (chunkCount == 1) failed.last().reason else "모든 묶음($chunkCount 개)을 쓰지 못했다. 마지막 원인: ${failed.last().reason}"
             return SupplierResult.failed(supplierId, reason, failedChunks = failed.size)
         }
         val failedChunks = failed.size
