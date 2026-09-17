@@ -58,7 +58,7 @@ date: 2026-09-16
 - 한 공급사의 숙소가 아주 많아지면 트랜잭션이 길어지고 그동안 매핑 테이블에 쓰기 잠금이 걸린다. 하루 한 번 배경 작업이라 지금 규모에서는 문제로 보지 않았고, 길어지면 쪼개는 방법을 다시 본다
 - 반영은 숙소 하나와 객실 타입 하나마다 DB 를 한 번씩 오간다. 숙소가 수천이면 왕복도 수천 번이고 위의 잠금 시간도 그만큼 늘어난다.
   여러 건을 한 문장으로 넣는 방법은 [ADR-0032](0032-mapping-persistence-with-jdbcclient.md) 가 고른 도구로 할 수 있다. **다시 볼 조건은 공급사 한 곳의 숙소 수다.**
-  지금은 Mock 기준 3건이라 근거가 없어 미룬다
+  지금은 Mock 기준 한 공급사에 두 건까지라 근거가 없어 미룬다
 
 **넘기는 것**
 - 목록 조회의 타임아웃 값. Mock 의 응답 지연 모드로 측정한 뒤 정한다([ADR-0028](0028-implement-decided-units-first.md))
@@ -79,16 +79,21 @@ date: 2026-09-16
 응답하지 않는 공급사가 있어도 기동이 끝나는지 — 테스트로 잡기 어려운 성질이라 실행해 관찰한다.
 
 ```
+./gradlew :mock-supplier:bootRun                                  # 먼저 띄운다
 curl -X POST 'localhost:9090/control/a/mode?value=no-response'
-./gradlew :app:bootRun
+./gradlew :app:bootRun                                            # 다른 터미널에서
+curl -X POST 'localhost:9090/control/a/mode?value=normal'         # 관찰이 끝나면 되돌린다
 ```
 
-보는 것은 **로그의 순서**다. `Started StayAggregatorApplicationKt` 가 먼저 나오고, 그 뒤 `stay.suppliers.a.timeout` 만큼
-지나서야 `목록 동기화 실패 supplier=a` 가 나오며, 같은 주기에 `목록 동기화 완료 supplier=b` 가 남아야 한다.
-기동이 동기화를 기다렸다면 두 로그의 순서가 뒤집힌다.
+보는 것은 두 가지다.
 
-2026-09-17 관찰: 기동 로그가 먼저 나왔고 실패 로그는 30초 뒤였다(타임아웃과 같다). B 는 숙소 1건·객실 타입 1건으로 반영됐다.
-기동에 걸린 시간 자체(2.7초)는 기계마다 달라 판정 기준으로 쓰지 않는다.
+- **로그의 순서** — `Started StayAggregatorApplicationKt` 가 먼저 나오고, 그 뒤 `stay.suppliers.a.timeout` 만큼
+  지나서야 `목록 동기화 실패 supplier=a` 가 나오며, 같은 주기에 `목록 동기화 완료 supplier=b` 가 남아야 한다
+- **실패 로그를 찍은 스레드** — 스케줄러 스레드여야 한다. 순서만으로는 기동 로그 뒤에서 막는 구현을 가려내지 못한다.
+  기동 스레드에서 찍혔다면 기동이 동기화를 기다린 것이다
+
+2026-09-17 관찰: 기동 로그가 `[main]` 에서 먼저 나왔고, 실패 로그는 30초 뒤 `[scheduling-1]` 에서 나왔다(타임아웃과 같다).
+B 는 숙소 1건·객실 타입 1건으로 반영됐다. 기동에 걸린 시간 자체(2.7초)는 기계마다 달라 판정 기준으로 쓰지 않는다.
 
 ## Discussion
 
