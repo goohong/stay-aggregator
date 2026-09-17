@@ -12,6 +12,7 @@ import com.stayaggregator.supplier.StayProperties
 import com.stayaggregator.supplier.SupplierAdapter
 import com.stayaggregator.supplier.SupplierResponseException
 import com.stayaggregator.supplier.asSupplierFailure
+import com.stayaggregator.supplier.supplierWebClient
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
@@ -31,10 +32,7 @@ class SupplierBAdapter(properties: StayProperties) : SupplierAdapter {
 
     private val config = properties.of(SUPPLIER_ID)
 
-    private val webClient: WebClient = WebClient.builder()
-        .baseUrl(config.baseUrl)
-        .defaultHeader(API_KEY_HEADER, config.apiKey)
-        .build()
+    private val webClient: WebClient = supplierWebClient(config, API_KEY_HEADER)
 
     override fun fetchCatalog(): Mono<FetchedCatalog> =
         webClient.get()

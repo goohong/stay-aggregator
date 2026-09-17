@@ -18,6 +18,14 @@ class StayPropertiesTest {
     }
 
     @Test
+    fun `연결 타임아웃이 호출 타임아웃보다 길면 만들 수 없다`() {
+        // 호출 타임아웃이 먼저 발동해 연결 타임아웃이 하는 일이 없다 (ADR-0066)
+        assertThatThrownBy { StayProperties.Supplier("http://localhost", "k", Duration.ofSeconds(30), Duration.ofSeconds(1), Duration.ofSeconds(2)) }
+            .isInstanceOf(IllegalArgumentException::class.java)
+            .hasMessageContaining("연결 타임아웃")
+    }
+
+    @Test
     fun `재시도 최대 대기가 기준 대기보다 짧으면 만들 수 없다`() {
         assertThatThrownBy { search(min = Duration.ofSeconds(1), max = Duration.ofMillis(100)) }
             .isInstanceOf(IllegalArgumentException::class.java)
@@ -26,7 +34,7 @@ class StayPropertiesTest {
 
     private fun properties(availabilityTimeout: Duration, budget: Duration) =
         StayProperties(
-            suppliers = mapOf("a" to StayProperties.Supplier("http://localhost", "k", Duration.ofSeconds(30), availabilityTimeout)),
+            suppliers = mapOf("a" to StayProperties.Supplier("http://localhost", "k", Duration.ofSeconds(30), availabilityTimeout, Duration.ofMillis(500))),
             search = search(budget = budget),
         )
 

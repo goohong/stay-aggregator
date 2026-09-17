@@ -24,11 +24,14 @@ stay:
       timeout: PT30S
       # 재고·요금 호출 하나의 한계. 아직 측정 전 임시값이다. Mock 지연 모드로 재서 정하고 ADR 에 근거를 적는다 (ADR-0045)
       availability-timeout: PT5S
+      # 연결 수립만 기다리는 한계. AWS SDK 의 standard 모드 기본값을 따랐다 (ADR-0066)
+      connect-timeout: PT3.1S
     b:
       base-url: http://localhost:9090
       api-key: mock
       timeout: PT30S
       availability-timeout: PT5S
+      connect-timeout: PT3.1S
 
   search:
     # 검색 한 건 전체의 한계와 공급사당 동시 호출 수. 둘 다 측정 전 임시값이다 (ADR-0045)

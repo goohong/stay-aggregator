@@ -29,7 +29,20 @@ data class StayProperties(
          * 이 값도 없으면 앱이 뜨지 않는다.
          */
         val availabilityTimeout: Duration,
-    )
+        /**
+         * 연결 수립만 기다리는 한계. 위 두 타임아웃은 연결부터 응답까지 전체에 걸리고, 이 값은 연결에만 걸린다 (ADR-0066).
+         * 이 값도 없으면 앱이 뜨지 않는다.
+         */
+        val connectTimeout: Duration,
+    ) {
+        init {
+            require(connectTimeout.toMillis() >= 1) { "연결 타임아웃이 1ms 미만이다" }
+            // 연결 타임아웃이 호출 타임아웃보다 길면 연결 타임아웃이 발동할 일이 없다
+            require(connectTimeout < timeout && connectTimeout < availabilityTimeout) {
+                "연결 타임아웃($connectTimeout)은 목록·재고 호출 타임아웃($timeout, $availabilityTimeout)보다 짧아야 한다"
+            }
+        }
+    }
 
     data class Search(
         /**

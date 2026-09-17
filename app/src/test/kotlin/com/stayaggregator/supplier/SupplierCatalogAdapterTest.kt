@@ -172,6 +172,7 @@ class SupplierCatalogAdapterTest {
                     apiKey = "test",
                     timeout = timeout,
                     availabilityTimeout = timeout,
+                    connectTimeout = timeout.dividedBy(2),
                 ),
             ),
             search = StayProperties.Search(

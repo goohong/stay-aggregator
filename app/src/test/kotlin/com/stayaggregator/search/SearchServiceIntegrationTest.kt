@@ -351,7 +351,7 @@ class SearchServiceIntegrationTest {
         meterRegistry: io.micrometer.core.instrument.MeterRegistry = io.micrometer.core.instrument.simple.SimpleMeterRegistry(),
     ): SearchService {
         // 호출 하나의 타임아웃은 검색 시간 한계보다 짧아야 한다(StayProperties 가 지킴). 한계를 줄인 테스트는 함께 줄인다. 가짜 어댑터는 이 값을 쓰지 않는다
-        val suppliers = properties.suppliers.mapValues { (_, s) -> if (s.availabilityTimeout < budget) s else s.copy(availabilityTimeout = budget.dividedBy(2)) }
+        val suppliers = properties.suppliers.mapValues { (_, s) -> if (s.availabilityTimeout < budget) s else s.copy(availabilityTimeout = budget.dividedBy(2), connectTimeout = minOf(s.connectTimeout, budget.dividedBy(4))) }
         val props = StayProperties(suppliers, properties.search.copy(budget = budget, maxRetries = maxRetries))
         return SearchService(adapters.toList(), repository, normalizer, breakers ?: SupplierCircuitBreakers(props), quarantine, com.stayaggregator.supplier.SupplierCallMetrics(meterRegistry), props)
     }

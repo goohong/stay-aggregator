@@ -188,6 +188,27 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
+    fun `연결이 수립되지 않으면 호출 타임아웃까지 기다리지 않고 연결 타임아웃에서 실패한다`() {
+        // 192.0.2.1 은 문서용으로 예약돼 라우팅되지 않는 주소다(RFC 5737). 연결 요청에 답이 없어 수립되지 않는다 (ADR-0066).
+        // 로컬 서버의 대기열을 채우는 방법은 macOS 에서 연결이 수립돼 버려 쓰지 않았다
+        val base = properties("a")
+        val adapter = SupplierAAdapter(StayProperties(
+            base.suppliers.mapValues { (_, s) ->
+                s.copy(baseUrl = "http://192.0.2.1", availabilityTimeout = Duration.ofSeconds(5), connectTimeout = Duration.ofMillis(300))
+            },
+            base.search.copy(budget = Duration.ofSeconds(8)),
+        ))
+
+        val started = System.nanoTime()
+        val thrown = catchThrowable { adapter.fetchAvailability(request).block() }
+        val elapsed = Duration.ofNanos(System.nanoTime() - started)
+
+        assertThat(elapsed).isLessThan(Duration.ofSeconds(3))
+        assertThat((thrown as SupplierResponseException).timedOut).isTrue()
+        assertThat(thrown.transient).isFalse()
+    }
+
+    @Test
     fun `공급사 B 의 결과 코드도 갈린다`() {
         respond("/b/api/search", status = 200, body = """{"resultCode":"E503","resultMessage":"TEMPORARILY_UNAVAILABLE","data":null}""")
         assertThat(transientOf { adapterB().fetchAvailability(request).block() }).isTrue()
@@ -226,6 +247,7 @@ class SupplierAvailabilityAdapterTest {
                     apiKey = "test",
                     timeout = Duration.ofSeconds(1),
                     availabilityTimeout = Duration.ofSeconds(1),
+                    connectTimeout = Duration.ofMillis(500),
                 ),
             ),
             search = StayProperties.Search(
