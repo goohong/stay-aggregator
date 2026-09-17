@@ -51,3 +51,4 @@
 | [0044](0044-rate-conditions-as-value-object.md) | 판매 조건을 요금이 가지되 조건 묶음을 별도 값 객체로 두기로 결정 | accepted |
 | [0045](0045-search-concurrency-and-budget.md) | 재고·요금 호출을 50개씩 나누고 동시 실행 수와 검색 시간 한계를 두기로 결정 | accepted |
 | [0046](0046-supplier-status-in-search-response.md) | 검색 응답에 공급사 상태와 스펙 때문에 뺀 건수를 싣기로 결정 | accepted |
+| [0047](0047-request-types-in-supplier-package.md) | 재고·요금 조회의 요청 형태를 supplier 패키지에 두기로 결정 | accepted |
