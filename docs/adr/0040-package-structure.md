@@ -49,8 +49,8 @@ date: 2026-09-16
 
 **이유**
 
-- 공급사 실패 신호와 어댑터 인터페이스는 목록과 재고 양쪽이 쓴다. 소비자 쪽에 두면 반대편 소비자가 그 패키지를 보게 되고,
-  [ADR-0031](0031-supplier-adapter-boundaries.md) 이 정한 "두 경계를 묶는 인터페이스"는 두 소비자 패키지를 모두 보게 된다. `supplier` 에 모으면 그 일이 없다
+- 공급사 실패 신호와 어댑터 인터페이스는 목록과 재고 양쪽이 쓴다. consumer 쪽에 두면 반대편 consumer 가 그 패키지를 보게 되고,
+  [ADR-0031](0031-supplier-adapter-boundaries.md) 이 정한 "두 경계를 묶는 인터페이스"는 두 consumer 패키지를 모두 보게 된다. `supplier` 에 모으면 그 일이 없다
 - 매핑 테이블은 동기화가 쓰고 검색이 읽는 유일한 공유물이다. 저장소가 `catalog` 에 있으면 검색이 `catalog` 를 보게 된다.
   사라진 것을 표시하고([ADR-0037](0037-missing-catalog-entries-kept-and-marked.md)) 그 표시로 거르는 일이 한 패키지 안에 있어야 규칙이 갈라지지 않는다
 - `config` 패키지는 만들지 않는다. 공급사 설정은 `supplier` 것이고, `stay.catalog.sync.*` 는 `@Scheduled` 의 문자열로 읽어 클래스가 없다
@@ -83,7 +83,7 @@ grep -rn "import com.stayaggregator.catalog" app/src/main/kotlin/com/stayaggrega
 
 - **AI 주장과 근거** — 기능별로 나누되 `supplier` / `catalog` / `search` / `config` 를 제안했다. 저장소는 목록 동기화가 쓰므로 `catalog` 에 두면 된다고 보았다
 - **반박** — 독립 검토는 저장소를 `mapping` 으로 꺼내라고 했다. 검색이 같은 테이블을 읽으므로 `search → catalog` 의존이 생기고,
-  어댑터 인터페이스를 소비자 쪽에 두면 묶는 인터페이스와 실패 신호가 양쪽을 다 보게 된다는 지적이었다
+  어댑터 인터페이스를 consumer 쪽에 두면 묶는 인터페이스와 실패 신호가 양쪽을 다 보게 된다는 지적이었다
 - **검증 결과** — 지적이 맞다. 인용된 Spring·Kotlin 문서를 원문과 대조했고, 문서가 기능별을 명시해 권하지는 않는다는 단서도 사실이었다.
   다만 검토가 든 사실 하나는 틀렸다. "`application.yml` 에 `stay.*` 가 없어 저장소만으로는 앱이 뜨지 않는다"고 했으나
   `app/src/main/resources/application.yml` 에 있고 실제로 기동된다. 인용한 파일 줄 번호도 실제와 달랐다

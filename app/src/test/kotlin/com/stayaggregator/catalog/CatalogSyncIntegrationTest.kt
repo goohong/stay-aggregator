@@ -172,7 +172,7 @@ class CatalogSyncIntegrationTest {
     }
 
     @Test
-    fun `공급사를 하나 더 붙여도 소비자 코드를 고치지 않는다`() {
+    fun `공급사를 하나 더 붙여도 consumer 코드를 고치지 않는다`() {
         syncWith(
             FakeCatalogAdapter("a", Mono.just(FetchedCatalog("a", listOf(hotel("A-1", "강변 호텔", roomType("DLX", "디럭스", 2)))))),
             FakeCatalogAdapter("b", Mono.just(FetchedCatalog("b", listOf(hotel("B-1", "한옥 스테이", roomType("ONDOL", "온돌", 2)))))),
@@ -240,7 +240,7 @@ class CatalogSyncIntegrationTest {
         syncWith(FakeCatalogAdapter(catalog.supplierId, Mono.just(catalog)))
     }
 
-    /** 소비자는 어댑터 목록을 주입받기만 한다. 공급사가 늘어도 이 호출은 그대로다 (ADR-0031) */
+    /** consumer 는 어댑터 목록을 주입받기만 한다. 공급사가 늘어도 이 호출은 그대로다 (ADR-0031) */
     private fun syncWith(vararg adapters: CatalogAdapter) {
         CatalogSyncService(adapters.toList(), normalizer, repository).syncAll()
     }
