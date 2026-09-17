@@ -64,3 +64,8 @@
 | [0057](0057-resilience4j-reactor-for-circuit-breaker.md) | 서킷 브레이커는 resilience4j-reactor 를 쓰고 재시도·타임아웃은 Reactor 연산자로 두기로 결정 | accepted |
 | [0058](0058-same-hotel-confirmed-pairs-only.md) | 동일 숙소는 사람이 확인한 짝만 응답에서 같은 값으로 묶기로 결정 | accepted |
 | [0059](0059-quarantine-package.md) | 격리 기록을 새 패키지 quarantine 에 두기로 결정 | accepted |
+| [0060](0060-supplier-call-metrics.md) | 공급사 호출 지표를 공급사와 결과로 나눠 Micrometer 로 세고 actuator 로 내보내기로 결정 | accepted |
+| [0061](0061-catalog-sync-min-interval.md) | 숙소 목록 갱신 주기의 최소 간격을 1시간으로 두고 설정 검사로 지키기로 결정 | accepted |
+| [0062](0062-name-mismatch-warning.md) | 목록과 재고 응답의 이름이 다르면 경고로 격리 기록에 남기기로 결정 | accepted |
+| [0063](0063-springdoc-openapi.md) | 검색 API 문서를 springdoc-openapi 로 코드에서 만들기로 결정 | accepted |
+| [0065](0065-availability-cache-redis.md) | 재고·요금을 숙소 단위로 판정한 뒤 Redis 에 캐시하기로 결정 | accepted |
