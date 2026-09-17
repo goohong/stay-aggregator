@@ -2,8 +2,13 @@ package com.stayaggregator.supplier
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import io.netty.channel.ConnectTimeoutException
 import org.junit.jupiter.api.Test
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.web.reactive.function.client.WebClientRequestException
 import reactor.core.publisher.Mono
+import java.net.URI
 
 /**
  * 실패를 한 예외로 모으는 범위를 고정한다 (ADR-0027 의 첫 질문, ADR-0031).
@@ -46,5 +51,16 @@ class SupplierFailureTest {
         val thrown = runCatching { Mono.error<String>(cause).asSupplierFailure("a").block() }.exceptionOrNull()
 
         assertThat(thrown?.cause).isSameAs(cause)
+    }
+
+    @Test
+    fun `연결 타임아웃으로 난 요청 실패는 시간 초과로 표시되고 재시도 가능하지 않다`() {
+        // WebClient 가 Netty 의 연결 타임아웃을 감싸 올리는 형태다. 실제 연결 없이 분류만 본다 (ADR-0051, ADR-0066)
+        val cause = WebClientRequestException(ConnectTimeoutException("connection timed out"), HttpMethod.GET, URI.create("http://192.0.2.1"), HttpHeaders())
+
+        val thrown = runCatching { Mono.error<String>(cause).asSupplierFailure("a").block() }.exceptionOrNull() as SupplierResponseException
+
+        assertThat(thrown.timedOut).isTrue()
+        assertThat(thrown.transient).isFalse()
     }
 }

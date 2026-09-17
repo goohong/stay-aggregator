@@ -8,6 +8,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assumptions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
@@ -209,6 +210,16 @@ class SupplierAvailabilityAdapterTest {
     }
 
     @Test
+    fun `공급사 HTTP 클라이언트에 설정한 연결 타임아웃이 들어간다`() {
+        // 네트워크 없이 설정값이 들어갔는지만 본다. 아래 블랙홀 주소 테스트는 환경에 따라 건너뛸 수 있다 (ADR-0066)
+        val config = properties("a").of("a").copy(connectTimeout = Duration.ofMillis(300))
+
+        val options = supplierHttpClient(config).configuration().options()
+
+        assertThat(options[io.netty.channel.ChannelOption.CONNECT_TIMEOUT_MILLIS]).isEqualTo(300)
+    }
+
+    @Test
     fun `연결이 수립되지 않으면 호출 타임아웃까지 기다리지 않고 연결 타임아웃에서 실패한다`() {
         // 192.0.2.1 은 문서용으로 예약돼 라우팅되지 않는 주소다(RFC 5737). 연결 요청에 답이 없어 수립되지 않는다 (ADR-0066).
         // 로컬 서버의 대기열을 채우는 방법은 macOS 에서 연결이 수립돼 버려 쓰지 않았다
@@ -224,6 +235,12 @@ class SupplierAvailabilityAdapterTest {
         val thrown = catchThrowable { adapter.fetchAvailability(request).block() }
         val elapsed = Duration.ofNanos(System.nanoTime() - started)
 
+        // 라우트가 없는 환경(오프라인 CI 등)에서는 연결 요청이 기다리지 않고 NoRouteToHostException 같은 다른 실패로 끝난다.
+        // 그때는 연결 타임아웃을 관찰할 수 없어 건너뛴다. 설정값이 들어갔는지는 위 테스트가 네트워크 없이 본다
+        Assumptions.assumeTrue(
+            thrown?.cause?.cause is io.netty.channel.ConnectTimeoutException,
+            "블랙홀 주소가 연결 타임아웃으로 끝나지 않는 환경이다: ${thrown?.cause?.cause}",
+        )
         assertThat(elapsed).isLessThan(Duration.ofSeconds(3))
         assertThat((thrown as SupplierResponseException).timedOut).isTrue()
         assertThat(thrown.transient).isFalse()

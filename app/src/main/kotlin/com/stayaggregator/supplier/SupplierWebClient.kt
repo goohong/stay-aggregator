@@ -14,12 +14,17 @@ import reactor.netty.http.client.HttpClient
  *
  * 어댑터마다 WebClient 를 직접 만들면 새 어댑터가 이 설정을 빠뜨려도 컴파일·기동·테스트가 모두 통과한다.
  */
-fun supplierWebClient(config: StayProperties.Supplier, apiKeyHeader: String): WebClient {
-    val httpClient = HttpClient.create()
-        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(config.connectTimeout.toMillis()))
-    return WebClient.builder()
-        .clientConnector(ReactorClientHttpConnector(httpClient))
+fun supplierWebClient(config: StayProperties.Supplier, apiKeyHeader: String): WebClient =
+    WebClient.builder()
+        .clientConnector(ReactorClientHttpConnector(supplierHttpClient(config)))
         .baseUrl(config.baseUrl)
         .defaultHeader(apiKeyHeader, config.apiKey)
         .build()
-}
+
+/**
+ * 연결 설정을 담은 HTTP 클라이언트. WebClient 와 따로 두어 설정값이 실제로 들어갔는지를 네트워크 없이 확인할 수 있게 했다.
+ * 라우팅되지 않는 주소로 확인하는 테스트는 환경에 따라 연결 타임아웃이 아닌 다른 실패로 끝날 수 있다.
+ */
+internal fun supplierHttpClient(config: StayProperties.Supplier): HttpClient =
+    HttpClient.create()
+        .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, Math.toIntExact(config.connectTimeout.toMillis()))
