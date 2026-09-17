@@ -209,6 +209,7 @@ resilience4j 의 재시도·타임아웃도 안에서 같은 Reactor 연산자�
 
 | 위치 | 내용 |
 |---|---|
+| [docs/architecture.md](docs/architecture.md) | 지금 코드의 구조. 패키지와 의존 방향, 두 흐름이 지나는 클래스, 실패가 갈리는 지점 |
 | [docs/adr/](docs/adr/) | 결정과 그 근거. 선택지와 버린 이유까지 |
 | [docs/features/](docs/features/) | 기능이 무엇을 하는가, 아직 정하지 못한 질문 |
 | [docs/research/](docs/research/) | 결정에 쓴 조사 기록. 출처와 조회일 |
