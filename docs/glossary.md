@@ -1,0 +1,81 @@
+# 용어
+
+이 저장소에서 쓰는 말의 뜻을 여기서만 정한다. 다른 문서와 코드는 쓰기만 하고 다시 정의하지 않는다.
+한쪽이 바뀌면 다른 쪽이 틀린 말이 되기 때문이다.
+
+말과 코드 이름과 DB 이름을 한 줄에 둔다. 대화에서는 왼쪽 말을, 코드에서는 가운데 이름을 쓴다.
+
+## 도메인
+
+| 말 | 코드·DB 이름 | 뜻과 헷갈리기 쉬운 것 |
+|---|---|---|
+| **공급사** | `supplier` | 우리가 상품을 받아 파는 외부 숙박 사업자. 지금은 A·B 둘 |
+| **숙소** | `hotel_mapping`, `FetchedHotel` | 호텔·게스트하우스 같은 건물 하나. 공급사 안에서 코드로 유일하다 |
+| **객실 타입** | `room_type_mapping`, `FetchedRoomType` | "디럭스 더블" 처럼 파는 단위. **물리 객실 하나가 아니다.** 그 숙소 안에서만 코드가 유일하다.<br>공급사 B 는 이것을 `roomId`·`roomName` 이라 부르지만 이름과 달리 객실 타입이다 |
+| **최대 수용 인원** | `max_occupancy` | 객실 1실에 묵을 수 있는 인원. 성인과 아동을 합한 수다 |
+| **예약 가능 객실 수** | (검색 응답) | 그 객실 타입을 몇 실 팔 수 있는가. 연박이면 날짜별 잔여 수의 최솟값 ([ADR-0023](adr/0023-multi-night-availability-minimum.md)).<br>0 이면 예약 불가다. 응답에서 빼지 않고 0 으로 내보낸다 ([ADR-0026](adr/0026-expose-unbookable-as-zero.md)) |
+| **숙박 구간** | `StayPeriod` (예정) | 체크인일과 체크아웃일 한 쌍. **체크아웃일은 숙박에 넣지 않는다** ([ADR-0043](adr/0043-stay-period-value-object.md)).<br>3박이면 날짜는 셋이고 체크아웃일은 그중에 없다 |
+| **금액** | `Money` (예정) | 액수와 통화를 함께 담는 값 ([ADR-0042](adr/0042-rate-as-tax-included-total.md)). 통화 없는 액수는 존재하지 않는다 |
+| **요금** | `Rate` (예정) | 금액과 판매 조건을 함께 가진, **팔리는 단위**. 금액 자체가 아니다.<br>같은 객실 타입이라도 조건이 다르면 다른 요금이다 |
+| **판매 조건** | `RateConditions` (예정) | 그 요금으로 살 때 따라오는 것. 지금 담는 것은 조식 포함 여부 하나 ([ADR-0044](adr/0044-rate-conditions-as-value-object.md)).<br>취소 조건은 공급사가 주지 않는다 |
+
+## 공급사와 만나는 곳
+
+| 말 | 코드 이름 | 뜻과 헷갈리기 쉬운 것 |
+|---|---|---|
+| **숙소 목록 API** | `CatalogAdapter.fetchCatalog` | 공급사가 취급하는 숙소와 객실 타입을 조건 없이 전부 주는 API. 드물게 바뀐다. 요금·재고는 여기 없다 |
+| **재고·요금 API** | (검색 구현 단위에서) | 숙소 코드 목록과 날짜·인원을 주면 그 조건의 재고와 요금을 주는 API. 매번 바뀐다.<br>한 번에 받을 수 있는 숙소 코드 수에 상한이 있다 |
+| **어댑터** | `SupplierACatalogAdapter` 등 | 한 공급사의 API 를 부르고 그 응답을 우리 형태로 바꾸는 클래스. 공급사마다 하나 ([ADR-0031](adr/0031-supplier-adapter-boundaries.md)).<br>판정은 하지 않는다. 공급사마다 다른 것만 흡수한다 |
+| **consumer** | `CatalogSyncService` 등 | 어댑터를 주입받아 쓰는 쪽. 지금은 목록 동기화 하나, 검색이 생기면 둘 |
+| **공급사 실패** | `SupplierResponseException` | 응답을 스펙대로 받지 못한 것. HTTP 상태, 본문의 결과 코드, 본문을 읽지 못한 것,<br>정한 시간 안에 오지 않은 것, 연결하지 못한 것이 모두 여기 든다 ([ADR-0027](adr/0027-spec-violation-handling-criteria.md)).<br>공급사가 "실패"라고 말한 것만이 아니다 |
+| **부분 실패** | (검색 응답) | 공급사 하나가 실패해도 나머지 공급사 결과로 응답하는 것. 응답에 그 사실을 드러낸다 |
+
+## 우리 안에서 쓰는 형태
+
+요구사항이 말하는 **"표준 모델"** 은 우리 코드에서 셋으로 나뉜다. 그 말만 쓰지 말고 어느 것인지 밝힌다.
+
+| 말 | 코드 이름 | 뜻 |
+|---|---|---|
+| **받은 값** | `Fetched…` | 어댑터가 공급사 응답에서 꺼내 놓은 값. **아직 판정하지 않았다.** 값이 없을 수 있어 전부 null 을 허용한다 |
+| **정규화한 값** | `Normalized…` | 판정을 마치고 매핑에 넣을 값. 조건을 어긴 것은 여기까지 오지 않는다 |
+| **검색 응답 모델** | (검색 구현 단위에서) | 고객에게 나갈 형태 |
+
+| 말 | 코드 이름 | 뜻과 헷갈리기 쉬운 것 |
+|---|---|---|
+| **정규화** | `CatalogNormalizer` | 받은 값에서 쓸 것과 제외할 것을 가르는 일.<br>값이 쓸 만한지는 값을 담는 객체가 판정한다 ([ADR-0041](adr/0041-validate-in-constructors.md)). 정규화는 만들어 보고 못 만든 것을 모은다 |
+| **제외 항목** | `ExcludedItem` | 값을 정할 수 없어 결과에서 뺀 숙소나 객실 타입. **사유를 함께 남긴다** |
+| **제외 사유** | `ExcludedItem.reason` | 왜 뺐는지. 값을 담는 객체가 거부하며 낸 문장이 그대로 들어간다 |
+| **격리** | (아직 없음) | **요구사항의 선택 항목 이름**이다. 변환하지 못한 응답의 **원본을 버리지 않고 따로 보관**하는 것을 말한다.<br>우리는 아직 하지 않는다. 지금 남기는 것은 제외 사유와 로그 한 줄까지다 (Q17·Q18).<br>**우리가 항목을 빼는 일을 "격리"라고 부르지 않는다** |
+
+## 매핑과 DB
+
+DB 에 저장하는 것은 매핑뿐이다 ([ADR-0017](adr/0017-mapping-in-server-rdb.md)). 요금·재고는 저장하지 않는다.
+
+| 말 | DB 이름 | 뜻과 헷갈리기 쉬운 것 |
+|---|---|---|
+| **매핑** | `hotel_mapping`, `room_type_mapping` | 공급사 코드와 내부 식별자의 짝 |
+| **내부 식별자** | `internal_hotel_id`, `internal_room_type_id` | 우리가 발급해 쓰는 식별자. 무작위 UUID ([ADR-0011](adr/0011-internal-id-random-uuid.md)).<br>공급사 코드가 아니다. 같은 공급사 상품은 다시 조회해도 같은 값이다 |
+| **공급사 코드** | `supplier_hotel_code`, `room_type_code` | 공급사가 그 숙소·객실 타입에 붙인 코드. 숙소 코드는 공급사 안에서, 객실 타입 코드는 그 숙소 안에서 유일하다 |
+| **목록 동기화** | `CatalogSyncService` | 숙소 목록 API 를 받아 매핑에 반영하는 일. 기동 직후 한 번, 그 뒤 주기마다 ([ADR-0013](adr/0013-catalog-sync-on-startup-and-interval.md)).<br>고객 검색이 이것을 부르지 않는다 ([ADR-0014](adr/0014-detect-drift-in-search-correct-in-sync.md)) |
+| **`missing_since`** | `missing_since` | **이번 목록에 없었던 시각.** 값이 비어 있으면 목록에 있다는 뜻이다 ([ADR-0037](adr/0037-missing-catalog-entries-kept-and-marked.md)).<br>지웠다는 뜻이 아니다. 행은 남고, 다시 나타나면 같은 내부 식별자로 값이 비워진다.<br>말할 때도 컬럼 이름 그대로 부른다. "사라짐" 같은 말은 삭제로 읽히기 쉽다 |
+
+### 테이블
+
+```
+hotel_mapping
+  internal_hotel_id    uuid   PK      내부 숙소 식별자
+  supplier             text           공급사
+  supplier_hotel_code  text           공급사가 붙인 숙소 코드
+  hotel_name           text           숙소명
+  missing_since        timestamptz    이번 목록에 없었던 시각 (비어 있으면 목록에 있음)
+  UNIQUE (supplier, supplier_hotel_code)
+
+room_type_mapping
+  internal_room_type_id uuid  PK      내부 객실 타입 식별자
+  internal_hotel_id     uuid  FK      어느 숙소의 객실 타입인가
+  room_type_code        text          공급사가 붙인 객실 타입 코드
+  room_type_name        text          객실 타입명
+  max_occupancy         int           객실 1실의 최대 수용 인원
+  missing_since         timestamptz   위와 같다
+  UNIQUE (internal_hotel_id, room_type_code)
+```
